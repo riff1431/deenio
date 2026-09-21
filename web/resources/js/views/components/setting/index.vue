@@ -209,7 +209,7 @@
                         <label class="field-label" for="islamic_name_api_key">
                             AI API Key
                             <a :href="aiKeyUrl" target="_blank" class="text-primary" style="margin-left:6px;">
-                                Get key from {{ aiProviderName }} →
+                                Get key from {{ aiKeyLabel }} →
                             </a>
                         </label>
                         <div style="position:relative;">
@@ -404,10 +404,10 @@ const mediaItems = computed(() => [
 
 // ── AI Provider Config ──────────────────────────
 const AI_PROVIDERS = {
-    groq:       { name: 'Groq',           defaultModel: 'llama-3.3-70b-versatile',               keyUrl: 'https://console.groq.com/keys' },
-    openai:     { name: 'OpenAI',         defaultModel: 'gpt-4o-mini',                           keyUrl: 'https://platform.openai.com/api-keys' },
-    openrouter: { name: 'OpenRouter',     defaultModel: 'meta-llama/llama-3.3-70b-instruct',     keyUrl: 'https://openrouter.ai/keys' },
-    gemini:     { name: 'Google Gemini',  defaultModel: 'gemini-2.0-flash',                      keyUrl: 'https://aistudio.google.com/apikey' },
+    groq:       { name: 'Groq',              keyLabel: 'Groq Console',        defaultModel: 'llama-3.3-70b-versatile',           keyUrl: 'https://console.groq.com/keys' },
+    openai:     { name: 'OpenAI',            keyLabel: 'OpenAI Platform',     defaultModel: 'gpt-4o-mini',                       keyUrl: 'https://platform.openai.com/api-keys' },
+    openrouter: { name: 'OpenRouter',        keyLabel: 'OpenRouter',          defaultModel: 'meta-llama/llama-3.3-70b-instruct', keyUrl: 'https://openrouter.ai/keys' },
+    gemini:     { name: 'Google Gemini',     keyLabel: 'Google AI Studio',    defaultModel: 'gemini-2.0-flash',                  keyUrl: 'https://aistudio.google.com/apikey' },
 };
 
 const showAiKey = ref(false);
@@ -415,7 +415,8 @@ const aiTestLoading = ref(false);
 const aiTestResult = ref(null);
 
 const aiProviderName = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.name || 'Groq');
-const aiKeyUrl = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.keyUrl || AI_PROVIDERS.groq.keyUrl);
+const aiKeyLabel    = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.keyLabel || aiProviderName.value);
+const aiKeyUrl      = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.keyUrl || AI_PROVIDERS.groq.keyUrl);
 const aiModelPlaceholder = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.defaultModel || '');
 const aiModelHint = computed(() => `Default: ${aiModelPlaceholder.value}`);
 
@@ -433,18 +434,15 @@ const testAiConnection = () => {
     aiTestLoading.value = true;
     aiTestResult.value = null;
 
-    // Determine the actual API key to send.
-    // If user has typed a new key (is_typed_islamic_name flag), send it directly.
-    // Otherwise, we send nothing and let the backend use the saved key.
-    const apiKeyToSend = formData.value.is_typed_islamic_name
-        ? formData.value.islamic_name_api_key
-        : null;
-
     const payload = {
         ai_provider: formData.value.ai_provider || 'groq',
         ai_model: formData.value.ai_model || '',
+        // Always send the current key; backend will decrypt if stored encrypted.
+        // If user typed a new unsaved key, is_typed_islamic_name is true and we pass it raw.
+        // If loaded from saved settings, we pass the stored value and backend safeDecrypts it.
+        ai_api_key: formData.value.islamic_name_api_key || '',
+        is_key_encrypted: !formData.value.is_typed_islamic_name,
     };
-    if (apiKeyToSend) payload.ai_api_key = apiKeyToSend;
 
     Axios.post('ai/test-connection', payload)
         .then(({ data }) => { aiTestResult.value = data; })

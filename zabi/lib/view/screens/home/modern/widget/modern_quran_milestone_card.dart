@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:zabi/controller/quran_milestone_controller.dart';
 import 'package:zabi/helper/route_helper.dart';
 import 'package:zabi/theme/modern_light_theme.dart';
-import 'package:zabi/util/dimensions.dart';
 import 'package:zabi/util/images.dart';
 import 'package:zabi/util/styles.dart';
 
@@ -21,86 +20,144 @@ class ModernQuranMilestoneCard extends StatelessWidget {
         final goal = controller.dailyGoal.value;
         final ratio = controller.progressRatio;
         final remaining = (goal - read).clamp(0, goal);
-        final isDarkmode = Get.isDarkMode;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
 
         return GestureDetector(
           onTap: () => Get.toNamed(RouteHelper.suraList),
           child: Container(
-            padding: const EdgeInsets.all(Dimensions.PADDING_SIZE_DEFAULT),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(
-                Dimensions.RADIUS_EXTRA_LARGE,
+              color: isDark ? const Color(0xFF1B2620) : Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withOpacity(0.08)
+                    : AppColorModern.emerald.withOpacity(0.12),
+                width: 1,
               ),
-              boxShadow: isDarkmode
-                  ? null
-                  : [
-                      BoxShadow(
-                        color: Get.isDarkMode
-                            ? Colors.black.withOpacity(0.25)
-                            : Colors.grey.withOpacity(0.15),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.05),
+                  blurRadius: 14,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
             child: Row(
               children: [
+                // 1. Circular Progress Indicator with icon & count
                 _CircularProgress(ratio: ratio, read: read, goal: goal),
-                const SizedBox(width: Dimensions.PADDING_SIZE_DEFAULT),
+
+                const SizedBox(width: 16),
+
+                // 2. Goal Stats & Action
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'quran_milestone_title'.tr,
-                        style: robotoBold.copyWith(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'quran_milestone_title'.tr,
+                            style: robotoBold.copyWith(
+                              fontSize: 15,
+                              color: isDark ? Colors.white : AppColorModern.textPrimary,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColorModern.emerald.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${(ratio * 100).toStringAsFixed(0)}%',
+                              style: robotoBold.copyWith(
+                                fontSize: 11,
+                                color: AppColorModern.emerald,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 3),
                       Text(
                         'quran_milestone_subtitle'.tr,
                         style: robotoRegular.copyWith(
-                          fontSize: Dimensions.FONT_SIZE_SMALL - 2,
-                          color: Theme.of(context).hintColor,
+                          fontSize: 11,
+                          color: isDark ? Colors.white60 : AppColorModern.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 10),
+
+                      // Linear track
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: LinearProgressIndicator(
-                                value: ratio.clamp(0.0, 1.0),
-                                minHeight: 8,
-                                borderRadius: BorderRadius.circular(20),
-                                backgroundColor: isDarkmode
-                                    ? Colors.grey.withValues(alpha: 0.5)
-                                    : AppColorModern.emeraldSoftBg,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  AppColorModern.emerald,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${(ratio * 100).toStringAsFixed(0)}%',
-                              style: robotoMedium.copyWith(
-                                fontSize: Dimensions.FONT_SIZE_SMALL,
-                                color: AppColorModern.emerald,
-                              ),
-                            ),
-                          ],
+                        borderRadius: BorderRadius.circular(10),
+                        child: LinearProgressIndicator(
+                          value: ratio.clamp(0.0, 1.0),
+                          minHeight: 6,
+                          backgroundColor: isDark
+                              ? Colors.white.withOpacity(0.1)
+                              : AppColorModern.emeraldSoftBg,
+                          valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColorModern.emerald,
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
 
-                      _InfoRow(
-                        title: remaining == 0
-                            ? 'quran_milestone_complete'.tr
-                            : '$remaining ${'quran_milestone_remaining'.tr}',
-                        subtitle: 'quran_milestone_subtitles'.tr,
+                      const SizedBox(height: 10),
+
+                      // Continue reading pill button
+                      InkWell(
                         onTap: () => Get.toNamed(RouteHelper.suraList),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.06)
+                                : AppColorModern.emeraldSoftBg,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              SvgPicture.asset(
+                                Images.ModernIcon_ReadQuran,
+                                height: 16,
+                                width: 16,
+                                color: AppColorModern.emerald,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  remaining == 0
+                                      ? 'quran_milestone_complete'.tr
+                                      : '$remaining ${'quran_milestone_remaining'.tr}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: robotoMedium.copyWith(
+                                    fontSize: 11,
+                                    color: isDark ? Colors.white : AppColorModern.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 11,
+                                color: AppColorModern.emerald,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -126,47 +183,26 @@ class _CircularProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
-      width: 85,
-      height: 85,
+      width: 76,
+      height: 76,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Container(
-            width: 110,
-            height: 110,
-            decoration: BoxDecoration(
-              color: Get.isDarkMode
-                  ? Colors.grey.withValues(alpha: 0.05)
-                  : Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(.08),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 86,
-                  height: 86,
-                  child: CircularProgressIndicator(
-                    value: ratio.clamp(0.0, 1.0),
-                    strokeWidth: 9,
-                    strokeCap: StrokeCap.round,
-                    backgroundColor: Get.isDarkMode
-                        ? Colors.white.withValues(alpha: 0.3)
-                        : AppColorModern.emeraldSoftBg,
-                    valueColor: const AlwaysStoppedAnimation(
-                      AppColorModern.emerald,
-                    ),
-                  ),
-                ),
-              ],
+          SizedBox(
+            width: 76,
+            height: 76,
+            child: CircularProgressIndicator(
+              value: ratio.clamp(0.0, 1.0),
+              strokeWidth: 6.5,
+              strokeCap: StrokeCap.round,
+              backgroundColor: isDark
+                  ? Colors.white.withOpacity(0.12)
+                  : AppColorModern.emeraldSoftBg,
+              valueColor: const AlwaysStoppedAnimation(
+                AppColorModern.emerald,
+              ),
             ),
           ),
           Column(
@@ -174,100 +210,28 @@ class _CircularProgress extends StatelessWidget {
             children: [
               SvgPicture.asset(
                 Images.Icon_Quran,
-                width: 24,
-                height: 24,
+                width: 18,
+                height: 18,
                 color: AppColorModern.emerald,
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '$read',
-                    style: robotoBold.copyWith(
-                      fontSize: Dimensions.FONT_SIZE_LARGE + 5,
-
-                      color: Get.isDarkMode
-                          ? Colors.white
-                          : AppColorModern.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    '/$goal',
-                    style: robotoRegular.copyWith(
-                      fontSize: Dimensions.FONT_SIZE_EXTRA_SMALL,
-                      color: Theme.of(context).hintColor,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 2),
+              Text(
+                '$read/$goal',
+                style: robotoBold.copyWith(
+                  fontSize: 11,
+                  color: isDark ? Colors.white : AppColorModern.textPrimary,
+                ),
+              ),
+              Text(
+                'pages'.tr.isNotEmpty ? 'pages'.tr : 'pages',
+                style: robotoRegular.copyWith(
+                  fontSize: 9,
+                  color: isDark ? Colors.white54 : AppColorModern.textSecondary,
+                ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final VoidCallback? onTap;
-
-  const _InfoRow({required this.title, required this.subtitle, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-        decoration: BoxDecoration(
-          color: Get.isDarkMode
-              ? Colors.white.withValues(alpha: 0.1)
-              : AppColorModern.chipGreenBackground,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            const Text('📗', style: robotoMedium),
-            const SizedBox(width: 5),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: robotoMedium.copyWith(
-                      color: Get.isDarkMode
-                          ? Colors.white
-                          : AppColorModern.textPrimary,
-                      fontSize: Dimensions.FONT_SIZE_EXTRA_SMALL,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: robotoMedium.copyWith(
-                      color: Get.isDarkMode
-                          ? Colors.white.withValues(alpha: 0.5)
-                          : AppColorModern.textSecondary,
-                      fontSize: Dimensions.FONT_SIZE_EXTRA_SMALL,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.chevron_right,
-              color: Get.isDarkMode
-                  ? Colors.white
-                  : AppColorModern.textSecondary,
-              size: 20,
-            ),
-          ],
-        ),
       ),
     );
   }

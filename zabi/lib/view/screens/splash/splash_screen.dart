@@ -44,8 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
             // logo image
             Image.asset(
               Images.Dark_APP_LOGO,
-              height: 80,
-              color: Theme.of(context).primaryColor,
+              height: 90,
               fit: BoxFit.contain,
             ),
             const SizedBox(height: Dimensions.PADDING_SIZE_EXTRA_SMALL),

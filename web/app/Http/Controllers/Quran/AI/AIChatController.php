@@ -78,25 +78,35 @@ class AIChatController extends Controller
     public function testConnection(Request $request)
     {
         $request->validate([
-            'ai_provider' => 'nullable|string|in:groq,openai,openrouter,gemini',
-            'ai_model' => 'nullable|string|max:100',
-            'ai_api_key' => 'nullable|string',
+            'ai_provider'     => 'nullable|string|in:groq,openai,openrouter,gemini',
+            'ai_model'        => 'nullable|string|max:100',
+            'ai_api_key'      => 'nullable|string',
+            'is_key_encrypted' => 'nullable|boolean',
         ]);
 
-        // If request provides config, use that (for testing before saving)
         $overrideConfig = null;
-        if ($request->filled('ai_api_key')) {
-            $overrideConfig = [
-                'provider' => $request->input('ai_provider', 'groq'),
-                'model' => $request->input('ai_model', ''),
-                'api_key' => $request->input('ai_api_key'),
-            ];
 
-            // Use default model if none specified
-            if (empty($overrideConfig['model'])) {
-                $providerKey = $overrideConfig['provider'];
-                $overrideConfig['model'] = AIProviderService::PROVIDERS[$providerKey]['default_model'] ?? '';
+        if ($request->filled('ai_api_key')) {
+            $apiKey = $request->input('ai_api_key');
+
+            // If the key was loaded from saved settings (not freshly typed), it is
+            // stored encrypted in the DB and returned as-is. Decrypt it before use.
+            if ($request->boolean('is_key_encrypted')) {
+                $apiKey = $this->safeDecrypt($apiKey);
             }
+
+            $providerKey = $request->input('ai_provider', 'groq');
+            $model       = $request->input('ai_model', '');
+
+            if (empty($model)) {
+                $model = AIProviderService::PROVIDERS[$providerKey]['default_model'] ?? '';
+            }
+
+            $overrideConfig = [
+                'provider' => $providerKey,
+                'model'    => $model,
+                'api_key'  => $apiKey,
+            ];
         }
 
         $result = $this->aiProvider->testConnection($overrideConfig);

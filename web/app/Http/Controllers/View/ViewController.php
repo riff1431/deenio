@@ -175,7 +175,7 @@ class ViewController extends Controller
         }
 
         $defaults = [
-            'app_name'                 => 'Zabi',
+            'app_name'                 => !empty($app['company_name']) ? $app['company_name'] : 'Zabi',
             'hero_badge_text'          => 'Available on iOS & Android',
             'hero_title'               => 'Your Complete',
             'hero_subtitle'            => 'Islamic Companion',

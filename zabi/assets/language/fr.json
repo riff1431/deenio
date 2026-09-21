@@ -1,5 +1,5 @@
 {
-  "app_name": "Zabi",
+  "app_name": "Deenio",
   "todays_Prayer_Time_in": "Prise de la prière aujourd'hui dans",
   "todays_Prayer_Time": "Prise de la prière aujourd'hui",
   "fajr": "L'aube",
@@ -280,7 +280,7 @@
   "no_saved_names": "Aucun nom enregistré pour l'instant.\nAppuyez sur ♡ pour enregistrer un nom.",
   "copy": "Copier",
   "remove": "Supprimer",
-  "generated_with": "Nom islamique — Généré avec l'application Zabi",
+  "generated_with": "Nom islamique — Généré avec l'application Deenio",
   "ai_name_key": "Générateur de Noms IA",
   "ask_ai_key": "Demander à l'IA",
   "synonyms_key": "Noms similaires",

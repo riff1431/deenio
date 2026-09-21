@@ -34,7 +34,7 @@ class SettingService extends BaseService
             }
 
             if (request()->has('is_typed_g_map')) {
-                $settings['google_map_key'] = encrypt($settings[$key]);
+                $settings['google_map_key'] = encrypt($settings['google_map_key']);
             }
 
             if (request()->has('islamic_name_api_key') && !request()->has('is_typed_islamic_name')) {
@@ -42,7 +42,7 @@ class SettingService extends BaseService
             }
 
             if (request()->has('is_typed_islamic_name')) {
-                $settings['islamic_name_api_key'] = encrypt($settings[$key]);
+                $settings['islamic_name_api_key'] = encrypt($settings['islamic_name_api_key']);
             }
 
             // ai_provider and ai_model are plain text — no encryption needed.

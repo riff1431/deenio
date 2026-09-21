@@ -5,19 +5,24 @@
         "preview_page": "Preview Page",
         "error_saving": "Error saving",
         "section": {
-            "brand": "Brand",
-            "footer_preview": "Footer Preview"
+            "brand": "Brand & Content",
+            "footer_preview": "Live Footer Preview"
         },
         "form": {
             "app_name_label": "App Name",
-            "app_name_hint": "shown in footer",
-            "app_name_placeholder": "Enter app name",
+            "app_name_hint": "shown in footer branding and copyright",
+            "app_name_placeholder": "e.g. Zabi",
             "footer_description_label": "Footer Description",
-            "footer_description_placeholder": "Enter footer description"
+            "footer_description_placeholder": "Enter a concise description of your Islamic companion app..."
         },
         "preview": {
-            "default_description": "Your complete Islamic companion app.",
-            "copyright_suffix": "· All rights reserved."
+            "default_description": "Your complete Islamic companion app. Bringing the beauty of Islam to your fingertips with modern technology.",
+            "copyright_suffix": "· All rights reserved.",
+            "mode_dark": "Dark Preview",
+            "mode_light": "Light Preview",
+            "features_title": "Features",
+            "resources_title": "Resources",
+            "get_app_title": "Get The App"
         }
     }
 }

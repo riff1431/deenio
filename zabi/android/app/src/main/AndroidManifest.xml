@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.example.zabi">
+    package="com.Deenio.app">
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -28,7 +28,7 @@
 
     <application
         android:name="${applicationName}"
-        android:label="Zabi"
+        android:label="Deenio"
         android:icon="@mipmap/launcher_icon">
 
         <!-- FileProvider for sharing images etc. -->

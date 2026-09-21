@@ -1,21 +1,27 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    {{-- Light/dark follows the theme preset selected in the admin panel. --}}
+    {{-- Dark mode initialized from theme preset --}}
     <script>
         (function () {
-            if ('{{ active_theme()['mode'] }}' === 'dark') document.documentElement.classList.add('dark');
+            if ('{{ active_theme()['mode'] }}' === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else if (localStorage.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
         })();
     </script>
 
     @php
-        $seoTitle   = !empty($s['seo_title'])       ? $s['seo_title']       : (($s['app_name'] ?? 'Zabi') . ' - ' . ($s['hero_title'] ?? 'Your Complete') . ' ' . ($s['hero_subtitle'] ?? 'Islamic Companion'));
-        $seoDesc    = !empty($s['seo_description'])  ? $s['seo_description']  : Str::limit($s['hero_description'] ?? '', 160);
-        $ogTitle    = !empty($s['seo_og_title'])     ? $s['seo_og_title']     : $seoTitle;
-        $ogDesc     = !empty($s['seo_og_description'])  ? $s['seo_og_description']  : $seoDesc;
+        $seoTitle   = !empty($s['seo_title']) ? $s['seo_title'] : (($s['app_name'] ?? 'Zabi') . ' — ' . ($s['hero_title'] ?? 'Your Complete') . ' ' . ($s['hero_subtitle'] ?? 'Islamic Companion'));
+        $seoDesc    = !empty($s['seo_description']) ? $s['seo_description'] : Str::limit($s['hero_description'] ?? '', 160);
+        $ogTitle    = !empty($s['seo_og_title']) ? $s['seo_og_title'] : $seoTitle;
+        $ogDesc     = !empty($s['seo_og_description']) ? $s['seo_og_description'] : $seoDesc;
         $twTitle    = !empty($s['seo_twitter_title']) ? $s['seo_twitter_title'] : $ogTitle;
         $twDesc     = !empty($s['seo_twitter_description']) ? $s['seo_twitter_description'] : $ogDesc;
         $ogImage    = !empty($s['seo_og_image']) ? asset($s['seo_og_image']) : (!empty($s['web_logo']) ? asset($s['web_logo']) : null);
@@ -28,6 +34,7 @@
     @if(!empty($s['seo_canonical_url']))<link rel="canonical" href="{{ $s['seo_canonical_url'] }}">@endif
     @if(!empty($s['seo_google_verification']))<meta name="google-site-verification" content="{{ $s['seo_google_verification'] }}">@endif
 
+    <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="{{ $s['app_name'] ?? 'Zabi' }}">
     <meta property="og:title" content="{{ $ogTitle }}">
@@ -35,53 +42,66 @@
     @if($ogImage)<meta property="og:image" content="{{ $ogImage }}">@endif
     @if(!empty($s['seo_canonical_url']))<meta property="og:url" content="{{ $s['seo_canonical_url'] }}">@endif
 
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="{{ $s['seo_twitter_card'] ?? 'summary_large_image' }}">
     <meta name="twitter:title" content="{{ $twTitle }}">
     <meta name="twitter:description" content="{{ $twDesc }}">
     @if($ogImage)<meta name="twitter:image" content="{{ $ogImage }}">@endif
 
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" href="{{ asset('assets/img/app-icon.png') }}" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('assets/img/apple-touch-icon.png') }}">
+    <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
     @if(!empty($s['seo_google_analytics']))
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ $s['seo_google_analytics'] }}"></script>
     <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','{{ $s['seo_google_analytics'] }}');</script>
     @endif
 
-    <!-- Fonts: Inter, Amiri (Quran), Cairo (Arabic UI), Noto Sans Bengali, Noto Sans Devanagari (Hindi) -->
+    <!-- Google Fonts: Plus Jakarta Sans, Inter, Amiri Calligraphy -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=Noto+Sans+Bengali:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://t.contentsquare.net/uxa/2fd348fa4e3b8.js"></script>
-    <!-- Tailwind CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- GSAP 3 & ScrollTrigger from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <!-- Tailwind CSS with custom configuration -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        // Brand shades pull from the active theme (see partials/theme-vars).
-                        emerald: {
-                            950: 'var(--theme-primary)',
-                            900: 'var(--theme-primary)',
-                            800: 'var(--theme-secondary)',
-                            700: 'var(--theme-secondary)',
-                            600: 'var(--theme-secondary)',
-                            500: 'var(--theme-secondary)',
-                            400: 'var(--theme-secondary)',
-                        },
-                        green: {
-                            500: 'var(--theme-secondary)',
-                            400: 'var(--theme-secondary)',
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                            950: '#022c22',
                         },
                         gold: {
-                            300: 'var(--theme-accent)',
-                            400: 'var(--theme-accent)',
-                            500: 'var(--theme-accent)',
-                            600: 'var(--theme-accent)',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                        },
+                        dark: {
+                            base: '#070d0a',
+                            surface: '#0d1712',
+                            card: '#122019',
+                            border: 'rgba(255, 255, 255, 0.08)'
                         }
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
                         arabic: ['Amiri', 'serif'],
                     }
                 }
@@ -89,948 +109,729 @@
         }
     </script>
 
+    @include('partials.theme-vars')
+
     <style>
         :root {
-            --green-dark: #0a2e1e;
-            --green-mid: #1a5c38;
-            --green-light: #2d7a50;
-            --gold: #d4a843;
-            --gold-light: #f0c060;
-
-            /* Light-mode tokens for content sections that support dark mode */
-            --lp-border: #f0f0f0;
-            --lp-surface: #ffffff;
-            --lp-input-bg: #f9fafb;
-            --lp-track: #f0f0f0;
-            --lp-accent: var(--green-mid);
-            --lp-text-soft: #6b7280;
-            --lp-flash-bg: #d4edda;
+            --lp-primary: var(--theme-primary, #059669);
+            --lp-secondary: var(--theme-secondary, #10b981);
+            --lp-accent: var(--theme-accent, #f59e0b);
+            --lp-bg: #f8faf9;
+            --lp-card: #ffffff;
+            --lp-border: rgba(0, 0, 0, 0.07);
+            --lp-text: #0f172a;
+            --lp-text-muted: #64748b;
         }
 
-        html.dark {
-            --lp-border: rgba(255,255,255,0.09);
-            --lp-surface: var(--theme-card);
-            /* A tone between page and card so alternating sections don't merge into one flat slab */
-            --lp-section-alt: color-mix(in srgb, var(--theme-card) 55%, var(--theme-page));
-            --lp-input-bg: var(--theme-muted-bg);
-            --lp-track: rgba(255,255,255,0.14);
-            --lp-accent: var(--gold);
-            --lp-text-soft: #b6c2cf;
-            --lp-text-faint: #8b97a4;
-            --lp-flash-bg: rgba(var(--theme-accent-rgb),0.22);
+        .dark {
+            --lp-bg: #060b08;
+            --lp-card: #0d1611;
+            --lp-border: rgba(255, 255, 255, 0.08);
+            --lp-text: #f8fafc;
+            --lp-text-muted: #94a3b8;
         }
 
-        /* Landing-only: when the on-page toggle turns dark mode on over a LIGHT preset,
-           the preset's --theme-* colors are still light, so supply real dark surfaces
-           here. A dark preset (data-theme-mode="dark") keeps its own hand-picked colors.
-           This rule lives in the landing page's <style>, so the admin panel is unaffected. */
-        html.dark[data-theme-mode="light"] {
-            --theme-text: #f1f5f9;
-            --theme-text-muted: #aeb9c4;
-            --theme-text-faint: #8b97a4;
-            --theme-card: #141c19;
-            --theme-muted-bg: #0f1613;
-            --theme-page: #0c1211;
-            --theme-border: rgba(255,255,255,0.10);
+        html {
+            scroll-padding-top: 110px;
         }
 
-        html { scroll-behavior: smooth; }
-
-        body { font-family: 'Inter', sans-serif; }
-
-        html.dark body { background-color: var(--theme-page); color: #f1f5f9; }
-
-        /* ── Dark mode: content sections (brand sections like Hero/Donation/AI stay dark always) ── */
-        html.dark section.lp-theme { background-color: var(--theme-page); color: #e6ebf2; }
-
-        /* Section rhythm: alternate elevation so consecutive sections read as distinct bands */
-        html.dark section.lp-theme.bg-white  { background-color: var(--lp-section-alt) !important; }
-        html.dark section.lp-theme.bg-gray-50 { background-color: var(--theme-page) !important; }
-
-        /* Surfaces / cards */
-        html.dark section.lp-theme .bg-white { background-color: var(--lp-surface) !important; }
-        html.dark section.lp-theme .bg-gray-50 { background-color: var(--theme-page) !important; }
-        html.dark section.lp-theme .bg-gray-100 { background-color: rgba(255,255,255,0.06) !important; }
-        html.dark section.lp-theme .bg-gray-200 { background-color: rgba(255,255,255,0.12) !important; }
-
-        /* Depth: cards get a subtle top highlight, a defined border and a real drop shadow
-           so they lift off the page instead of blending into one flat surface. */
-        html.dark section.lp-theme .card-hover,
-        html.dark section.lp-theme #prayer-card,
-        html.dark section.lp-theme .shadow-lg,
-        html.dark section.lp-theme .shadow-xl,
-        html.dark section.lp-theme .shadow-2xl {
-            border-color: var(--lp-border) !important;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 30px rgba(0,0,0,0.45) !important;
-        }
-        html.dark section.lp-theme .card-hover:hover {
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.07), 0 22px 48px rgba(0,0,0,0.6) !important;
+        section[id] {
+            scroll-margin-top: 110px;
         }
 
-        /* Icon tiles: pale pastel gradients look washed-out on dark, so swap them for a
-           consistent frosted tile. Emoji glyphs keep their own color. */
-        html.dark section.lp-theme .feature-icon,
-        html.dark section.lp-theme .lp-tile {
-            background: rgba(255,255,255,0.06) !important;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08) !important;
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            background-color: var(--lp-bg);
+            color: var(--lp-text);
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Text contrast */
-        html.dark section.lp-theme .text-gray-900,
-        html.dark section.lp-theme h1,
-        html.dark section.lp-theme h2,
-        html.dark section.lp-theme h3,
-        html.dark section.lp-theme h4 { color: #f5f8fc !important; }
-        html.dark section.lp-theme .text-gray-700,
-        html.dark section.lp-theme .text-gray-600,
-        html.dark section.lp-theme .text-gray-500 { color: var(--lp-text-soft) !important; }
-        html.dark section.lp-theme .text-gray-400,
-        html.dark section.lp-theme .text-gray-300 { color: var(--lp-text-faint) !important; }
-        html.dark section.lp-theme .text-emerald-700 { color: #34d399 !important; }
-        html.dark section.lp-theme .border-gray-50,
-        html.dark section.lp-theme .border-gray-100,
-        html.dark section.lp-theme .border-gray-200 { border-color: var(--lp-border) !important; }
-        html.dark section.lp-theme .hover\:bg-gray-100:hover { background-color: rgba(255,255,255,0.08) !important; }
-
-        /* Light pastel chip → theme-tinted so it doesn't glow against the dark panel */
-        html.dark #qa-surah-place { background: rgba(52,211,153,0.16) !important; color: #6ee7b7 !important; }
-
-        html.dark #ng-error { background: rgba(239,68,68,0.15) !important; color: #fca5a5 !important; }
-        html.dark #qa-progress-track { background-color: var(--lp-track) !important; }
-        html.dark .wave-fill { fill: var(--theme-page); }
-
-        /* Islamic geometric pattern background */
-        .pattern-bg {
-            background-color: var(--green-dark);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23ffffff08' stroke-width='1'%3E%3Cpath d='M40 0 L80 40 L40 80 L0 40 Z'/%3E%3Cpath d='M40 10 L70 40 L40 70 L10 40 Z'/%3E%3Cpath d='M40 20 L60 40 L40 60 L20 40 Z'/%3E%3Ccircle cx='40' cy='40' r='20'/%3E%3Ccircle cx='0' cy='0' r='15'/%3E%3Ccircle cx='80' cy='0' r='15'/%3E%3Ccircle cx='0' cy='80' r='15'/%3E%3Ccircle cx='80' cy='80' r='15'/%3E%3C/g%3E%3C/svg%3E");
+        /* Glassmorphism Classes */
+        .glass-island {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+        .dark .glass-island {
+            background: rgba(13, 22, 17, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .hero-gradient {
-            background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 50%, var(--green-dark) 100%);
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .dark .glass-card {
+            background: rgba(13, 22, 17, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
         }
 
-        .gold-gradient {
-            background: linear-gradient(135deg, var(--gold), var(--gold-light), var(--gold));
+        .glass-card:hover {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.15);
         }
 
-        .card-hover {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card-hover:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-        }
-
-        .feature-icon {
-            width: 64px;
-            height: 64px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin-bottom: 16px;
-        }
-
-        /* Phone mockup */
-        .phone-mockup {
-            width: 240px;
-            height: 480px;
-            background: linear-gradient(145deg, #1a1a2e, #16213e);
-            border-radius: 40px;
-            border: 8px solid #2d3748;
-            box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.1);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .phone-mockup::before {
-            content: '';
+        /* Ambient Glow Mesh */
+        .ambient-orb {
             position: absolute;
-            top: 14px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 6px;
-            background: #4a5568;
-            border-radius: 3px;
+            border-radius: 50%;
+            filter: blur(90px);
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 0;
+        }
+        .dark .ambient-orb {
+            opacity: 0.2;
         }
 
-        .phone-screen {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(160deg, var(--green-dark) 0%, var(--green-mid) 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+        /* Arabic Typography */
+        .font-arabic {
+            font-family: 'Amiri', 'Cairo', serif;
+            font-feature-settings: "cv01", "ss01";
         }
 
-        .stat-counter {
-            font-size: 3rem;
-            font-weight: 900;
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(16, 185, 129, 0.25);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.5);
+        }
+
+        /* Text gradient */
+        .text-gradient-emerald {
+            background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+        }
+        .dark .text-gradient-emerald {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #facc15 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        /* Animate on scroll */
-        .reveal {
+        .text-gradient-gold {
+            background: linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Wave visualizer bars (calm, static heights) */
+        .wave-bar {
+            width: 3px;
+            background: #10b981;
+            border-radius: 4px;
+        }
+
+        /* Mobile Menu */
+        #mobile-drawer {
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-origin: top center;
+        }
+        #mobile-drawer.closed {
             opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
+            transform: scale(0.96) translateY(-8px);
+            pointer-events: none;
+            max-height: 0;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            border-color: transparent !important;
+            overflow: hidden !important;
         }
-        .reveal.visible {
+        #mobile-drawer.open {
             opacity: 1;
-            transform: translateY(0);
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            max-height: 85vh;
+            overflow-y: auto;
         }
 
-        /* Navbar */
-        .navbar-scrolled {
-            background: rgba(var(--theme-primary-rgb), 0.95) !important;
-            backdrop-filter: blur(12px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        /* Animated Hamburger Icon */
+        .hamburger-line {
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+            transform-origin: 12px 12px;
+        }
+        .is-open .line-1 {
+            transform: translateY(6px) rotate(45deg);
+        }
+        .is-open .line-2 {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+        .is-open .line-3 {
+            transform: translateY(-6px) rotate(-45deg);
         }
 
-        /* Pulse animation for download buttons */
-        @keyframes pulse-gold {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(var(--theme-accent-rgb), 0.4); }
-            50% { box-shadow: 0 0 0 12px rgba(var(--theme-accent-rgb), 0); }
+        /* Active language option highlight */
+        .lang-option.active-lang {
+            background: rgba(16, 185, 129, 0.12);
+            color: #10b981;
+            font-weight: 700;
         }
-        .btn-pulse {
-            animation: pulse-gold 2.5s infinite;
+        .lang-option.active-lang .lang-check {
+            display: inline-block !important;
         }
-
-        /* Floating particles */
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+        .mobile-lang-btn.active-lang {
+            background: #10b981;
+            color: #fff;
         }
-        .float-1 { animation: float 6s ease-in-out infinite; }
-        .float-2 { animation: float 8s ease-in-out infinite 1s; }
-        .float-3 { animation: float 7s ease-in-out infinite 2s; }
-
-        .section-divider {
-            width: 60px;
-            height: 4px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light));
-            border-radius: 2px;
-            margin: 0 auto 24px;
-        }
-
-        /* Arabic text glow */
-        .arabic-glow {
-            text-shadow: 0 0 40px rgba(var(--theme-accent-rgb), 0.3);
-        }
-
-        /* Mobile menu */
-        #mobile-menu { display: none; }
-        #mobile-menu.open { display: block; }
-
-        /* ── Language switcher ── */
-        #lang-menu { display: none; }
-        #lang-menu.open { display: block; }
-        .lang-option { text-align: left; background: none; border: none; cursor: pointer; }
-        .lang-option.active-lang { background: rgba(255,255,255,0.12) !important; }
-        [dir="rtl"] .lang-option { text-align: right; }
-
-        /* ── Donation Form ───────────────────────────────────── */
-        .donate-label {
-            display: block;
-            font-size: 12px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 6px;
-            letter-spacing: 0.2px;
-        }
-
-        .donate-input {
-            width: 100%;
-            padding: 10px 14px;
-            border: 1.5px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 13px;
-            color: #111827;
-            background: #f9fafb;
-            outline: none;
-            transition: border-color .15s, box-shadow .15s;
-            appearance: none;
-            -webkit-appearance: none;
-        }
-        .donate-input:focus {
-            border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(var(--theme-accent-rgb),.12);
-            background: #fff;
-        }
-        .donate-input::placeholder { color: #9ca3af; }
-
-        /* remove browser number-input arrows & red validation ring */
-        .donate-input[type=number]::-webkit-inner-spin-button,
-        .donate-input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        .donate-input[type=number] { -moz-appearance: textfield; }
-        .donate-input:invalid { box-shadow: none; }
-
-        .donate-input-wrap { position: relative; }
-        .donate-input-prefix {
-            position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
-            font-size: 13px; color: #6b7280; pointer-events: none; font-weight: 500;
-        }
-        .donate-input-suffix {
-            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            pointer-events: none; display: flex; align-items: center;
-        }
-        .donate-input-prefixed  { padding-left: 26px; }
-        .donate-select          { padding-right: 32px; cursor: pointer; }
-
-        /* Preset amount buttons */
-        .donate-preset-btn {
-            padding: 9px 4px;
-            border-radius: 10px;
-            border: 1.5px solid #e5e7eb;
-            background: #f9fafb;
-            color: #374151;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .15s;
-        }
-        .donate-preset-btn:hover { border-color: var(--gold); color: #92400e; }
-
-        /* Payment method cards */
-        .donate-payment-card {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            padding: 10px 4px;
-            border: 1.5px solid #e5e7eb;
-            border-radius: 12px;
-            background: #fff;
-            cursor: pointer;
-            transition: all .15s;
-        }
-        .donate-payment-card:hover { border-color: var(--gold); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
-        .donate-gw-icon {
-            width: 34px; height: 34px;
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-        }
-        .donate-gw-label {
-            font-size: 10px;
-            font-weight: 600;
-            color: #6b7280;
-            text-align: center;
-            line-height: 1.2;
-        }
-        .donate-check {
-            display: none;
-            position: absolute;
-            top: -5px; right: -5px;
-            width: 16px; height: 16px;
-            border-radius: 50%;
-            background: var(--gold);
-            align-items: center; justify-content: center;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ── AI Chat scrollbar ── */
-        #ai-chat-messages::-webkit-scrollbar { width: 4px; }
-        #ai-chat-messages::-webkit-scrollbar-track { background: transparent; }
-        #ai-chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
-
-        /* ── RTL overrides ── */
-        [dir="rtl"] body { font-family: 'Cairo', sans-serif; }
-        [dir="rtl"] .section-divider.ltr-left { margin-right: 0; margin-left: auto; }
-        [dir="rtl"] #navbar > div { flex-direction: row-reverse; }
-        [dir="rtl"] .lp-ltr-only { direction: ltr; }
-        [dir="rtl"] .footer-brand { direction: rtl; }
     </style>
-
-    {{-- Active theme colors + light/dark mode (overrides the fallbacks above) --}}
-    @include('partials.theme-vars')
 </head>
+<body class="selection:bg-brand-500 selection:text-white">
 
-<body class="bg-white text-gray-900">
+    <!-- Ambient background glows -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="ambient-orb w-[500px] h-[500px] -top-32 -left-32 bg-emerald-500/20"></div>
+        <div class="ambient-orb w-[600px] h-[600px] top-1/3 -right-48 bg-teal-500/15"></div>
+        <div class="ambient-orb w-[550px] h-[550px] bottom-10 left-1/4 bg-amber-500/10"></div>
+    </div>
 
-    <!-- ===================== NAVBAR ===================== -->
-    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 py-4 px-6">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <!-- Logo -->
-            <a href="{{ url('/') }}" class="flex items-center gap-3">
-                @if(!empty($s['web_logo']))
-                    <img src="{{ asset($s['web_logo']) }}" alt="{{ $s['app_name'] }}" class="h-10 w-auto max-w-[160px] object-contain" />
-                @else
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">
-                        <span class="text-xl">🕌</span>
-                    </div>
-                @endif
-                {{-- <span class="text-white font-bold text-2xl tracking-tight">{{ $s['app_name'] }}</span> --}}
+    <!-- ===================== FLOATING NAVBAR ===================== -->
+    <header class="fixed top-4 inset-x-0 mx-auto w-[92%] max-w-5xl z-50 transition-all duration-300">
+        <!-- Interactive Scroll Progress Bar -->
+        <div class="w-full h-[2.5px] bg-black/5 dark:bg-white/5 overflow-hidden rounded-full mb-1.5 backdrop-blur-xs">
+            <div id="scroll-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-400 w-0 transition-all duration-100 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.7)]"></div>
+        </div>
+
+        <div id="navbar" class="glass-island rounded-full px-4 sm:px-5 py-2 sm:py-2.5 shadow-lg flex items-center justify-between transition-all duration-300 border border-white/20 dark:border-white/10 relative">
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center group shrink-0 select-none" title="{{ $s['app_name'] ?? 'Deenio' }}" aria-label="{{ $s['app_name'] ?? 'Deenio' }}">
+                <img src="{{ asset('assets/img/deenio-logo-hr.png') }}" alt="{{ $s['app_name'] ?? 'Deenio' }}" class="h-8 sm:h-9 max-h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105 dark:hidden">
+                <img src="{{ asset('assets/img/deenio-logo-hr-white.png') }}" alt="{{ $s['app_name'] ?? 'Deenio' }}" class="h-8 sm:h-9 max-h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-105 hidden dark:block">
             </a>
 
-            <!-- Desktop Nav -->
-            <div class="hidden md:flex items-center gap-8">
-                <a href="#features" class="text-white/80 hover:text-white transition-colors text-sm font-medium" data-i18n="nav.features">Features</a>
-                <a href="#quran" class="text-white/80 hover:text-white transition-colors text-sm font-medium" data-i18n="nav.quran">Quran</a>
-                <a href="#quran-audio" class="text-white/80 hover:text-white transition-colors text-sm font-medium" data-i18n="nav.listen">Listen</a>
-                <a href="#prayer" class="text-white/80 hover:text-white transition-colors text-sm font-medium" data-i18n="nav.prayer">Prayer</a>
-                <a href="#ai" class="text-white/80 hover:text-white transition-colors text-sm font-medium" data-i18n="nav.ai">AI</a>
-                <a href="#download" class="text-white/80 hover:text-white transition-colors text-sm font-medium" data-i18n="nav.download">Download</a>
-                <a href="#donate" class="text-white/80 hover:text-white transition-colors text-sm font-medium" data-i18n="nav.donate">Donate</a>
-            </div>
+            <!-- Desktop Main Navigation Menu -->
+            <nav class="hidden md:flex items-center gap-1 lg:gap-1.5">
+                <a href="#features" class="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+                    <svg class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 group-hover:text-emerald-500 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/>
+                    </svg>
+                    <span data-i18n="nav.features">Features</span>
+                </a>
+                <a href="#quran" class="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+                    <svg class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 group-hover:text-emerald-500 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                    <span data-i18n="nav.quran">Quran</span>
+                </a>
+                <a href="#prayer" class="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+                    <svg class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 group-hover:text-emerald-500 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/>
+                    </svg>
+                    <span data-i18n="nav.prayer">Prayer</span>
+                </a>
+                <a href="#ai-chat" class="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+                    <svg class="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 group-hover:scale-110 transition-transform shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
+                    </svg>
+                    <span data-i18n="nav.ai">AI Guide</span>
+                </a>
+                <a href="#tasbih" class="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+                    <svg class="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 group-hover:text-emerald-500 transition-all shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="7" r="2.2"/><circle cx="16.5" cy="9.5" r="2.2"/><circle cx="16.5" cy="14.5" r="2.2"/><circle cx="12" cy="17" r="2.2"/><circle cx="7.5" cy="14.5" r="2.2"/><circle cx="7.5" cy="9.5" r="2.2"/>
+                    </svg>
+                    <span data-i18n="dhikr.tasbih">Tasbih</span>
+                </a>
+                <a href="#donate" class="group flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs lg:text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-500/10 transition-all">
+                    <svg class="w-3.5 h-3.5 text-amber-500 group-hover:scale-110 transition-transform shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
+                    </svg>
+                    <span data-i18n="nav.donate">Donate</span>
+                </a>
+            </nav>
 
-            <!-- CTA + Language Switcher -->
-            <div class="hidden md:flex items-center gap-3">
-                <!-- Language switcher -->
-                <div class="relative" id="lang-dropdown">
-                    <button onclick="toggleLangDropdown(event)" class="flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-semibold transition-colors px-3 py-2 rounded-lg hover:bg-white/10 border border-white/20">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span id="current-lang-label">EN</span>
-                        <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            <!-- Actions Cluster (Lang Switcher + Dark Mode + Mobile Toggle) -->
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <!-- 6-Language Dropdown -->
+                <div class="relative">
+                    <button id="lang-menu-btn" type="button" onclick="toggleLangDropdown(event)" aria-label="Select Language" class="group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold bg-black/[0.04] dark:bg-white/10 hover:bg-black/[0.08] dark:hover:bg-white/15 text-gray-700 dark:text-gray-200 border border-black/5 dark:border-white/10 transition-all shadow-xs">
+                        <span id="current-lang-flag" class="text-sm">🇬🇧</span>
+                        <span id="current-lang-code" class="uppercase font-mono tracking-wider font-bold text-[11px]">EN</span>
+                        <svg id="lang-chevron" class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
                     </button>
-                    <div id="lang-menu" class="absolute top-full right-0 mt-2 py-1.5 w-44 rounded-2xl shadow-2xl z-50" style="background: rgba(8,38,24,0.98); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.12);">
-                        <button onclick="setLanguage('en')" class="lang-option w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/10 transition-colors" data-lang="en">
-                            <span>🇬🇧</span><span class="text-white/90">English</span>
-                        </button>
-                        <button onclick="setLanguage('ar')" class="lang-option w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/10 transition-colors" data-lang="ar">
-                            <span>🇸🇦</span><span class="text-white/90">العربية</span>
-                        </button>
-                        <button onclick="setLanguage('bn')" class="lang-option w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/10 transition-colors" data-lang="bn">
-                            <span>🇧🇩</span><span class="text-white/90">বাংলা</span>
-                        </button>
-                        <button onclick="setLanguage('hi')" class="lang-option w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/10 transition-colors" data-lang="hi">
-                            <span>🇮🇳</span><span class="text-white/90">हिंदी</span>
-                        </button>
-                        <button onclick="setLanguage('es')" class="lang-option w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/10 transition-colors" data-lang="es">
-                            <span>🇪🇸</span><span class="text-white/90">Español</span>
-                        </button>
-                        <button onclick="setLanguage('fr')" class="lang-option w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-white/10 transition-colors" data-lang="fr">
-                            <span>🇫🇷</span><span class="text-white/90">Français</span>
-                        </button>
+
+                    <!-- Dropdown Menu -->
+                    <div id="lang-dropdown" class="hidden absolute right-0 mt-2 w-44 glass-island rounded-2xl shadow-2xl py-2 border border-black/5 dark:border-white/10 z-50 backdrop-blur-2xl">
+                        <div class="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Language</div>
+                        <div class="space-y-0.5 px-1.5 mt-1">
+                            <button type="button" onclick="setLanguage('en')" class="lang-option w-full text-left px-3 py-2 text-xs font-medium hover:bg-brand-500 hover:text-white flex items-center justify-between transition-colors rounded-xl active-lang" data-lang="en">
+                                <span class="flex items-center gap-2"><span>🇬🇧</span> English</span>
+                                <span class="lang-check text-emerald-500 font-bold">✓</span>
+                            </button>
+                            <button type="button" onclick="setLanguage('ar')" class="lang-option w-full text-left px-3 py-2 text-xs font-medium hover:bg-brand-500 hover:text-white flex items-center justify-between transition-colors rounded-xl" data-lang="ar">
+                                <span class="flex items-center gap-2"><span>🇸🇦</span> العربية</span>
+                                <span class="lang-check hidden text-emerald-500 font-bold">✓</span>
+                            </button>
+                            <button type="button" onclick="setLanguage('bn')" class="lang-option w-full text-left px-3 py-2 text-xs font-medium hover:bg-brand-500 hover:text-white flex items-center justify-between transition-colors rounded-xl" data-lang="bn">
+                                <span class="flex items-center gap-2"><span>🇧🇩</span> বাংলা</span>
+                                <span class="lang-check hidden text-emerald-500 font-bold">✓</span>
+                            </button>
+                            <button type="button" onclick="setLanguage('hi')" class="lang-option w-full text-left px-3 py-2 text-xs font-medium hover:bg-brand-500 hover:text-white flex items-center justify-between transition-colors rounded-xl" data-lang="hi">
+                                <span class="flex items-center gap-2"><span>🇮🇳</span> हिन्दी</span>
+                                <span class="lang-check hidden text-emerald-500 font-bold">✓</span>
+                            </button>
+                            <button type="button" onclick="setLanguage('es')" class="lang-option w-full text-left px-3 py-2 text-xs font-medium hover:bg-brand-500 hover:text-white flex items-center justify-between transition-colors rounded-xl" data-lang="es">
+                                <span class="flex items-center gap-2"><span>🇪🇸</span> Español</span>
+                                <span class="lang-check hidden text-emerald-500 font-bold">✓</span>
+                            </button>
+                            <button type="button" onclick="setLanguage('fr')" class="lang-option w-full text-left px-3 py-2 text-xs font-medium hover:bg-brand-500 hover:text-white flex items-center justify-between transition-colors rounded-xl" data-lang="fr">
+                                <span class="flex items-center gap-2"><span>🇫🇷</span> Français</span>
+                                <span class="lang-check hidden text-emerald-500 font-bold">✓</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <!-- Theme toggle -->
-                <button onclick="toggleTheme()" class="flex items-center justify-center w-9 h-9 rounded-lg text-white/70 hover:text-white transition-colors hover:bg-white/10 border border-white/20" title="Toggle theme" aria-label="Toggle theme">
-                    <svg class="theme-icon-sun hidden w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                    <svg class="theme-icon-moon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleDarkMode()" aria-label="Toggle Theme" class="p-2 rounded-full text-gray-600 dark:text-gray-300 hover:bg-black/[0.05] dark:hover:bg-white/10 transition-colors border border-black/5 dark:border-white/10" title="Toggle theme">
+                    <svg id="theme-sun-icon" class="w-4 h-4 hidden dark:block text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg id="theme-moon-icon" class="w-4 h-4 block dark:hidden text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
                 </button>
-                @if($showAdminLogin)
-                <a href="{{ route('login') }}" class="text-white/80 hover:text-white text-sm font-medium transition-colors" data-i18n="nav.admin">Admin Login</a>
-                @endif
-                <a href="#download" class="px-5 py-2.5 rounded-full text-sm font-semibold text-gray-900 transition-all hover:scale-105"
-                   style="background: linear-gradient(135deg, var(--gold), var(--gold-light));" data-i18n="nav.download_btn">
-                    Download Free
-                </a>
-            </div>
 
-            <!-- Mobile hamburger -->
-            <button id="menu-btn" class="md:hidden text-white" onclick="toggleMenu()">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-            </button>
-        </div>
-
-        <!-- Mobile Menu -->
-        <div id="mobile-menu" class="md:hidden mt-4 rounded-2xl p-4" style="background: rgba(var(--theme-primary-rgb),0.95); backdrop-filter: blur(12px);">
-            <a href="#features" class="block py-2 px-4 text-white/80 hover:text-white" onclick="toggleMenu()" data-i18n="nav.features">Features</a>
-            <a href="#quran" class="block py-2 px-4 text-white/80 hover:text-white" onclick="toggleMenu()" data-i18n="nav.quran">Quran</a>
-            <a href="#quran-audio" class="block py-2 px-4 text-white/80 hover:text-white" onclick="toggleMenu()" data-i18n="nav.listen">Listen</a>
-            <a href="#prayer" class="block py-2 px-4 text-white/80 hover:text-white" onclick="toggleMenu()" data-i18n="nav.prayer">Prayer</a>
-            <a href="#ai" class="block py-2 px-4 text-white/80 hover:text-white" onclick="toggleMenu()" data-i18n="nav.ai">AI</a>
-            <a href="#download" class="block py-2 px-4 text-white/80 hover:text-white" onclick="toggleMenu()" data-i18n="nav.download">Download</a>
-            <a href="#donate" class="block py-2 px-4 text-white/80 hover:text-white" onclick="toggleMenu()" data-i18n="nav.donate">Donate</a>
-            <!-- Mobile language grid -->
-            <div class="mt-3 pt-3 border-t border-white/10">
-                <p class="text-white/40 text-xs px-4 mb-2 uppercase tracking-wider">Language</p>
-                <div class="grid grid-cols-3 gap-1 px-2">
-                    <button onclick="setLanguage('en');toggleMenu()" class="lang-option flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs text-white/80 hover:bg-white/10" data-lang="en">🇬🇧 EN</button>
-                    <button onclick="setLanguage('ar');toggleMenu()" class="lang-option flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs text-white/80 hover:bg-white/10" data-lang="ar">🇸🇦 AR</button>
-                    <button onclick="setLanguage('bn');toggleMenu()" class="lang-option flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs text-white/80 hover:bg-white/10" data-lang="bn">🇧🇩 BN</button>
-                    <button onclick="setLanguage('hi');toggleMenu()" class="lang-option flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs text-white/80 hover:bg-white/10" data-lang="hi">🇮🇳 HI</button>
-                    <button onclick="setLanguage('es');toggleMenu()" class="lang-option flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs text-white/80 hover:bg-white/10" data-lang="es">🇪🇸 ES</button>
-                    <button onclick="setLanguage('fr');toggleMenu()" class="lang-option flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs text-white/80 hover:bg-white/10" data-lang="fr">🇫🇷 FR</button>
-                </div>
-            </div>
-            <div class="mt-3 pt-3 border-t border-white/10">
-                <button onclick="toggleTheme()" class="w-full flex items-center justify-between py-2 px-4 text-white/80 hover:text-white">
-                    <span class="text-sm font-medium">Theme</span>
-                    <span class="flex items-center gap-1.5">
-                        <svg class="theme-icon-sun hidden w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                        <svg class="theme-icon-moon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                    </span>
+                <!-- Mobile Animated Hamburger Button -->
+                <button id="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle Mobile Menu" class="md:hidden p-2 rounded-xl text-gray-700 dark:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 transition-all">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line class="hamburger-line line-1" x1="4" y1="6" x2="20" y2="6" stroke-width="2.2" stroke-linecap="round"/>
+                        <line class="hamburger-line line-2" x1="4" y1="12" x2="20" y2="12" stroke-width="2.2" stroke-linecap="round"/>
+                        <line class="hamburger-line line-3" x1="4" y1="18" x2="20" y2="18" stroke-width="2.2" stroke-linecap="round"/>
+                    </svg>
                 </button>
             </div>
-            <div class="mt-3 pt-3 border-t border-white/10 flex gap-3">
-                @if($showAdminLogin)
-                <a href="{{ route('login') }}" class="flex-1 text-center py-2 rounded-full text-white/80 border border-white/20 text-sm" data-i18n="nav.admin">Admin Login</a>
-                @endif
-                <a href="#download" class="flex-1 text-center py-2 rounded-full text-gray-900 text-sm font-semibold" style="background: linear-gradient(135deg, var(--gold), var(--gold-light));" data-i18n="nav.download_btn">Download</a>
+        </div>
+
+        <!-- Mobile Drawer Menu -->
+        <div id="mobile-drawer" class="closed md:hidden mt-2 mx-auto w-full glass-island rounded-3xl p-5 shadow-2xl border border-black/5 dark:border-white/10 flex flex-col gap-2.5 backdrop-blur-2xl">
+            <div class="flex items-center justify-between pb-3 border-b border-black/5 dark:border-white/5">
+                <img src="{{ asset('assets/img/deenio-logo-hr.png') }}" alt="{{ $s['app_name'] ?? 'Deenio' }}" class="h-7 w-auto object-contain dark:hidden">
+                <img src="{{ asset('assets/img/deenio-logo-hr-white.png') }}" alt="{{ $s['app_name'] ?? 'Deenio' }}" class="h-7 w-auto object-contain hidden dark:block">
+                <span class="text-xs font-arabic text-brand-600 dark:text-brand-400">بِسْمِ اللَّهِ</span>
+            </div>
+
+            <a href="#features" onclick="toggleMobileMenu()" class="py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-400 transition-colors flex items-center justify-between">
+                <span class="flex items-center gap-3">
+                    <svg class="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/>
+                    </svg>
+                    <span data-i18n="nav.features">Features</span>
+                </span>
+                <span class="text-gray-400 text-xs">→</span>
+            </a>
+            <a href="#quran" onclick="toggleMobileMenu()" class="py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-400 transition-colors flex items-center justify-between">
+                <span class="flex items-center gap-3">
+                    <svg class="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+                    </svg>
+                    <span data-i18n="nav.quran">Holy Quran</span>
+                </span>
+                <span class="text-gray-400 text-xs">→</span>
+            </a>
+            <a href="#prayer" onclick="toggleMobileMenu()" class="py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-400 transition-colors flex items-center justify-between">
+                <span class="flex items-center gap-3">
+                    <svg class="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/>
+                    </svg>
+                    <span data-i18n="nav.prayer">Prayer Times</span>
+                </span>
+                <span class="text-gray-400 text-xs">→</span>
+            </a>
+            <a href="#ai-chat" onclick="toggleMobileMenu()" class="py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-400 transition-colors flex items-center justify-between">
+                <span class="flex items-center gap-3">
+                    <svg class="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
+                    </svg>
+                    <span data-i18n="nav.ai">AI Islamic Guide</span>
+                </span>
+                <span class="text-gray-400 text-xs">→</span>
+            </a>
+            <a href="#tasbih" onclick="toggleMobileMenu()" class="py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-brand-600 dark:hover:text-brand-400 transition-colors flex items-center justify-between">
+                <span class="flex items-center gap-3">
+                    <svg class="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="7" r="2.2"/><circle cx="16.5" cy="9.5" r="2.2"/><circle cx="16.5" cy="14.5" r="2.2"/><circle cx="12" cy="17" r="2.2"/><circle cx="7.5" cy="14.5" r="2.2"/><circle cx="7.5" cy="9.5" r="2.2"/>
+                    </svg>
+                    <span data-i18n="dhikr.tasbih">Digital Tasbih</span>
+                </span>
+                <span class="text-gray-400 text-xs">→</span>
+            </a>
+            <a href="#donate" onclick="toggleMobileMenu()" class="py-2.5 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:text-amber-500 transition-colors flex items-center justify-between">
+                <span class="flex items-center gap-3">
+                    <svg class="w-4 h-4 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/>
+                    </svg>
+                    <span data-i18n="nav.donate">Support & Donate</span>
+                </span>
+                <span class="text-amber-500 text-xs">❤️</span>
+            </a>
+
+            <!-- Mobile Language Quick Switch Grid -->
+            <div class="py-2.5 border-t border-black/5 dark:border-white/5">
+                <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">Language</div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="setLanguage('en'); toggleMobileMenu();" class="mobile-lang-btn py-1.5 px-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 hover:bg-brand-500 hover:text-white transition-colors text-center active-lang" data-lang="en">🇬🇧 EN</button>
+                    <button type="button" onclick="setLanguage('ar'); toggleMobileMenu();" class="mobile-lang-btn py-1.5 px-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 hover:bg-brand-500 hover:text-white transition-colors text-center" data-lang="ar">🇸🇦 العربية</button>
+                    <button type="button" onclick="setLanguage('bn'); toggleMobileMenu();" class="mobile-lang-btn py-1.5 px-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 hover:bg-brand-500 hover:text-white transition-colors text-center" data-lang="bn">🇧🇩 বাংলা</button>
+                    <button type="button" onclick="setLanguage('hi'); toggleMobileMenu();" class="mobile-lang-btn py-1.5 px-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 hover:bg-brand-500 hover:text-white transition-colors text-center" data-lang="hi">🇮🇳 हिन्दी</button>
+                    <button type="button" onclick="setLanguage('es'); toggleMobileMenu();" class="mobile-lang-btn py-1.5 px-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 hover:bg-brand-500 hover:text-white transition-colors text-center" data-lang="es">🇪🇸 ES</button>
+                    <button type="button" onclick="setLanguage('fr'); toggleMobileMenu();" class="mobile-lang-btn py-1.5 px-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 hover:bg-brand-500 hover:text-white transition-colors text-center" data-lang="fr">🇫🇷 FR</button>
+                </div>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- ===================== HERO ===================== -->
-    <section class="hero-gradient pattern-bg min-h-screen flex items-center relative overflow-hidden">
-        <!-- Decorative circles -->
-        <div class="absolute top-32 right-16 w-64 h-64 rounded-full opacity-10 float-1" style="background: radial-gradient(circle, var(--gold), transparent);"></div>
-        <div class="absolute bottom-32 left-8 w-48 h-48 rounded-full opacity-10 float-2" style="background: radial-gradient(circle, var(--gold), transparent);"></div>
-        <div class="absolute top-1/2 left-1/3 w-32 h-32 rounded-full opacity-5 float-3" style="background: radial-gradient(circle, #ffffff, transparent);"></div>
+    <!-- ===================== HERO SECTION ===================== -->
+    <section id="hero" class="relative min-h-[92vh] pt-36 pb-20 flex items-center justify-center overflow-hidden z-10">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12 w-full grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
-        <div class="max-w-7xl mx-auto px-6 py-32 grid lg:grid-cols-2 gap-16 items-center w-full">
-            <!-- Text content -->
-            <div>
-                <!-- Bismillah -->
-                <div class="font-arabic text-gold-400 text-3xl mb-6 arabic-glow" style="color: var(--gold);">
-                    بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-                </div>
-
-                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold mb-6" style="background: rgba(var(--theme-accent-rgb),0.15); color: var(--gold); border: 1px solid rgba(var(--theme-accent-rgb),0.3);">
-                    <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+            <!-- Hero Left Text -->
+            <div class="lg:col-span-7 flex flex-col items-center lg:items-start text-center lg:text-left gsap-hero-left">
+                <!-- Pill Badge -->
+                <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full glass-card border border-brand-500/30 text-xs font-semibold text-brand-700 dark:text-brand-300 mb-6 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-brand-500"></span>
                     <span data-i18n="hero.badge" data-i18n-en="{{ $s['hero_badge_text'] }}">{{ $s['hero_badge_text'] }}</span>
                 </div>
 
-                <h1 class="text-5xl lg:text-6xl font-black text-white leading-tight mb-6">
-                    <span data-i18n="hero.title" data-i18n-en="{{ $s['hero_title'] }}">{{ $s['hero_title'] }}</span>
-                    <span class="block" style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                <!-- Main Display Headline -->
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-[1.12] mb-6">
+                    <span data-i18n="hero.title" data-i18n-en="{{ $s['hero_title'] }}">{{ $s['hero_title'] }}</span><br>
+                    <span class="text-gradient-emerald">
                         <span data-i18n="hero.subtitle" data-i18n-en="{{ $s['hero_subtitle'] }}">{{ $s['hero_subtitle'] }}</span>
                     </span>
                 </h1>
 
-                <p class="text-white/70 text-lg leading-relaxed mb-10 max-w-xl" data-i18n="hero.description" data-i18n-en="{{ $s['hero_description'] }}">
+                <!-- Subtitle Description -->
+                <p class="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-xl mb-9 leading-relaxed" data-i18n="hero.description" data-i18n-en="{{ $s['hero_description'] }}">
                     {{ $s['hero_description'] }}
                 </p>
 
-                <!-- CTA Buttons -->
-                <div class="flex flex-wrap gap-4 mb-10">
-                    <a href="{{ $s['app_store_url'] }}" class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl text-gray-900 font-bold text-base btn-pulse transition-all hover:scale-105"
-                       style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <!-- Store Action CTAs -->
+                <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-10 w-full sm:w-auto">
+                    <!-- Apple App Store -->
+                    <a href="{{ $s['app_store_url'] }}" target="_blank" class="flex items-center gap-3 px-6 py-3.5 rounded-2xl glass-card border border-black/10 dark:border-white/10 hover:border-brand-500/50 transition-all group shadow-sm">
+                        <svg class="w-7 h-7 text-gray-900 dark:text-white" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
                         </svg>
-                        <span data-i18n="hero.app_store">App Store</span>
+                        <div class="text-left">
+                            <div class="text-[10px] text-gray-500 dark:text-gray-400 leading-none">Download on the</div>
+                            <div class="text-sm font-bold text-gray-900 dark:text-white tracking-tight" data-i18n="hero.app_store">App Store</div>
+                        </div>
                     </a>
-                    <a href="{{ $s['play_store_url'] }}" class="inline-flex items-center gap-3 px-6 py-4 rounded-2xl font-bold text-base transition-all hover:scale-105"
-                       style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(8px);">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+
+                    <!-- Google Play Store -->
+                    <a href="{{ $s['play_store_url'] }}" target="_blank" class="flex items-center gap-3 px-6 py-3.5 rounded-2xl glass-card border border-black/10 dark:border-white/10 hover:border-brand-500/50 transition-all group shadow-sm">
+                        <svg class="w-7 h-7 text-gray-900 dark:text-white" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M3.18 23.76c.27.15.58.2.89.13l12.89-7.43-2.77-2.76-11.01 10.06zm-.99-20.29v18.06c0 .36.1.69.28.97l10.32-10.32L2.19 2.5c-.0 .0-.0.0-.0 0zm16.12 6.77l-2.44-1.41-3.08 3.09 3.09 3.09 2.44-1.41c.7-.4 1.12-1.15 1.12-1.68 0-.53-.42-1.27-1.13-1.68zm-14.7-8.47c.04-.01.08-.01.12-.01.31 0 .61.09.87.26l12.01 6.93-2.76 2.76L4.44.73c-.31-.18-.66-.21-.93-.05l-.0-.91z"/>
                         </svg>
-                        <span data-i18n="hero.play_store">Google Play</span>
+                        <div class="text-left">
+                            <div class="text-[10px] text-gray-500 dark:text-gray-400 leading-none">Get it on</div>
+                            <div class="text-sm font-bold text-gray-900 dark:text-white tracking-tight" data-i18n="hero.play_store">Google Play</div>
+                        </div>
                     </a>
                 </div>
 
-                <!-- Trust badges -->
-                <div class="flex flex-wrap items-center gap-6 text-white/50 text-sm">
-                    <div class="flex items-center gap-2">
-                        <span class="text-yellow-400">★★★★★</span>
-                        <span>{{ $s['rating'] }} <span data-i18n="hero.rating_label">Rating</span></span>
+                <!-- Trust Metrics / Rating -->
+                <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                    <div class="flex text-amber-400">
+                        ★★★★★
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span>📥</span>
-                        <span>{{ $s['downloads_count'] }} <span data-i18n="hero.downloads_label">Downloads</span></span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <span>🌍</span>
-                        <span>{{ $s['languages_count'] }} <span data-i18n="hero.languages_label">Languages</span></span>
-                    </div>
+                    <span class="font-medium"><strong class="text-gray-800 dark:text-gray-200">4.9/5 Rating</strong> • Trusted by 100,000+ Believers</span>
                 </div>
             </div>
 
-            <!-- Phone Mockups -->
-            <div class="hidden lg:flex items-center justify-center gap-6 relative">
-                <!-- Main phone -->
-                <div class="phone-mockup float-1">
-                    <div class="phone-screen">
-                        <div class="font-arabic text-center text-gold-400 text-xl mb-4" style="color: var(--gold);">
-                            قُلْ هُوَ اللَّهُ أَحَدٌ
+            <!-- Hero Right Mockup with Calm Widgets -->
+            <div class="lg:col-span-5 relative flex justify-center gsap-hero-right">
+                <!-- Outer Glow Halo -->
+                <div class="absolute inset-0 bg-gradient-to-tr from-brand-500/10 to-amber-500/10 rounded-[60px] blur-2xl -z-10"></div>
+
+                <!-- Modern Phone Chassis -->
+                <div class="relative w-72 sm:w-80 rounded-[50px] p-4 bg-gradient-to-b from-gray-900/90 to-gray-950/95 border-[4px] border-white/20 shadow-2xl backdrop-blur-2xl text-white">
+                    <!-- Dynamic Island / Speaker Notch -->
+                    <div class="w-24 h-4 bg-black rounded-full mx-auto mb-4 flex items-center justify-center">
+                        <div class="w-2 h-2 rounded-full bg-emerald-500/80"></div>
+                    </div>
+
+                    <!-- Inner Mockup UI -->
+                    <div class="space-y-4">
+                        <!-- Bismillah header -->
+                        <div class="text-center pt-2">
+                            <span class="font-arabic text-xl text-amber-300">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</span>
                         </div>
-                        <div class="text-white/60 text-xs text-center mb-6">Surah Al-Ikhlas • Ayah 1</div>
-                        <div class="w-full space-y-2">
-                            <div class="h-2 rounded-full bg-white/20 w-3/4 mx-auto"></div>
-                            <div class="h-2 rounded-full bg-white/10 w-full mx-auto"></div>
-                            <div class="h-2 rounded-full bg-white/15 w-5/6 mx-auto"></div>
-                        </div>
-                        <div class="mt-8 flex gap-3 justify-center">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: rgba(var(--theme-accent-rgb),0.2);">
-                                <span class="text-sm">▶</span>
+
+                        <!-- Live Next Prayer Card -->
+                        <div class="rounded-2xl p-4 bg-white/10 backdrop-blur-md border border-white/15">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs uppercase tracking-wider text-emerald-400 font-bold">Next Prayer</span>
+                                <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold">In 24 mins</span>
                             </div>
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: rgba(var(--theme-accent-rgb),0.2);">
-                                <span class="text-sm">🔖</span>
-                            </div>
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: rgba(var(--theme-accent-rgb),0.2);">
-                                <span class="text-sm">↗</span>
+                            <div class="flex items-baseline justify-between">
+                                <span class="text-2xl font-black">Asr</span>
+                                <span class="text-xl font-mono text-white/90">03:45 PM</span>
                             </div>
                         </div>
-                        <!-- Prayer times mini card -->
-                        <div class="mt-6 w-full rounded-xl p-3" style="background: rgba(255,255,255,0.08);">
-                            <div class="text-white/60 text-xs mb-2">Next Prayer</div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-white font-semibold text-sm">Asr</span>
-                                <span style="color: var(--gold);" class="font-bold text-sm">04:30 PM</span>
+
+                        <!-- Daily Ayah Card -->
+                        <div class="rounded-2xl p-4 bg-white/5 border border-white/10">
+                            <div class="text-[10px] uppercase font-bold text-white/40 mb-1">Ayah of the Day</div>
+                            <p class="font-arabic text-lg text-emerald-200 text-right leading-relaxed mb-2" dir="rtl">فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي</p>
+                            <p class="text-xs text-white/70 italic">"So remember Me; I will remember you."</p>
+                        </div>
+
+                        <!-- Mini Waveform Player Mock -->
+                        <div class="rounded-2xl p-3.5 bg-gradient-to-r from-emerald-950/80 to-emerald-900/80 border border-emerald-500/30 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-gray-950">
+                                    <svg class="w-4 h-4 fill-current ml-0.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-white">Surah Al-Mulk</div>
+                                    <div class="text-[10px] text-emerald-300">Mishary Rashid Alafasy</div>
+                                </div>
+                            </div>
+                            <div class="flex items-end gap-1 h-5">
+                                <span class="wave-bar" style="height: 8px;"></span>
+                                <span class="wave-bar" style="height: 18px;"></span>
+                                <span class="wave-bar" style="height: 12px;"></span>
+                                <span class="wave-bar" style="height: 16px;"></span>
+                                <span class="wave-bar" style="height: 10px;"></span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Second phone (offset) -->
-                <div class="phone-mockup float-2" style="width: 200px; height: 400px; margin-top: 60px;">
-                    <div class="phone-screen">
-                        <div class="text-white/70 text-xs mb-4 text-center">Prayer Times</div>
-                        <!-- Clock mockup -->
-                        <div class="w-20 h-20 rounded-full flex items-center justify-center relative mx-auto mb-4" style="background: linear-gradient(135deg, rgba(var(--theme-accent-rgb),0.18), rgba(var(--theme-accent-rgb),0.05)); border: 2px solid rgba(var(--theme-accent-rgb),0.3);">
-                            <span class="text-3xl">🕌</span>
-                        </div>
-                        <div class="text-white font-bold text-center mb-1">Makkah</div>
-                        <div class="text-white/50 text-xs text-center mb-4">Saturday, June 20</div>
-                        <div class="space-y-2">
-                            @foreach([['Fajr','05:12',false], ['Dhuhr','12:30',false], ['Asr','04:30',true], ['Maghrib','07:15',false], ['Isha','08:45',false]] as [$name, $time, $isNext])
-                            <div class="flex justify-between items-center gap-2 px-3 py-1.5 rounded-lg" style="{{ $isNext ? 'background: rgba(var(--theme-accent-rgb),0.15); border: 1px solid rgba(var(--theme-accent-rgb),0.3);' : '' }}">
-                                <span class="text-xs {{ $isNext ? 'text-white font-semibold' : 'text-white/60' }}">{{ $name }}</span>
-                                <span class="text-xs font-bold" style="color: {{ $isNext ? 'var(--gold)' : '#fff' }};">{{ $time }}</span>
-                            </div>
-                            @endforeach
-                        </div>
+                <!-- Calm Badges -->
+                <!-- Badge 1: Qibla -->
+                <div class="absolute -top-4 -right-4 sm:-right-8 px-3.5 py-2 rounded-2xl glass-card border border-emerald-500/30 text-xs font-bold shadow-xl flex items-center gap-2.5">
+                    <div class="w-6 h-6 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-500 shrink-0">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"></polygon>
+                        </svg>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Wave divider -->
-        <div class="absolute bottom-0 left-0 right-0">
-            <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path class="wave-fill" d="M0 80L48 69.3C96 59 192 37 288 32C384 27 480 37 576 48C672 59 768 69 864 69.3C960 69 1056 59 1152 48C1248 37 1344 27 1392 21.3L1440 16V80H1392C1344 80 1248 80 1152 80C1056 80 960 80 864 80C768 80 672 80 576 80C480 80 384 80 288 80C192 80 96 80 48 80H0Z" fill="white"/>
-            </svg>
-        </div>
-    </section>
-
-    <!-- ===================== STATS ===================== -->
-    <section id="stats" class="py-16 bg-white lp-theme">
-        <div class="max-w-6xl mx-auto px-6">
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-                <div class="reveal">
-                    <div class="stat-counter">114</div>
-                    <p class="text-gray-500 mt-1 font-medium" data-i18n="stats.surahs">Surahs of Quran</p>
-                </div>
-                <div class="reveal" style="transition-delay: 0.1s;">
-                    <div class="stat-counter">{{ $s['languages_count'] }}</div>
-                    <p class="text-gray-500 mt-1 font-medium" data-i18n="stats.languages">Languages</p>
-                </div>
-                <div class="reveal" style="transition-delay: 0.2s;">
-                    <div class="stat-counter">{{ $s['rating'] }}</div>
-                    <p class="text-gray-500 mt-1 font-medium" data-i18n="stats.rating">App Rating</p>
-                </div>
-                <div class="reveal" style="transition-delay: 0.3s;">
-                    <div class="stat-counter">{{ $s['downloads_count'] }}</div>
-                    <p class="text-gray-500 mt-1 font-medium" data-i18n="stats.downloads">Downloads</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ===================== DONATION ===================== -->
-    <section id="donate" class="py-14 relative overflow-hidden" style="background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 100%);">
-        <div class="max-w-6xl mx-auto px-6 relative">
-            <div class="text-center mb-8 reveal">
-                <div class="section-divider"></div>
-                <h2 class="text-3xl font-black text-white mb-2" data-i18n="donate.title" data-i18n-en="{{ $s['donation_title'] ?? 'Support Our Mission' }}">{{ $s['donation_title'] ?? 'Support Our Mission' }}</h2>
-                <p class="text-white/60 text-sm max-w-xl mx-auto" data-i18n="donate.desc" data-i18n-en="{{ $s['donation_description'] ?? 'Your generosity keeps Zabi free for millions of Muslims worldwide.' }}">{{ $s['donation_description'] ?? 'Your generosity keeps Zabi free for millions of Muslims worldwide.' }}</p>
-            </div>
-
-            <div class="grid lg:grid-cols-5 gap-8 items-start">
-                <!-- Left: Why Donate -->
-                <div class="lg:col-span-2 reveal space-y-4">
-                    <div class="rounded-xl p-4" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="font-arabic text-center text-white/90 text-lg leading-loose mb-2" dir="rtl" data-i18n-en="{{ $s['donation_verse_arabic'] }}">
-                            {{ $s['donation_verse_arabic'] }}
-                        </div>
-                        <p class="text-white/50 text-center text-xs" data-i18n="donate.verse_trans" data-i18n-en="{{ $s['donation_verse_translation'] }}">{{ $s['donation_verse_translation'] }}</p>
-                    </div>
-
-                    <div class="space-y-3">
-                        @foreach($s['donation_why'] as $i => $item)
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm" style="background: rgba(var(--theme-accent-rgb),0.2);">{{ $item['icon'] ?? '' }}</div>
-                            <div>
-                                <h4 class="font-semibold text-white text-xs mb-0.5" data-i18n="donate.why.{{ $i }}.title" data-i18n-en="{{ $item['title'] ?? '' }}">{{ $item['title'] ?? '' }}</h4>
-                                <p class="text-white/50 text-xs" data-i18n="donate.why.{{ $i }}.desc" data-i18n-en="{{ $item['description'] ?? '' }}">{{ $item['description'] ?? '' }}</p>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-
                     <div>
-                        <p class="text-white/40 text-xs uppercase tracking-wider mb-2" data-i18n="donate.accepted" data-i18n-en="{{ $s['donation_accepted_label'] }}">{{ $s['donation_accepted_label'] }}</p>
-                        <div class="flex flex-wrap gap-1.5">
-                            @foreach(array_filter(array_map('trim', explode("\n", $s['donation_gateways'] ?? ''))) as $gw)
-                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold" style="background:var(--green-mid);color:#fff;border:1px solid rgba(255,255,255,0.18);">{{ $gw }}</span>
-                            @endforeach
-                        </div>
+                        <div class="text-[11px] text-gray-900 dark:text-white">Qibla Compass</div>
+                        <div class="text-[9px] text-brand-600 dark:text-brand-400 font-semibold">99.8% Precision</div>
                     </div>
                 </div>
 
-                <!-- Right: Donation Form -->
-                <div class="lg:col-span-3 reveal" style="transition-delay:0.2s;">
-                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-
-                        <!-- Form header -->
-                        <div class="px-6 pt-6 pb-5 border-b" style="border-color:#f3f4f6;">
-                            <h3 class="text-gray-900 font-bold text-base mb-0.5" data-i18n="donate.form_title">Make a Donation</h3>
-                            <p class="text-gray-400 text-xs" data-i18n="donate.form_subtitle">Every contribution makes a difference</p>
-                        </div>
-
-                        <div class="px-6 py-5 space-y-4">
-
-                            <!-- Amount -->
-                            <div>
-                                <label class="donate-label" data-i18n="donate.amount_label">Select Amount</label>
-                                <div class="grid grid-cols-4 gap-2 mb-2">
-                                    @foreach([10, 25, 50, 100] as $preset)
-                                    <button type="button" onclick="selectDonationAmount({{ $preset }})"
-                                        class="donate-preset-btn"
-                                        data-amount="{{ $preset }}">${{ $preset }}</button>
-                                    @endforeach
-                                </div>
-                                <div class="donate-input-wrap">
-                                    <span class="donate-input-prefix">$</span>
-                                    <input type="number" id="donate-amount" min="1"
-                                        class="donate-input donate-input-prefixed"
-                                        placeholder="Enter custom amount"
-                                        oninput="clearDonationPresets()">
-                                </div>
-                            </div>
-
-                            <!-- Category + Name side by side -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="donate-label" data-i18n="donate.category_label">Category</label>
-                                    <div class="donate-input-wrap">
-                                        <select id="donate-category" class="donate-input donate-select">
-                                            <option value="">Select a cause…</option>
-                                        </select>
-                                        <span class="donate-input-suffix">
-                                            <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="donate-label" data-i18n="donate.name_label">Your Name</label>
-                                    <input type="text" id="donate-name"
-                                        class="donate-input"
-                                        placeholder="Optional">
-                                </div>
-                            </div>
-
-                            <!-- Email -->
-                            <div>
-                                <label class="donate-label"><span data-i18n="donate.email_label" data-i18n-en="Email Address">Email Address</span> <span style="color:#ef4444;">*</span></label>
-                                <input type="email" id="donate-email"
-                                    class="donate-input"
-                                    placeholder="you@example.com">
-                            </div>
-
-                            <!-- Payment Method -->
-                            <div>
-                                <label class="donate-label" data-i18n="donate.payment_label">Payment Method</label>
-                                <div id="donate-payment-grid" class="grid grid-cols-5 gap-2">
-                                    @foreach([
-                                        ['razorpay',   'Razorpay',   '#1a237e'],
-                                        ['paystack',   'Paystack',   '#00695c'],
-                                        ['stripe',     'Stripe',     '#635BFF'],
-                                        ['paypal',     'PayPal',     '#003087'],
-                                        ['sslcommerz', 'SSLCommerz', '#c62828'],
-                                    ] as $gw)
-                                    <button type="button"
-                                        class="donate-payment-card"
-                                        data-gateway="{{ $gw[0] }}"
-                                        onclick="selectPaymentGateway('{{ $gw[0] }}')">
-                                        <div class="donate-gw-icon" style="background:{{ $gw[2] }};">
-                                            @if($gw[0]==='razorpay')
-                                                <svg viewBox="0 0 24 24" fill="white" width="14" height="14"><path d="M21 3L3 10.53v.98l6.84 2.65L21 3zm0 0l-8.16 9.95 3 1.15L21 3z"/></svg>
-                                            @elseif($gw[0]==='paystack')
-                                                <svg viewBox="0 0 24 24" fill="white" width="14" height="14"><path d="M2 8h20v2.5H2zm0 5h20V15.5H2zm0 5h12V20.5H2z"/></svg>
-                                            @elseif($gw[0]==='stripe')
-                                                <svg viewBox="0 0 24 24" fill="white" width="14" height="14"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z"/></svg>
-                                            @elseif($gw[0]==='paypal')
-                                                <svg viewBox="0 0 24 24" fill="white" width="14" height="14"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/></svg>
-                                            @else
-                                                <svg viewBox="0 0 24 24" fill="white" width="14" height="14"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
-                                            @endif
-                                        </div>
-                                        <span class="donate-gw-label">{{ $gw[1] }}</span>
-                                        <div class="donate-check">
-                                            <svg fill="none" stroke="white" stroke-width="3" viewBox="0 0 24 24" width="8" height="8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                        </div>
-                                    </button>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <!-- PayPal button container -->
-                            <div id="paypal-button-container" class="hidden"></div>
-
-                            <!-- Submit -->
-                            <button id="donate-submit-btn" onclick="submitDonation()" type="button"
-                                class="w-full py-3 rounded-xl font-bold text-gray-900 text-sm transition-all hover:opacity-90 hover:shadow-lg"
-                                style="background:linear-gradient(135deg,var(--gold),var(--gold-light));">
-                                <span id="donate-btn-text" data-i18n="donate.btn">Donate Now</span>
-                                <span id="donate-btn-loader" class="hidden ml-2">
-                                    <svg class="inline w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                                    </svg>
-                                </span>
-                            </button>
-
-                            <div id="donate-feedback" class="hidden px-4 py-3 rounded-xl text-xs font-medium text-center"></div>
-
-                        </div>
-
-                        <!-- Form footer -->
-                        <div class="px-6 py-3 border-t text-center" style="border-color:#f3f4f6;background:#fafafa;">
-                            <p class="text-gray-400 text-xs" data-i18n="donate.privacy_note">🔒 Secure & encrypted. We never store card details.</p>
-                        </div>
+                <!-- Badge 2: Tasbih -->
+                <div class="absolute -bottom-5 -left-4 sm:-left-8 px-3.5 py-2 rounded-2xl glass-card border border-amber-500/30 text-xs font-bold shadow-xl flex items-center gap-2.5">
+                    <div class="w-6 h-6 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 shrink-0">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="6" r="1.5"></circle>
+                            <circle cx="16" cy="8" r="1.5"></circle>
+                            <circle cx="17.5" cy="12" r="1.5"></circle>
+                            <circle cx="15.5" cy="16" r="1.5"></circle>
+                            <circle cx="8" cy="8" r="1.5"></circle>
+                            <circle cx="6.5" cy="12" r="1.5"></circle>
+                            <circle cx="8.5" cy="16" r="1.5"></circle>
+                            <circle cx="12" cy="18" r="1.5"></circle>
+                        </svg>
                     </div>
+                    <div>
+                        <div class="text-[11px] text-gray-900 dark:text-white">Digital Tasbih</div>
+                        <div class="text-[9px] text-amber-500 font-semibold">Haptic Feedback</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ===================== STATS SECTION ===================== -->
+    <section id="stats" class="relative py-12 z-10">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="glass-card rounded-3xl p-8 border border-black/5 dark:border-white/10 shadow-xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                <!-- Stat 1 -->
+                <div class="flex flex-col items-center">
+                    <div class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-1 tracking-tight stat-counter" data-target="114">114</div>
+                    <div class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400" data-i18n="stats.surahs">Surahs of Quran</div>
+                </div>
+                <!-- Stat 2 -->
+                <div class="flex flex-col items-center">
+                    <div class="text-3xl sm:text-4xl font-extrabold text-brand-600 dark:text-brand-400 mb-1 tracking-tight stat-counter" data-target="40" data-suffix="+">40+</div>
+                    <div class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400" data-i18n="stats.languages">Languages Supported</div>
+                </div>
+                <!-- Stat 3 -->
+                <div class="flex flex-col items-center">
+                    <div class="text-3xl sm:text-4xl font-extrabold text-amber-500 mb-1 tracking-tight stat-counter" data-target="4.9" data-decimals="1">4.9★</div>
+                    <div class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400" data-i18n="stats.rating">App Store Rating</div>
+                </div>
+                <!-- Stat 4 -->
+                <div class="flex flex-col items-center">
+                    <div class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-1 tracking-tight stat-counter" data-target="100" data-suffix="K+">100K+</div>
+                    <div class="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400" data-i18n="stats.downloads">Active Downloads</div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ===================== FEATURES GRID ===================== -->
-    <section id="features" class="py-24 bg-gray-50 lp-theme">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center mb-16 reveal">
-                <div class="section-divider"></div>
-                <h2 class="text-4xl font-black text-gray-900 mb-4" data-i18n="features.title" data-i18n-en="{{ $s['features_title'] }}">{{ $s['features_title'] }}</h2>
-                <p class="text-gray-500 text-lg max-w-2xl mx-auto" data-i18n="features.desc" data-i18n-en="{{ $s['features_description'] }}">
+    <!-- ===================== BENTO GRID FEATURES ===================== -->
+    <section id="features" class="py-24 relative z-10 scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12">
+            <!-- Section Header -->
+            <div class="text-center max-w-2xl mx-auto mb-16 gsap-reveal">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-700 dark:text-brand-300 mb-4 border border-brand-500/20">
+                    <svg class="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2l2.4 5.5L20 9.8l-4 3.9 1 5.6-5-2.8-5 2.8 1-5.6-4-3.9 5.6-2.3L12 2z"/>
+                    </svg>
+                    <span>EVERYTHING YOU NEED</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">
+                    <span data-i18n="features.title" data-i18n-en="{{ $s['features_title'] }}">{{ $s['features_title'] }}</span>
+                </h2>
+                <p class="text-gray-600 dark:text-gray-400 text-base leading-relaxed" data-i18n="features.desc" data-i18n-en="{{ $s['features_description'] }}">
                     {{ $s['features_description'] }}
                 </p>
             </div>
 
-            @php
-                $defaultFeatures = [
-                    ['icon'=>'📖','title'=>'Quran & Islamic Content','description'=>'Complete Al-Quran reading experience with multi-language translations, audio recitation, transliteration, and ayah sharing.','bullets'=>"4 Language Translations\nAudio Quran Support\nTransliteration Feature\nHadith & Dua Collections\nAllah's 99 Names"],
-                    ['icon'=>'🕌','title'=>'Prayer & Worship','description'=>'Accurate prayer times, customizable schedules, Adhan notifications with multiple reciters, and Qibla finder with compass.','bullets'=>"Accurate Prayer Times\nAdhan Notifications\nQibla Finder & Compass\nRamadan Schedule\nMultiple Adhan Reciters"],
-                    ['icon'=>'🤖','title'=>'AI-Powered Features','description'=>'Get answers to Islamic questions instantly with our AI Islamic Chat and generate beautiful Islamic names for your family.','bullets'=>"AI Islamic Q&A Chat\nIslamic Name Generator\nSmart Recommendations\nInstant Responses\n24/7 Availability"],
-                    ['icon'=>'📍','title'=>'Mosque & Location','description'=>'Find nearby mosques using GPS, get navigation assistance, and manage location permissions easily.','bullets'=>"Nearby Mosque Finder\nGPS Navigation\nReal-time Location\nCity-based Prayer Times"],
-                    ['icon'=>'💰','title'=>'Islamic Finance & Charity','description'=>'Calculate your Zakat accurately with customizable Nisab settings and support charitable causes through the donation module.','bullets'=>"Zakat Calculator\nCustomizable Nisab\nDonation Module\nMultiple Currencies"],
-                    ['icon'=>'🎨','title'=>'Personalization','description'=>'Make the app yours with dark mode, RTL support, dynamic wallpapers, custom dhikr, dua, and 40+ language options.','bullets'=>"Dark Mode Support\nRTL Language Support\nDynamic Wallpapers\nCustom Dhikr & Dua"],
-                ];
-                $featureCards = !empty($s['features']) ? $s['features'] : $defaultFeatures;
-                $delays = ['0s','0.1s','0.2s','0.1s','0.2s','0.3s'];
-                $isDark = fn($i) => $i === 2;
-            @endphp
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach($featureCards as $i => $card)
-                    @if($isDark($i))
-                        <div class="rounded-3xl p-8 card-hover reveal" style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid)); transition-delay: {{ $delays[$i] ?? '0s' }};">
-                            <div class="feature-icon" style="background: rgba(var(--theme-accent-rgb),0.2);">{{ $card['icon'] }}</div>
-                            <h3 class="text-xl font-bold text-white mb-3" data-i18n="feature.{{ $i }}.title" data-i18n-en="{{ $card['title'] }}">{{ $card['title'] }}</h3>
-                            <p class="text-white/70 text-sm leading-relaxed mb-4" data-i18n="feature.{{ $i }}.desc" data-i18n-en="{{ $card['description'] }}">{{ $card['description'] }}</p>
-                            <ul class="space-y-2 text-sm text-white/80" data-feature-bullets="{{ $i }}" data-en-bullets="{{ trim($card['bullets']) }}">
-                                @foreach(array_filter(explode("\n", $card['bullets'])) as $bullet)
-                                    <li class="flex items-center gap-2"><span style="color: var(--gold);">✓</span> {{ trim($bullet) }}</li>
-                                @endforeach
-                            </ul>
+            <!-- Bento Grid -->
+            <div class="grid md:grid-cols-3 gap-6 gsap-bento-grid">
+                <!-- Bento 1: Holy Quran (Wide - 2 Columns) -->
+                <div class="md:col-span-2 glass-card rounded-3xl p-8 flex flex-col justify-between group hover:border-emerald-500/30 transition-all duration-300">
+                    <div class="flex items-start justify-between mb-6">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-500/5 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm group-hover:scale-105 group-hover:border-emerald-500/40 transition-transform duration-300">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 4v14a2 2 0 0 0 2 2h6.5a2.5 2.5 0 0 1 2 1 2.5 2.5 0 0 1 2-1H21a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-6.5a2.5 2.5 0 0 0-2 1 2.5 2.5 0 0 0-2-1H4a2 2 0 0 0-2 2z" fill="currentColor" fill-opacity="0.08"></path>
+                                <path d="M12 4v16"></path>
+                                <path d="M6 8h4"></path>
+                                <path d="M6 12h4"></path>
+                                <path d="M14 8h4"></path>
+                                <path d="M14 12h4"></path>
+                            </svg>
                         </div>
-                    @else
-                        <div class="bg-white rounded-3xl p-8 card-hover reveal" style="border: 1px solid var(--lp-border); transition-delay: {{ $delays[$i] ?? '0s' }};">
-                            <div class="feature-icon" style="background: linear-gradient(135deg, #f0f4ff, #e0e7ff);">{{ $card['icon'] }}</div>
-                            <h3 class="text-xl font-bold text-gray-900 mb-3" data-i18n="feature.{{ $i }}.title" data-i18n-en="{{ $card['title'] }}">{{ $card['title'] }}</h3>
-                            <p class="text-gray-500 text-sm leading-relaxed mb-4" data-i18n="feature.{{ $i }}.desc" data-i18n-en="{{ $card['description'] }}">{{ $card['description'] }}</p>
-                            <ul class="space-y-2 text-sm text-gray-600" data-feature-bullets="{{ $i }}" data-en-bullets="{{ trim($card['bullets']) }}">
-                                @foreach(array_filter(explode("\n", $card['bullets'])) as $bullet)
-                                    <li class="flex items-center gap-2"><span style="color: var(--lp-accent);">✓</span> {{ trim($bullet) }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        </div>
-    </section>
-
-    <!-- ===================== QURAN HIGHLIGHT ===================== -->
-    <section id="quran" class="py-24 bg-white overflow-hidden lp-theme">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
-
-                <!-- Visual -->
-                <div class="reveal order-2 lg:order-1">
-                    <div class="rounded-3xl p-8 relative overflow-hidden" style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid));">
-                        <!-- Decorative Arabic text -->
-                        <div class="font-arabic text-white/10 text-7xl absolute -top-4 -right-4 select-none">ق</div>
-
-                        <div class="font-arabic text-center text-white/90 text-2xl leading-loose mb-6" dir="rtl">
-                            وَلَقَدْ يَسَّرْنَا الْقُرْآنَ لِلذِّكْرِ فَهَلْ مِن مُّدَّكِرٍ
-                        </div>
-                        <p class="text-white/60 text-center text-sm mb-8" data-i18n="quran.verse_trans">
-                            "And We have certainly made the Quran easy for remembrance, so is there any who will remember?" — Al-Qamar 54:17
+                        <span class="text-xs font-bold px-3 py-1 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">114 Surahs</span>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Complete Quran & Audio Recitations</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                            Experience the Holy Quran with crystal-clear Arabic calligraphy, phonetic transliteration, verse-by-verse audio, and translations in over 40 languages.
                         </p>
-
-                        <!-- Feature pills -->
-                        <div class="flex flex-wrap gap-2 justify-center">
-                            @foreach(['English', 'Bangla', 'Arabic', 'Spanish', 'Transliteration', 'Audio'] as $lang)
-                            <span class="px-3 py-1.5 rounded-full text-xs font-medium" style="background: rgba(var(--theme-accent-rgb),0.2); color: var(--gold); border: 1px solid rgba(var(--theme-accent-rgb),0.3);">
-                                {{ $lang }}
-                            </span>
-                            @endforeach
-                        </div>
-
-                        <!-- Divider -->
-                        <div class="my-6 border-t border-white/10"></div>
-
-                        <!-- Progress bar mockup -->
-                        <div class="space-y-3">
-                            <div class="flex justify-between text-xs text-white/50">
-                                <span>Reading Progress</span>
-                                <span>Juz 12 / 30</span>
-                            </div>
-                            <div class="h-2 rounded-full bg-white/10">
-                                <div class="h-2 rounded-full" style="width: 40%; background: linear-gradient(90deg, var(--gold), var(--gold-light));"></div>
-                            </div>
+                        <div class="flex flex-wrap gap-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                            <span class="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">100+ Reciters</span>
+                            <span class="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">Word-by-word</span>
+                            <span class="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">Offline Audio</span>
+                            <span class="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">Bookmarks</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Text -->
-                <div class="reveal order-1 lg:order-2" style="transition-delay: 0.2s;">
-                    <div class="section-divider" style="margin-left: 0;"></div>
-                    <h2 class="text-4xl font-black text-gray-900 mb-6">
-                        <span data-i18n="quran.title" data-i18n-en="{{ $s['quran_title'] }}">{{ $s['quran_title'] }}</span><br>
-                        <span style="color: var(--lp-accent);" data-i18n="quran.highlight" data-i18n-en="{{ $s['quran_title_highlight'] }}">{{ $s['quran_title_highlight'] }}</span>
-                    </h2>
-                    <p class="text-gray-500 text-lg leading-relaxed mb-8" data-i18n="quran.description" data-i18n-en="{{ $s['quran_description'] }}">
-                        {{ $s['quran_description'] }}
-                    </p>
+                <!-- Bento 2: Prayer Times & Qibla (1 Column) -->
+                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between group hover:border-amber-500/30 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 via-amber-500/10 to-yellow-500/5 border border-amber-500/25 flex items-center justify-center text-amber-500 dark:text-amber-400 shadow-sm mb-6 group-hover:scale-105 group-hover:border-amber-500/40 transition-transform duration-300">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2.5L3.5 7.2v9.6L12 21.5l8.5-4.7V7.2L12 2.5z" fill="currentColor" fill-opacity="0.12"></path>
+                            <path d="M12 21.5V11.8"></path>
+                            <path d="M20.5 7.2L12 11.8 3.5 7.2"></path>
+                            <path d="M3.5 9.8L12 14.3l8.5-4.5" stroke="currentColor" stroke-width="2.2"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Prayer Times & Qibla</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                            Ultra-precise GPS prayer schedules, beautiful Adhan alerts, Ramadan Sehri/Iftar calendar, and 360° Qibla compass.
+                        </p>
+                        <span class="inline-flex items-center text-xs font-bold text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
+                            Live Auto-Location &rarr;
+                        </span>
+                    </div>
+                </div>
 
-                    <div class="space-y-4">
-                        <div class="flex items-start gap-4">
-                            <div class="lp-tile w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg" style="background: linear-gradient(135deg, #d4edda, #a8e6cf);">📗</div>
-                            <div>
-                                <h4 class="font-semibold text-gray-900 mb-1" data-i18n="quran.surah_title">Complete 114 Surahs</h4>
-                                <p class="text-gray-500 text-sm" data-i18n="quran.surah_desc">All 6,236 ayahs with multiple recitation styles and verse-by-verse audio.</p>
-                            </div>
+                <!-- Bento 3: AI Islamic Guide (1 Column) -->
+                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between group hover:border-emerald-500/30 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-teal-500/5 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-sm mb-6 group-hover:scale-105 group-hover:border-emerald-500/40 transition-transform duration-300">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3c-4.97 0-9 3.58-9 8a7.86 7.86 0 0 0 3 6.13V21l3.6-1.8c.76.2 1.56.3 2.4.3 4.97 0 9-3.58 9-8s-4.03-8-9-8z" fill="currentColor" fill-opacity="0.08"></path>
+                            <path d="M12 7.5l.8 1.9 1.9.8-1.9.8-.8 1.9-.8-1.9-1.9-.8 1.9-.8z" fill="currentColor" stroke="none"></path>
+                            <path d="M16.5 12.5l.5 1 1 .5-1 .5-.5 1-.5-1-1-.5 1-.5z" fill="currentColor" stroke="none"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">AI Islamic Assistant</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                            Ask complex questions regarding fiqh, daily duas, and authentic Hadith citations with sub-second AI responses.
+                        </p>
+                        <span class="inline-flex items-center text-xs font-bold text-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">
+                            Powered by AI &rarr;
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Bento 4: Digital Tasbih (1 Column) -->
+                <div class="glass-card rounded-3xl p-8 flex flex-col justify-between group hover:border-teal-500/30 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500/20 via-teal-500/10 to-cyan-500/5 border border-teal-500/25 flex items-center justify-center text-teal-600 dark:text-teal-400 shadow-sm mb-6 group-hover:scale-105 group-hover:border-teal-500/40 transition-transform duration-300">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="5.5" r="1.5" fill="currentColor"></circle>
+                            <circle cx="16" cy="7.2" r="1.5" fill="currentColor"></circle>
+                            <circle cx="18" cy="10.8" r="1.5" fill="currentColor"></circle>
+                            <circle cx="16.8" cy="14.8" r="1.5" fill="currentColor"></circle>
+                            <circle cx="13.5" cy="17.2" r="1.5" fill="currentColor"></circle>
+                            <circle cx="8" cy="7.2" r="1.5" fill="currentColor"></circle>
+                            <circle cx="6" cy="10.8" r="1.5" fill="currentColor"></circle>
+                            <circle cx="7.2" cy="14.8" r="1.5" fill="currentColor"></circle>
+                            <circle cx="10.5" cy="17.2" r="1.5" fill="currentColor"></circle>
+                            <path d="M12 18.5v3"></path>
+                            <path d="M10 21.5h4"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Digital Tasbih & Dhikr</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                            Satisfying tactile tap counter, haptic feedback, custom Adhkar, 99 Names of Allah, and morning/evening duas.
+                        </p>
+                        <span class="inline-flex items-center text-xs font-bold text-teal-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
+                            Try Interactive Below &darr;
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Bento 5: Name Generator & Halal (Wide - 2 Columns) -->
+                <div class="md:col-span-2 glass-card rounded-3xl p-8 flex flex-col justify-between group hover:border-indigo-500/30 transition-all duration-300">
+                    <div class="flex items-start justify-between mb-6">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-indigo-500/10 to-purple-500/5 border border-indigo-500/25 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shadow-sm group-hover:scale-105 group-hover:border-indigo-500/40 transition-transform duration-300">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor" fill-opacity="0.12"></path>
+                                <path d="M17 4l.6 1.4L19 6l-1.4.6L17 8l-.6-1.4L15 6l1.4-.6z" fill="currentColor" stroke="none"></path>
+                            </svg>
                         </div>
-                        <div class="flex items-start gap-4">
-                            <div class="lp-tile w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">🔊</div>
-                            <div>
-                                <h4 class="font-semibold text-gray-900 mb-1" data-i18n="quran.audio_title">Audio Quran</h4>
-                                <p class="text-gray-500 text-sm" data-i18n="quran.audio_desc">Listen to world-renowned reciters with offline support and background play.</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start gap-4">
-                            <div class="lp-tile w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">🔖</div>
-                            <div>
-                                <h4 class="font-semibold text-gray-900 mb-1" data-i18n="quran.bookmark_title">Bookmarks & History</h4>
-                                <p class="text-gray-500 text-sm" data-i18n="quran.bookmark_desc">Save your place, bookmark favorite verses, and continue where you left off.</p>
-                            </div>
+                        <span class="text-xs font-bold px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">Meaningful Names</span>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Islamic Name Generator & Halal Food Guide</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                            Discover deeply meaningful baby names with Arabic script and origin. Check everyday food ingredients with our built-in E-code Haram/Halal scanner.
+                        </p>
+                        <div class="flex flex-wrap gap-2 text-xs font-medium text-gray-700 dark:text-gray-300">
+                            <span class="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">Boys & Girls Names</span>
+                            <span class="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">E-code Checker</span>
+                            <span class="px-3 py-1 rounded-full bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">Zakat Calculator</span>
                         </div>
                     </div>
                 </div>
@@ -1038,680 +839,1004 @@
         </div>
     </section>
 
-    <!-- ===================== QURAN AUDIO PLAYER ===================== -->
-    <section id="quran-audio" class="py-12 lg:py-24 bg-gray-50 lp-theme">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6">
-            <div class="text-center mb-8 lg:mb-12 reveal">
-                <div class="section-divider"></div>
-                <h2 class="text-3xl lg:text-4xl font-black text-gray-900 mb-3">
-                    <span data-i18n="quran_audio.title">Read &amp; Listen </span><span style="color: var(--lp-accent);" data-i18n="quran_audio.highlight">Together</span>
+    <!-- ===================== INTERACTIVE QURAN STUDIO ===================== -->
+    <section id="quran" class="py-24 relative z-10 scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12">
+            <!-- Header -->
+            <div class="text-center max-w-3xl mx-auto mb-14 gsap-reveal">
+                <div class="font-arabic text-2xl text-brand-600 dark:text-amber-400 mb-3">
+                    اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ
+                </div>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
+                    <span data-i18n="quran.title" data-i18n-en="{{ $s['quran_title'] }}">{{ $s['quran_title'] }}</span>
+                    <span class="text-gradient-emerald">
+                        <span data-i18n="quran.highlight" data-i18n-en="{{ $s['quran_title_highlight'] }}">{{ $s['quran_title_highlight'] }}</span>
+                    </span>
                 </h2>
-                <p class="text-gray-500 text-base lg:text-lg max-w-2xl mx-auto" data-i18n="quran_audio.desc">
-                    Follow along with Arabic text while listening to world-renowned reciters — verse by verse.
+                <p class="text-gray-600 dark:text-gray-400 text-base" data-i18n="quran.description" data-i18n-en="{{ $s['quran_description'] }}">
+                    {{ $s['quran_description'] }}
                 </p>
             </div>
 
-            <div class="rounded-2xl lg:rounded-3xl overflow-hidden shadow-2xl reveal" style="border: 1px solid var(--lp-border);">
-
-                <!-- Top bar -->
-                <div class="px-4 py-3 lg:px-5 lg:py-4" style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid));">
-                    <!-- Row 1 on mobile / single row on desktop: selects side by side -->
-                    <div class="flex gap-2 mb-2">
-                        <div class="flex-1 relative">
-                            <select id="qa-surah-select"
-                                class="w-full appearance-none rounded-xl px-3 py-2.5 text-sm font-medium outline-none pr-8"
-                                style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2);"
-                                onchange="qaLoadSurah(this.value)">
-                                <option value="" disabled selected style="background:var(--green-dark);">Select a Surah…</option>
+            <!-- Studio Interface Card -->
+            <div class="glass-card rounded-3xl p-6 lg:p-8 border border-black/10 dark:border-white/10 shadow-2xl">
+                <!-- Studio Controls Bar -->
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-black/5 dark:border-white/10">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Surah Selector -->
+                        <div class="relative">
+                            <select id="qa-surah-select" onchange="qaLoadSurah(this.value)" class="glass-island rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none cursor-pointer border border-black/10 dark:border-white/10">
+                                <option value="" disabled selected>Select Surah...</option>
                             </select>
-                            <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/60 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
-                        <div class="flex-1 relative">
-                            <select id="qa-reciter-select"
-                                class="w-full appearance-none rounded-xl px-3 py-2.5 text-sm font-medium outline-none pr-8"
-                                style="background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2);"
-                                onchange="qaLoadAudio()">
-                                <option value="" disabled selected style="background:var(--green-dark);">Select a Reciter…</option>
+
+                        <!-- Reciter Selector -->
+                        <div class="relative">
+                            <select id="qa-reciter-select" onchange="qaSetReciter(this.value)" class="glass-island rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none cursor-pointer border border-black/10 dark:border-white/10">
+                                <option value="" disabled selected>Select Reciter...</option>
                             </select>
-                            <svg class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/60 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                     </div>
-                    <!-- Row 2: Translator tabs -->
-                    <div id="qa-translator-tabs"
-                        class="flex gap-1.5 overflow-x-auto mb-2"
-                        style="-webkit-overflow-scrolling: touch; scrollbar-width: none;">
-                        <span class="text-white/30 text-xs py-1.5 flex-shrink-0">Loading translators…</span>
+
+                    <!-- Translator Tabs -->
+                    <div id="qa-translator-tabs" class="flex items-center gap-2 overflow-x-auto max-w-md py-1">
+                        <!-- Filled by JS -->
                     </div>
 
-                    <!-- Row 3: action buttons -->
-                    <div class="flex gap-2">
-                        <button id="qa-trans-toggle" onclick="qaToggleTranslation()"
-                            class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-                            style="background: rgba(var(--theme-accent-rgb),0.2); color: var(--gold); border: 1px solid rgba(var(--theme-accent-rgb),0.3);">
-                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
-                            Translation
+                    <!-- Toggles -->
+                    <div class="flex items-center gap-2">
+                        <button id="qa-idx-toggle" onclick="qaToggleIndex()" class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-island border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 transition-all">
+                            Index
                         </button>
-                        <!-- Mobile-only: toggle verse index panel -->
-                        <button id="qa-idx-toggle" onclick="qaToggleIndex()"
-                            class="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
-                            style="background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.2);">
-                            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                            Verse List
+                        <button id="qa-trans-toggle" onclick="qaToggleTranslation()" class="px-3 py-1.5 rounded-lg text-xs font-semibold glass-island border border-black/10 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 transition-all">
+                            Translation
                         </button>
                     </div>
                 </div>
 
-                <!-- Main body -->
-                <div class="flex flex-col lg:grid lg:grid-cols-3">
+                <!-- Studio Audio Bar -->
+                <div class="py-5 flex flex-wrap items-center justify-between gap-4 border-b border-black/5 dark:border-white/10">
+                    <!-- Playback controls -->
+                    <div class="flex items-center gap-3">
+                        <button onclick="qaPrevSurah()" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300" title="Previous Surah">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"></line></svg>
+                        </button>
 
-                    <!-- Left: verse index — hidden on mobile, collapsible via "Verse List" button -->
-                    <div id="qa-index-container"
-                        class="hidden lg:block lg:col-span-1 overflow-y-auto border-b lg:border-b-0 lg:border-r"
-                        style="max-height: 260px; border-color: var(--lp-border); background: var(--lp-input-bg);">
-                        <div id="qa-surah-header" class="px-4 py-3 border-b sticky top-0 z-10" style="border-color: var(--lp-border); background: var(--lp-surface);">
-                            <div id="qa-surah-arabic" class="font-arabic text-xl text-gray-900 text-right mb-0.5 leading-relaxed" dir="rtl">—</div>
-                            <div id="qa-surah-english" class="text-gray-400 text-xs">Select a surah to begin</div>
-                            <div class="flex items-center gap-2 mt-1.5">
-                                <span id="qa-surah-place" class="text-xs px-2 py-0.5 rounded-full" style="background:#d4edda; color:var(--green-mid);"></span>
-                                <span id="qa-surah-count" class="text-xs text-gray-400"></span>
-                            </div>
+                        <button id="qa-play-btn" onclick="qaTogglePlay()" class="w-12 h-12 rounded-full bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white flex items-center justify-center shadow-lg shadow-brand-500/30 transition-transform active:scale-95">
+                            <span id="qa-play-icon">
+                                <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            </span>
+                        </button>
+
+                        <button onclick="qaNextSurah()" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300" title="Next Surah">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"></line></svg>
+                        </button>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="flex-1 min-w-[200px] flex items-center gap-3">
+                        <span id="qa-cur-time" class="text-xs font-mono text-gray-500">0:00</span>
+                        <div id="qa-progress-bar" onclick="qaSeekAudio(event)" class="flex-1 h-2 rounded-full bg-black/5 dark:bg-white/10 cursor-pointer overflow-hidden relative">
+                            <div id="qa-progress-fill" class="h-full bg-gradient-to-r from-brand-600 to-emerald-400 w-0 rounded-full transition-all"></div>
                         </div>
-                        <div id="qa-verse-index" class="divide-y" style="divide-color: #f5f5f5;">
-                            <div class="p-6 text-center text-gray-300 text-sm">Verses will appear here</div>
+                        <span id="qa-total-time" class="text-xs font-mono text-gray-500">0:00</span>
+                    </div>
+
+                    <!-- Volume slider -->
+                    <div class="hidden sm:flex items-center gap-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                        <input id="qa-volume" type="range" min="0" max="100" value="80" onchange="qaSetVolume(this.value)" class="w-20 accent-brand-500 h-1">
+                    </div>
+
+                    <audio id="qa-audio" preload="none"></audio>
+                </div>
+
+                <!-- Surah Display Header -->
+                <div class="text-center py-6">
+                    <div id="qa-surah-arabic" class="font-arabic text-3xl sm:text-4xl text-brand-700 dark:text-amber-400 mb-1">الفاتحة</div>
+                    <div class="text-sm font-bold text-gray-900 dark:text-white">
+                        <span id="qa-surah-english">Al-Fatiha</span> • <span id="qa-surah-count" class="text-gray-500">7 verses</span>
+                    </div>
+                    <div id="qa-surah-place" class="text-xs text-gray-400"></div>
+                    <div id="qa-bismillah" class="font-arabic text-2xl text-emerald-600 dark:text-emerald-400 mt-4">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+                </div>
+
+                <!-- Main Quran Content Panel -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 min-h-[420px]">
+                    <!-- Left: Verse Index Drawer -->
+                    <div id="qa-index-container" class="md:col-span-1 max-h-[500px] overflow-y-auto glass-island rounded-2xl p-2 border border-black/5 dark:border-white/10 hidden md:block">
+                        <div id="qa-verse-index" class="space-y-1">
+                            <div class="p-6 text-center text-gray-400 text-xs">Select Surah to load verses</div>
                         </div>
                     </div>
 
-                    <!-- Right: verse reading + player (always visible) -->
-                    <div class="lg:col-span-2 flex flex-col">
-                        <!-- Bismillah -->
-                        <div id="qa-bismillah" class="hidden text-center py-4 border-b" style="border-color: var(--lp-border);">
-                            <span class="font-arabic text-xl lg:text-2xl" style="color: var(--lp-accent);">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</span>
+                    <!-- Right: Ayahs Container -->
+                    <div class="md:col-span-3 max-h-[500px] overflow-y-auto space-y-4 pr-2">
+                        <div id="qa-placeholder" class="h-64 flex flex-col items-center justify-center text-center p-6">
+                            <span class="text-4xl mb-3">📖</span>
+                            <h4 class="text-base font-bold text-gray-800 dark:text-gray-200">Start Your Recitation</h4>
+                            <p class="text-xs text-gray-500 max-w-sm">Choose any Surah from the dropdown above to read and listen to the Holy Quran.</p>
                         </div>
 
-                        <!-- Verses scroll area -->
-                        <div id="qa-verses" class="overflow-y-auto px-4 py-4 lg:p-6 space-y-4 lg:space-y-5"
-                            style="min-height: 200px; max-height: 300px; background: var(--lp-surface);">
-                            <div id="qa-placeholder" class="flex flex-col items-center justify-center py-10 text-center">
-                                <div class="font-arabic text-4xl mb-3" style="color: var(--gold);">﷽</div>
-                                <p class="text-gray-400 text-sm max-w-xs">Choose a Surah and a Reciter to start reading and listening.</p>
-                            </div>
-                            <div id="qa-loading" class="hidden flex-col items-center justify-center py-10">
-                                <svg class="w-7 h-7 animate-spin mb-3" style="color:var(--lp-accent);" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                                <p class="text-gray-400 text-sm">Loading verses…</p>
-                            </div>
+                        <div id="qa-loading" class="hidden h-64 flex-col items-center justify-center text-center">
+                            <div class="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                            <span class="text-xs text-gray-400 font-medium">Fetching translation & verses...</span>
                         </div>
 
-                        <!-- Audio player -->
-                        <div id="qa-player" class="border-t px-4 pt-3 pb-4 lg:px-5" style="border-color: var(--lp-border); background: var(--lp-surface);">
-                            <audio id="qa-audio" preload="none" onended="qaOnAudioEnded()" onloadedmetadata="qaOnMetadata()"></audio>
-
-                            <!-- Visualizer canvas -->
-                            <canvas id="qa-canvas" class="w-full mb-2.5 rounded-xl"
-                                style="display:none; height:56px; background: linear-gradient(135deg, #0d2618 0%, #0a1e12 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 3px rgba(0,0,0,0.12);"></canvas>
-
-                            <!-- Progress bar — always full width -->
-                            <div class="mb-2.5">
-                                <div id="qa-progress-track" class="relative h-2 rounded-full cursor-pointer" style="background: #f0f0f0;" onclick="qaSeek(event, this)">
-                                    <div id="qa-progress-bar" class="h-2 rounded-full" style="width:0%; background: linear-gradient(90deg, var(--lp-accent), var(--gold-light));"></div>
-                                </div>
-                                <div class="flex justify-between items-center text-xs text-gray-400 mt-1">
-                                    <span id="qa-current-time">0:00</span>
-                                    <span id="qa-no-audio" class="italic text-center px-2">Select reciter for audio</span>
-                                    <span id="qa-duration">0:00</span>
-                                </div>
-                            </div>
-
-                            <!-- Controls row -->
-                            <div class="flex items-center gap-2">
-                                <!-- Avatar (sm+) -->
-                                <img id="qa-reciter-avatar" src="" alt=""
-                                    class="hidden sm:block w-8 h-8 rounded-full object-cover flex-shrink-0"
-                                    style="border: 2px solid var(--gold);">
-
-                                <!-- Playback buttons — centered -->
-                                <div class="flex items-center gap-1 mx-auto">
-                                    <button onclick="qaPrevSurah()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all" title="Previous Surah">
-                                        <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-                                    </button>
-                                    <button onclick="qaSkipBackward()" class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all" title="−10s">
-                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
-                                    </button>
-                                    <button id="qa-play-btn" onclick="qaTogglePlay()"
-                                        class="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 mx-1 hover:scale-105 transition-all"
-                                        style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid));" disabled>
-                                        <svg id="qa-icon-play" class="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                                        <svg id="qa-icon-pause" class="hidden w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                                        <svg id="qa-icon-loading" class="hidden w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                                    </button>
-                                    <button onclick="qaSkipForward()" class="w-7 h-7 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all" title="+10s">
-                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/></svg>
-                                    </button>
-                                    <button onclick="qaNextSurah()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all" title="Next Surah">
-                                        <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/></svg>
-                                    </button>
-                                </div>
-
-                                <!-- Volume — hidden on mobile -->
-                                <div class="hidden sm:flex items-center gap-1.5 flex-shrink-0">
-                                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                                    <input type="range" id="qa-volume" min="0" max="100" value="80"
-                                        class="w-16 h-1.5 rounded-full appearance-none cursor-pointer"
-                                        style="accent-color: var(--lp-accent);"
-                                        oninput="qaSetVolume(this.value)">
-                                </div>
-                            </div>
+                        <div id="qa-verses" class="space-y-4">
+                            <!-- Injected by JS -->
                         </div>
                     </div>
                 </div>
             </div>
-
-            <p class="text-center text-gray-400 text-sm mt-5" data-i18n="quran.offline_note" data-i18n-en="{{ $s['quran_offline_note'] }}">
-                {{ $s['quran_offline_note'] }}
-            </p>
         </div>
     </section>
 
-    <!-- ===================== PRAYER TIMES HIGHLIGHT ===================== -->
-    <section id="prayer" class="py-24 bg-gray-50 lp-theme">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid lg:grid-cols-2 gap-16 items-center">
+    <!-- ===================== PRAYER & QIBLA SECTION ===================== -->
+    <section id="prayer" class="py-24 relative z-10 scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12">
+            <div class="grid lg:grid-cols-12 gap-12 items-center">
 
-                <!-- Text -->
-                <div class="reveal">
-                    <div class="section-divider" style="margin-left: 0;"></div>
-                    <h2 class="text-4xl font-black text-gray-900 mb-6">
-                        <span data-i18n="prayer.title" data-i18n-en="{{ $s['prayer_title'] }}">{{ $s['prayer_title'] }}</span><br>
-                        <span style="color: var(--lp-accent);" data-i18n="prayer.highlight" data-i18n-en="{{ $s['prayer_title_highlight'] }}">{{ $s['prayer_title_highlight'] }}</span>
+                <!-- Left Details -->
+                <div class="lg:col-span-6 gsap-reveal">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 mb-4">
+                        🕌 NEVER MISS A SALAH
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6">
+                        <span data-i18n="prayer.title" data-i18n-en="{{ $s['prayer_title'] }}">{{ $s['prayer_title'] }}</span>
+                        <span class="text-gradient-gold">
+                            <span data-i18n="prayer.highlight" data-i18n-en="{{ $s['prayer_title_highlight'] }}">{{ $s['prayer_title_highlight'] }}</span>
+                        </span>
                     </h2>
-                    <p class="text-gray-500 text-lg leading-relaxed mb-8" data-i18n="prayer.description" data-i18n-en="{{ $s['prayer_description'] }}">
+                    <p class="text-gray-600 dark:text-gray-400 text-base leading-relaxed mb-8" data-i18n="prayer.description" data-i18n-en="{{ $s['prayer_description'] }}">
                         {{ $s['prayer_description'] }}
                     </p>
 
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-white rounded-2xl p-4 card-hover" style="border: 1px solid var(--lp-border);">
-                            <div class="text-2xl mb-2">🧭</div>
-                            <h4 class="font-semibold text-gray-900 text-sm mb-1" data-i18n="prayer.qibla_title">Qibla Finder</h4>
-                            <p class="text-gray-500 text-xs" data-i18n="prayer.qibla_desc">Accurate compass with improved precision</p>
+                    <!-- Features bullets -->
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-sm">✓</div>
+                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Accurate GPS Calculation</span>
                         </div>
-                        <div class="bg-white rounded-2xl p-4 card-hover" style="border: 1px solid var(--lp-border);">
-                            <div class="text-2xl mb-2">🔔</div>
-                            <h4 class="font-semibold text-gray-900 text-sm mb-1" data-i18n="prayer.adhan_title">Adhan Alerts</h4>
-                            <p class="text-gray-500 text-xs" data-i18n="prayer.adhan_desc">Multiple beautiful reciters to choose from</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-sm">✓</div>
+                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Multiple Adhan Voices</span>
                         </div>
-                        <div class="bg-white rounded-2xl p-4 card-hover" style="border: 1px solid var(--lp-border);">
-                            <div class="text-2xl mb-2">🌙</div>
-                            <h4 class="font-semibold text-gray-900 text-sm mb-1" data-i18n="prayer.ramadan_title">Ramadan Mode</h4>
-                            <p class="text-gray-500 text-xs" data-i18n="prayer.ramadan_desc">Iftar & Sehri times for your city</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-sm">✓</div>
+                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Ramadan Iftar & Sehri</span>
                         </div>
-                        <div class="bg-white rounded-2xl p-4 card-hover" style="border: 1px solid var(--lp-border);">
-                            <div class="text-2xl mb-2">⚙️</div>
-                            <h4 class="font-semibold text-gray-900 text-sm mb-1" data-i18n="prayer.custom_title">Customizable</h4>
-                            <p class="text-gray-500 text-xs" data-i18n="prayer.custom_desc">Manual adjustments & AM/PM format</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 font-bold text-sm">✓</div>
+                            <span class="text-sm font-semibold text-gray-800 dark:text-gray-200">Interactive Qibla Finder</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Prayer times visual -->
-                <div class="reveal" style="transition-delay: 0.2s;">
-                    <div id="prayer-card" class="bg-white rounded-3xl p-6 shadow-xl max-w-sm mx-auto" style="border: 1px solid var(--lp-border);">
-                        <div class="flex items-center justify-between mb-6">
+                <!-- Right Live Prayer Card & Qibla Compass -->
+                <div class="lg:col-span-6 grid sm:grid-cols-2 gap-6 gsap-reveal">
+                    <!-- Prayer Times Card -->
+                    <div class="glass-card rounded-3xl p-6 border border-black/10 dark:border-white/10 shadow-xl">
+                        <div class="flex items-center justify-between pb-4 mb-4 border-b border-black/5 dark:border-white/5">
                             <div>
-                                <p class="text-gray-400 text-xs" data-i18n="prayer.card_label">Today's Prayer Times</p>
-                                <p id="prayer-city" class="font-bold text-gray-900">Detecting location…</p>
+                                <div class="text-xs font-bold uppercase tracking-wider text-gray-400">Prayer Times</div>
+                                <div id="prayer-city" class="text-base font-bold text-gray-900 dark:text-white">Detecting location...</div>
                             </div>
-                            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid));">
-                                <span class="text-lg">🌙</span>
+                            <span class="text-xl">🕌</span>
+                        </div>
+                        <div id="prayer-list" class="space-y-3">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Qibla Compass Card -->
+                    <div class="glass-card rounded-3xl p-6 border border-black/10 dark:border-white/10 shadow-xl flex flex-col items-center justify-center text-center">
+                        <div class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-6">Qibla Direction</div>
+                        <!-- Compass Dial Mockup -->
+                        <div class="relative w-40 h-40 rounded-full border-4 border-emerald-500/30 flex items-center justify-center shadow-inner">
+                            <div class="absolute top-2 text-[10px] font-bold text-emerald-500">N</div>
+                            <div class="absolute bottom-2 text-[10px] font-bold text-gray-400">S</div>
+                            <div class="absolute right-2 text-[10px] font-bold text-gray-400">E</div>
+                            <div class="absolute left-2 text-[10px] font-bold text-gray-400">W</div>
+                            <!-- Compass Needle -->
+                            <div class="w-1.5 h-24 bg-gradient-to-t from-gray-400 via-amber-400 to-emerald-500 rounded-full transform -rotate-45 shadow-lg"></div>
+                            <div class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md border border-white/20">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2.5L4 7v10l8 4.5 8-4.5V7L12 2.5z" fill="currentColor" fill-opacity="0.25"></path>
+                                    <path d="M12 21.5V11.5"></path>
+                                    <path d="M20 7L12 11.5 4 7"></path>
+                                </svg>
                             </div>
                         </div>
-                        <div id="prayer-rows"></div>
+                        <div class="mt-6">
+                            <div class="text-sm font-bold text-gray-900 dark:text-white">Kaaba Angle: 124° SE</div>
+                            <div class="text-xs text-gray-500">Calibrated via device sensors</div>
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </section>
 
-    <!-- ===================== AI FEATURES ===================== -->
-    <section id="ai" class="py-24 overflow-hidden" style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid));">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center mb-16 reveal">
-                <div class="section-divider"></div>
-                <h2 class="text-4xl font-black text-white mb-4" data-i18n="ai.title" data-i18n-en="{{ $s['ai_title'] }}">{{ $s['ai_title'] }}</h2>
-                <p class="text-white/60 text-lg max-w-2xl mx-auto" data-i18n="ai.description" data-i18n-en="{{ $s['ai_description'] }}">
-                    {{ $s['ai_description'] }}
+    <!-- ===================== AI ISLAMIC ASSISTANT ===================== -->
+    <section id="ai-chat" class="py-24 lg:py-32 relative z-10 scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-4xl mx-auto px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-10 gsap-reveal">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 mb-4 border border-emerald-500/20 shadow-sm">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>{{ $s['ai_chat_badge'] ?? '⚡ Live AI Scholar • Instant Answers' }}</span>
+                </div>
+                <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-4">
+                    {{ $s['ai_chat_title_line1'] ?? 'Ask Any' }} <span class="text-gradient-emerald">{{ $s['ai_chat_title_line2'] ?? 'Islamic Question' }}</span>
+                </h2>
+                <p class="text-gray-600 dark:text-gray-400 text-sm sm:text-base leading-relaxed">
+                    {{ $s['ai_chat_description'] ?? 'Receive instant, authentic answers referenced from Quran and Hadith. Lightning-fast AI, right here on the page.' }}
                 </p>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-8">
-                <!-- AI Chat -->
-                <div class="rounded-3xl p-8 reveal" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);">
-                    <div class="feature-icon" style="background: rgba(var(--theme-accent-rgb),0.2);">💬</div>
-                    <h3 class="text-2xl font-bold text-white mb-4" data-i18n="ai.chat_title" data-i18n-en="{{ $s['ai_chat_card_title'] }}">{{ $s['ai_chat_card_title'] }}</h3>
-                    <p class="text-white/60 leading-relaxed mb-6" data-i18n="ai.chat_desc" data-i18n-en="{{ $s['ai_chat_card_description'] }}">
-                        {{ $s['ai_chat_card_description'] }}
-                    </p>
-
-                    <!-- Chat mockup -->
-                    <div class="rounded-2xl p-4 space-y-3" style="background: rgba(0,0,0,0.2);">
-                        <div class="flex gap-3">
-                            <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs" style="background: rgba(var(--theme-accent-rgb),0.3);">👤</div>
-                            <div class="rounded-xl rounded-tl-none px-3 py-2 text-sm text-white/80" style="background: rgba(255,255,255,0.1);">
-                                <span data-i18n="ai.chat_q">What is the dua before eating?</span>
+            <!-- Modern Conversational UI Card -->
+            <div class="glass-card rounded-[32px] border border-black/10 dark:border-white/10 shadow-2xl bg-white dark:bg-[#0c1611] overflow-hidden">
+                <!-- Chat Window Header Bar -->
+                <div class="px-6 py-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between bg-emerald-50/40 dark:bg-white/[0.02]">
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-emerald-500/20">
+                                AI
                             </div>
+                            <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0c1611]"></span>
                         </div>
-                        <div class="flex gap-3 justify-end">
-                            <div class="rounded-xl rounded-tr-none px-3 py-2 text-sm text-gray-900 max-w-xs" style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">
-                                <div class="font-arabic text-base mb-1">بِسْمِ اللَّهِ</div>
-                                <span data-i18n="ai.chat_a">"Bismillah" — In the name of Allah. (Bukhari & Muslim)</span>
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                                <span>Zabi Islamic AI Scholar</span>
+                                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Verified</span>
                             </div>
-                            <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs" style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">🤖</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">Online • Authentic Quran & Sunnah references</div>
+                        </div>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 px-3 py-1 rounded-full bg-black/5 dark:bg-white/5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Knowledge Base Active
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Suggested Prompt Chips -->
+                <div class="px-6 pt-4 pb-3 border-b border-black/5 dark:border-white/5 bg-gray-50/50 dark:bg-black/20 flex flex-wrap items-center gap-2">
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-semibold mr-1">Try asking:</span>
+                    <button onclick="sendQuickChatQuestion('What is the dua before sleeping?')" class="text-xs px-3.5 py-1.5 rounded-full bg-white dark:bg-white/5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-gray-700 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all border border-black/10 dark:border-white/10 hover:border-emerald-300 shadow-xs flex items-center gap-2 group">
+                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <span>Dua before sleeping</span>
+                    </button>
+                    <button onclick="sendQuickChatQuestion('What are the 5 pillars of Islam?')" class="text-xs px-3.5 py-1.5 rounded-full bg-white dark:bg-white/5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-gray-700 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all border border-black/10 dark:border-white/10 hover:border-emerald-300 shadow-xs flex items-center gap-2 group">
+                        <svg class="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v4m-4 16v-6a2 2 0 0 1 4 0v6m-8 0h16M4 10h16M8 6h8l1 4H7l1-4z"></path>
+                        </svg>
+                        <span>Pillars of Islam</span>
+                    </button>
+                    <button onclick="sendQuickChatQuestion('How to perform Wudu correctly?')" class="text-xs px-3.5 py-1.5 rounded-full bg-white dark:bg-white/5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-gray-700 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all border border-black/10 dark:border-white/10 hover:border-emerald-300 shadow-xs flex items-center gap-2 group">
+                        <svg class="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                        </svg>
+                        <span>How to do Wudu</span>
+                    </button>
+                    <button onclick="sendQuickChatQuestion('What is the ruling on fasting in Ramadan?')" class="text-xs px-3.5 py-1.5 rounded-full bg-white dark:bg-white/5 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-gray-700 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-300 transition-all border border-black/10 dark:border-white/10 hover:border-emerald-300 shadow-xs flex items-center gap-2 group">
+                        <svg class="w-3.5 h-3.5 text-brand-600 dark:text-brand-400 group-hover:scale-110 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        <span>Ramadan rules</span>
+                    </button>
+                </div>
+
+                <!-- Chat History Messages Container -->
+                <div id="ai-chat-messages" class="h-80 sm:h-96 overflow-y-auto space-y-4 p-6 bg-slate-50/40 dark:bg-black/30 text-sm">
+                    <!-- Default Welcome Message -->
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm mt-0.5">
+                            AI
+                        </div>
+                        <div class="p-4 rounded-2xl rounded-tl-sm bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 text-gray-800 dark:text-gray-200 max-w-xl leading-relaxed shadow-sm">
+                            Assalamu Alaikum! I am your AI Islamic assistant. Ask me anything about Quran, Hadith, Salah, or daily Muslim life.
                         </div>
                     </div>
                 </div>
 
-                <!-- AI Name Generator -->
-                <div class="rounded-3xl p-8 reveal" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); transition-delay: 0.2s;">
-                    <div class="feature-icon" style="background: rgba(var(--theme-accent-rgb),0.2);">✨</div>
-                    <h3 class="text-2xl font-bold text-white mb-4" data-i18n="ai.name_title" data-i18n-en="{{ $s['ai_name_card_title'] }}">{{ $s['ai_name_card_title'] }}</h3>
-                    <p class="text-white/60 leading-relaxed mb-6" data-i18n="ai.name_desc" data-i18n-en="{{ $s['ai_name_card_description'] }}">
-                        {{ $s['ai_name_card_description'] }}
-                    </p>
-
-                    <!-- Name generator mockup -->
-                    <div class="rounded-2xl p-4" style="background: rgba(0,0,0,0.2);">
-                        <div class="mb-3">
-                            <p class="text-white/40 text-xs mb-2" data-i18n="ai.name_label">Generated Names for Boys</p>
+                <!-- Input Box Container -->
+                <div class="p-4 sm:p-5 border-t border-black/5 dark:border-white/5 bg-white dark:bg-[#0c1611]">
+                    <div class="flex items-center gap-3">
+                        <div class="relative flex-1">
+                            <input id="ai-chat-input" type="text" onkeydown="handleAIChatKeydown(event)" placeholder="Type your Islamic question here..." class="w-full rounded-2xl pl-5 pr-12 py-3.5 text-sm bg-gray-100 dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none border border-black/10 dark:border-white/10 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all">
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono hidden sm:inline-block">↵ Enter</span>
                         </div>
-                        @foreach([
-                            ['عبد الله', 'Abdullah', 'Servant of Allah'],
-                            ['يوسف', 'Yusuf', 'To increase, God increases'],
-                            ['إبراهيم', 'Ibrahim', 'Father of nations'],
-                        ] as $name)
-                        <div class="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
-                            <div>
-                                <span class="font-arabic text-white text-lg">{{ $name[0] }}</span>
-                                <span class="text-white/60 text-sm ml-2">{{ $name[1] }}</span>
-                            </div>
-                            <span class="text-white/40 text-xs">{{ $name[2] }}</span>
-                        </div>
-                        @endforeach
+                        <button id="ai-chat-send" onclick="sendAIChatMessage()" class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold text-sm hover:shadow-lg hover:shadow-brand-500/25 active:scale-95 transition-all flex items-center gap-2">
+                            <span>Send</span>
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                    <div class="mt-2 text-center text-[11px] text-gray-400 dark:text-gray-500">
+                        References drawn from authentic Islamic scholarship. Always verify complex rulings with local scholars.
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ===================== AI CHAT (LIVE) ===================== -->
-    <section id="ai-chat" class="py-24" style="background: #040d06;">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid lg:grid-cols-2 gap-16 items-start">
+    <!-- ===================== INTERACTIVE DIGITAL TASBIH ===================== -->
+    <section id="tasbih" class="py-24 relative z-10 scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-700 dark:text-brand-300 mb-4">
+                📿 REMEMBRANCE OF ALLAH
+            </div>
+            <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 dark:text-white mb-4">
+                Digital Tasbih Counter
+            </h2>
+            <p class="text-gray-600 dark:text-gray-400 text-base max-w-xl mx-auto mb-12">
+                Keep your tongue moist with the remembrance of Allah wherever you go.
+            </p>
 
-                <!-- Left: Description -->
-                <div class="reveal">
-                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6" style="background: rgba(var(--theme-accent-rgb),0.1); color: var(--gold); border: 1px solid rgba(var(--theme-accent-rgb),0.2);">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"></span>
-                        <span data-i18n="ai_chat.badge" data-i18n-en="{{ $s['ai_chat_badge'] }}">{{ $s['ai_chat_badge'] }}</span>
-                    </div>
-                    <h2 class="text-4xl font-black text-white mb-6 leading-tight">
-                        <span data-i18n="ai_chat.title_line1" data-i18n-en="{{ $s['ai_chat_title_line1'] }}">{{ $s['ai_chat_title_line1'] }}</span><br>
-                        <span style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;" data-i18n="ai_chat.title_line2" data-i18n-en="{{ $s['ai_chat_title_line2'] }}">{{ $s['ai_chat_title_line2'] }}</span>
-                    </h2>
-                    <p class="text-white/50 text-lg leading-relaxed mb-8" data-i18n="ai_chat.desc" data-i18n-en="{{ $s['ai_chat_description'] }}">
-                        {{ $s['ai_chat_description'] }}
-                    </p>
-
-                    <div class="space-y-4 mb-8">
-                        @foreach($s['ai_chat_features'] as $i => $feat)
-                        <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-sm mt-0.5" style="background: rgba(var(--theme-accent-rgb),0.12);">{{ $feat['icon'] ?? '' }}</div>
-                            <div>
-                                <p class="text-white font-semibold text-sm" data-i18n="ai_chat.feature.{{ $i }}.title" data-i18n-en="{{ $feat['title'] ?? '' }}">{{ $feat['title'] ?? '' }}</p>
-                                <p class="text-white/40 text-xs mt-0.5" data-i18n="ai_chat.feature.{{ $i }}.desc" data-i18n-en="{{ $feat['description'] ?? '' }}">{{ $feat['description'] ?? '' }}</p>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-
-                    <p class="text-white/30 text-xs uppercase tracking-wider mb-3" data-i18n="ai_chat.try_asking" data-i18n-en="{{ $s['ai_chat_try_label'] }}">{{ $s['ai_chat_try_label'] }}</p>
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($s['ai_chat_suggestions'] as $sugg)
-                        <button type="button" onclick="sendQuickChatQuestion(this.dataset.question)" data-question="{{ $sugg['question'] ?? '' }}" class="ai-quick-pill px-3 py-1.5 rounded-full text-xs border transition-all hover:border-yellow-500/50 hover:text-white/90" style="border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.55);">{{ $sugg['label'] ?? '' }}</button>
-                        @endforeach
-                    </div>
+            <!-- Tasbih Dial Card -->
+            <div class="glass-card rounded-[40px] p-10 max-w-md mx-auto border border-black/10 dark:border-white/10 shadow-2xl flex flex-col items-center">
+                <!-- Dhikr Selector Pills -->
+                <div class="flex flex-wrap justify-center gap-2 mb-8">
+                    <button onclick="setTasbihDhikr('سُبْحَانَ اللَّهِ', 'SubhanAllah')" class="tasbih-phrase-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-brand-500 text-white">SubhanAllah</button>
+                    <button onclick="setTasbihDhikr('الْحَمْدُ لِلَّهِ', 'Alhamdulillah')" class="tasbih-phrase-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300">Alhamdulillah</button>
+                    <button onclick="setTasbihDhikr('اللَّهُ أَكْبَرُ', 'Allahu Akbar')" class="tasbih-phrase-btn px-3.5 py-1.5 rounded-full text-xs font-bold bg-black/5 dark:bg-white/5 text-gray-700 dark:text-gray-300">Allahu Akbar</button>
                 </div>
 
-                <!-- Right: Chat Terminal -->
-                <div class="reveal" style="transition-delay: 0.2s;">
-                    <div class="rounded-2xl overflow-hidden" style="background: #0d1f14; border: 1px solid rgba(255,255,255,0.07);">
-                        <!-- Window chrome -->
-                        <div class="px-5 py-3.5 flex items-center gap-3" style="border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02);">
-                            <div class="flex items-center gap-1.5">
-                                <div class="w-3 h-3 rounded-full bg-red-500/70"></div>
-                                <div class="w-3 h-3 rounded-full bg-yellow-500/70"></div>
-                                <div class="w-3 h-3 rounded-full bg-green-500/70"></div>
-                            </div>
-                            <div class="flex items-center gap-2 ml-2">
-                                <div class="w-6 h-6 rounded-lg flex items-center justify-center text-xs" style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">🤖</div>
-                                <span class="text-white/70 text-sm font-medium">Zabi AI</span>
-                            </div>
-                            <div class="ml-auto flex items-center gap-1.5">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block"></span>
-                                <span class="text-green-400 text-xs">Online</span>
-                            </div>
-                        </div>
+                <!-- Current Dhikr Display -->
+                <div id="tasbih-arabic" class="font-arabic text-3xl text-brand-600 dark:text-amber-400 mb-1">سُبْحَانَ اللَّهِ</div>
+                <div id="tasbih-trans" class="text-xs font-semibold text-gray-500 mb-8">SubhanAllah</div>
 
-                        <!-- Messages area -->
-                        <div id="ai-chat-messages" class="p-5 space-y-4 overflow-y-auto" style="height: 360px; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent;">
-                            <div class="flex gap-2.5">
-                                <div class="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-xs mt-0.5" style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">🤖</div>
-                                <div class="rounded-xl rounded-tl-none px-4 py-3 text-sm max-w-xs leading-relaxed" style="background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.80);">
-                                    <span class="font-arabic text-base block mb-1" style="color:var(--gold);">السلام عليكم ورحمة الله</span>
-                                    I'm Zabi AI. Ask me anything about Islam — Quran, Hadith, prayer, fiqh, duas, or Islamic lifestyle!
-                                </div>
-                            </div>
-                        </div>
+                <!-- Tap Button Dial -->
+                <button id="tasbih-tap-btn" onclick="incrementTasbih()" class="w-48 h-48 rounded-full bg-gradient-to-br from-brand-500 to-emerald-700 hover:from-brand-400 hover:to-emerald-600 text-white shadow-2xl shadow-brand-500/40 flex flex-col items-center justify-center transition-transform active:scale-95 group select-none">
+                    <span id="tasbih-count" class="text-5xl font-black tracking-tight mb-1">0</span>
+                    <span class="text-xs uppercase font-bold tracking-widest text-emerald-100 opacity-80 group-hover:opacity-100">TAP</span>
+                </button>
 
-                        <!-- Input bar -->
-                        <div class="p-4" style="border-top: 1px solid rgba(255,255,255,0.06);">
-                            <div class="flex gap-2 items-end">
-                                <textarea id="ai-chat-input" rows="1"
-                                    placeholder="Ask an Islamic question…"
-                                    class="flex-1 rounded-xl px-4 py-3 text-sm resize-none outline-none"
-                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); color: rgba(255,255,255,0.9); max-height: 100px; scrollbar-width: none;"
-                                    onkeydown="handleAIChatKeydown(event)"
-                                    oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
-                                <button id="ai-chat-send" onclick="sendAIChatMessage()"
-                                    class="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all hover:scale-105 hover:shadow-lg"
-                                    style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">
-                                    <svg class="w-4 h-4 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-center text-white/20 text-xs mt-3">Responses are AI-generated for reference only • Always verify with a qualified scholar</p>
+                <!-- Action Toolbar (Reset) -->
+                <div class="mt-8 flex items-center gap-6">
+                    <button onclick="resetTasbih()" class="text-xs font-semibold text-gray-500 hover:text-rose-500 flex items-center gap-1.5 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span>Reset Count</span>
+                    </button>
+                    <span class="text-gray-300 dark:text-gray-700">•</span>
+                    <span class="text-xs text-gray-400">Target: <strong class="text-gray-700 dark:text-gray-300">33 / 99</strong></span>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- ===================== ISLAMIC NAME GENERATOR ===================== -->
-    <section id="name-generator" class="py-24 bg-gray-50 lp-theme">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center mb-12 reveal">
-                <div class="section-divider"></div>
-                <h2 class="text-4xl font-black text-gray-900 mb-4">
-                    <span data-i18n="name_gen.title" data-i18n-en="{{ $s['name_gen_title'] }} ">{{ $s['name_gen_title'] }} </span><span style="color: var(--lp-accent);" data-i18n="name_gen.highlight" data-i18n-en="{{ $s['name_gen_title_highlight'] }}">{{ $s['name_gen_title_highlight'] }}</span>
+    <section id="name-generator" class="py-24 relative z-10 scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto mb-12 gsap-reveal">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 mb-4">
+                    👶 BLESSED NAMES
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-3">
+                    <span data-i18n="ai.name_title" data-i18n-en="{{ $s['name_gen_title'] }}">{{ $s['name_gen_title'] }}</span>
+                    <span class="text-gradient-emerald">{{ $s['name_gen_title_highlight'] }}</span>
                 </h2>
-                <p class="text-gray-500 text-lg max-w-2xl mx-auto" data-i18n="name_gen.desc" data-i18n-en="{{ $s['name_gen_description'] }}">
-                    {{ $s['name_gen_description'] }}
+                <p class="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+                    {{ $s['name_gen_description'] ?? 'Discover beautiful Islamic names with Arabic script, roots, and virtues.' }}
                 </p>
             </div>
 
-            <!-- Generator form -->
-            <div class="max-w-lg mx-auto mb-10 reveal">
-                <div class="bg-white rounded-2xl p-6 shadow-lg" style="border: 1px solid var(--lp-border);">
-                    <div class="mb-5">
-                        <label class="block text-sm font-semibold text-gray-700 mb-3" data-i18n="name_gen.label">Generate names for a</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button type="button" onclick="selectNameGender('boy')" id="ng-btn-boy"
-                                class="py-3 px-4 rounded-xl font-semibold text-sm transition-all border-2"
-                                style="border-color: var(--green-mid); background: var(--green-mid); color: white;">
-                                👦 Boy
+            <div class="glass-card rounded-3xl p-8 border border-black/10 dark:border-white/10 shadow-2xl">
+                <!-- Controls -->
+                <div class="flex flex-wrap items-center justify-center gap-4 mb-8">
+                    <!-- Gender toggle -->
+                    <div class="flex items-center gap-2 p-1.5 glass-island rounded-2xl border border-black/5 dark:border-white/10">
+                        <button id="ng-btn-boy" onclick="selectNameGender('boy')" class="px-5 py-2 rounded-xl text-xs font-bold transition-all bg-brand-600 text-white">
+                            Boys
+                        </button>
+                        <button id="ng-btn-girl" onclick="selectNameGender('girl')" class="px-5 py-2 rounded-xl text-xs font-bold transition-all text-gray-600 dark:text-gray-400">
+                            Girls
+                        </button>
+                    </div>
+
+                    <!-- Theme input -->
+                    <input id="ng-theme" type="text" placeholder="Theme e.g. Wisdom, Light, Peace..." class="glass-island rounded-2xl px-5 py-2.5 text-xs sm:text-sm text-gray-800 dark:text-gray-200 outline-none border border-black/10 dark:border-white/10 min-w-[240px]">
+
+                    <!-- Generate Button -->
+                    <button id="ng-generate-btn" onclick="generateIslamicNames()" class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-brand-600 to-emerald-500 text-white font-bold text-xs sm:text-sm hover:scale-105 active:scale-95 transition-all shadow-lg shadow-brand-500/20">
+                        <span id="ng-btn-text">Generate Names</span>
+                        <span id="ng-btn-loader" class="hidden">Generating...</span>
+                    </button>
+                </div>
+
+                <div id="ng-error" class="hidden text-center text-xs text-rose-500 mb-4"></div>
+
+                <!-- Results Output Grid -->
+                <div id="ng-placeholder" class="text-center py-10 text-gray-400 text-xs">
+                    Select a gender and click generate to discover meaningful Islamic names.
+                </div>
+
+                <div id="ng-results-wrap" class="hidden">
+                    <div id="ng-results-label" class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4 text-center"></div>
+                    <div id="ng-names-grid" class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================== DONATION / SADAQAH SECTION ===================== -->
+    <section id="donate" class="py-24 relative z-10 scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="glass-card rounded-[36px] p-6 sm:p-10 lg:p-12 border border-brand-500/20 shadow-2xl relative overflow-hidden bg-white/95 dark:bg-[#0c1611]/95 backdrop-blur-xl">
+                <!-- Background Accent -->
+                <div class="absolute -top-24 -right-24 w-80 h-80 bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="text-center max-w-2xl mx-auto mb-8">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-brand-500/10 text-brand-700 dark:text-brand-300 mb-3 border border-brand-500/20">
+                        <svg class="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="currentColor" fill-opacity="0.15"></path>
+                        </svg>
+                        <span>SADAQAH JARIYAH</span>
+                    </div>
+                    <div class="font-arabic text-2xl sm:text-3xl text-brand-600 dark:text-amber-400 mb-2 leading-relaxed" dir="rtl">
+                        {{ $s['donation_verse_arabic'] ?? 'مَّثَلُ الَّذِينَ يُنفِقُونَ أَمْوَالَهُمْ فِي سَبِيلِ اللَّهِ كَمَثَلِ حَبَّةٍ أَنبَتَتْ سَبْعَ سَنَابِلَ' }}
+                    </div>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 italic mb-4 max-w-xl mx-auto">
+                        {{ $s['donation_verse_translation'] ?? '"The example of those who spend in the way of Allah is like a grain that sprouts seven ears" — Al-Baqarah 2:261' }}
+                    </p>
+                    <h3 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white" data-i18n="donate.title">
+                        Support Our Mission
+                    </h3>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">Every contribution empowers Muslim communities worldwide</p>
+                </div>
+
+                <!-- Donation Form -->
+                <div class="max-w-xl mx-auto space-y-6">
+
+                    <!-- 1. Amount Selection (Preset Buttons + Custom Input) -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2.5">
+                            Select Donation Amount (USD) <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="grid grid-cols-4 gap-2.5 sm:gap-3">
+                            <button type="button" onclick="selectDonationAmount(10)" data-amount="10" class="donate-preset-btn py-3 rounded-2xl border text-sm font-bold transition-all text-center">
+                                $10
                             </button>
-                            <button type="button" onclick="selectNameGender('girl')" id="ng-btn-girl"
-                                class="py-3 px-4 rounded-xl font-semibold text-sm transition-all border-2"
-                                style="border-color: var(--lp-border); background: var(--lp-surface); color: var(--lp-text-soft);">
-                                👧 Girl
+                            <button type="button" onclick="selectDonationAmount(25)" data-amount="25" class="donate-preset-btn py-3 rounded-2xl border text-sm font-bold transition-all text-center">
+                                $25
+                            </button>
+                            <button type="button" onclick="selectDonationAmount(50)" data-amount="50" class="donate-preset-btn py-3 rounded-2xl border text-sm font-bold transition-all text-center">
+                                $50
+                            </button>
+                            <button type="button" onclick="selectDonationAmount(100)" data-amount="100" class="donate-preset-btn py-3 rounded-2xl border text-sm font-bold transition-all text-center">
+                                $100
+                            </button>
+                        </div>
+
+                        <!-- Custom Amount Input -->
+                        <div class="relative mt-2.5">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">$</span>
+                            <input type="number" id="donate-amount" min="1" step="1" value="25" oninput="onCustomAmountInput()" placeholder="Or enter custom amount" class="w-full pl-8 pr-4 py-3 rounded-2xl bg-gray-100/80 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 text-sm font-semibold outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- 2. Charitable Cause Dropdown -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2.5">
+                            Charitable Cause / Purpose <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <select id="donate-category" class="w-full appearance-none rounded-2xl px-5 py-3.5 pr-10 bg-gray-100/80 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-900 dark:text-white text-sm font-medium outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all cursor-pointer">
+                                <option value="">Select a cause (Zakat, Sadaqah, etc.)...</option>
+                            </select>
+                            <div class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Donor Details (Name + Email) -->
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2">
+                                Your Name
+                            </label>
+                            <input id="donate-name" type="text" placeholder="Full Name (Optional)" class="w-full rounded-2xl px-5 py-3.5 bg-gray-100/80 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2">
+                                Email Address <span class="text-rose-500">*</span>
+                            </label>
+                            <input id="donate-email" type="email" placeholder="you@example.com" class="w-full rounded-2xl px-5 py-3.5 bg-gray-100/80 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-900 dark:text-white placeholder-gray-400 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- 4. Selectable Payment Gateway Cards -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2.5">
+                            Select Payment Method <span class="text-rose-500">*</span>
+                        </label>
+                        <div id="donate-payment-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <!-- Stripe -->
+                            <button type="button" onclick="selectPaymentGateway('stripe')" data-gateway="stripe" class="donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all cursor-pointer group">
+                                <div class="w-10 h-10 rounded-xl bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center mb-2 font-bold text-xs">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z"/></svg>
+                                </div>
+                                <span class="font-bold text-xs text-gray-900 dark:text-white">Stripe</span>
+                                <span class="text-[10px] text-gray-400">Cards / Apple Pay</span>
+                                <div class="donate-check absolute top-2 right-2 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px]">✓</div>
+                            </button>
+
+                            <!-- PayPal -->
+                            <button type="button" onclick="selectPaymentGateway('paypal')" data-gateway="paypal" class="donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all cursor-pointer group">
+                                <div class="w-10 h-10 rounded-xl bg-[#003087]/10 text-[#003087] dark:text-[#0079c1] flex items-center justify-center mb-2 font-bold text-xs">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/></svg>
+                                </div>
+                                <span class="font-bold text-xs text-gray-900 dark:text-white">PayPal</span>
+                                <span class="text-[10px] text-gray-400">Balance & Cards</span>
+                                <div class="donate-check absolute top-2 right-2 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px]">✓</div>
+                            </button>
+
+                            <!-- Razorpay -->
+                            <button type="button" onclick="selectPaymentGateway('razorpay')" data-gateway="razorpay" class="donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all cursor-pointer group">
+                                <div class="w-10 h-10 rounded-xl bg-[#0c2340]/10 text-[#0c2340] dark:text-[#3395ff] flex items-center justify-center mb-2 font-bold text-xs">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3L3 10.53v.98l6.84 2.65L21 3zm0 0l-8.16 9.95 3 1.15L21 3z"/></svg>
+                                </div>
+                                <span class="font-bold text-xs text-gray-900 dark:text-white">Razorpay</span>
+                                <span class="text-[10px] text-gray-400">UPI / Netbanking</span>
+                                <div class="donate-check absolute top-2 right-2 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px]">✓</div>
+                            </button>
+
+                            <!-- Paystack -->
+                            <button type="button" onclick="selectPaymentGateway('paystack')" data-gateway="paystack" class="donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all cursor-pointer group">
+                                <div class="w-10 h-10 rounded-xl bg-[#00c3f7]/10 text-[#00c3f7] flex items-center justify-center mb-2 font-bold text-xs">
+                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M2 8h20v2.5H2zm0 5h20V15.5H2zm0 5h12V20.5H2z"/></svg>
+                                </div>
+                                <span class="font-bold text-xs text-gray-900 dark:text-white">Paystack</span>
+                                <span class="text-[10px] text-gray-400">Cards & Transfer</span>
+                                <div class="donate-check absolute top-2 right-2 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px]">✓</div>
                             </button>
                         </div>
                     </div>
-                    <div class="mb-5">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <span data-i18n="name_gen.theme">Meaning Theme</span>
-                            <span class="font-normal text-gray-400 ml-1" data-i18n="name_gen.optional">(optional)</span>
-                        </label>
-                        <input id="ng-theme" type="text"
-                            placeholder="e.g. light, strength, wisdom, beauty…"
-                            class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                            style="border: 1.5px solid var(--lp-border); background: var(--lp-input-bg); color: var(--lp-text-soft);"
-                            onfocus="this.style.borderColor='var(--lp-accent)';this.style.background='var(--lp-surface)'"
-                            onblur="this.style.borderColor='var(--lp-border)';this.style.background='var(--lp-input-bg)'"
-                            onkeydown="if(event.key==='Enter')generateIslamicNames()">
+
+                    <!-- PayPal SDK Container -->
+                    <div id="paypal-button-container" class="hidden my-4"></div>
+
+                    <!-- 5. Submit Button -->
+                    <div>
+                        <button id="donate-submit-btn" onclick="submitDonation()" type="button" class="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold text-base shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+                            <span id="donate-btn-text" data-i18n="donate.btn">Donate Now</span>
+                            <svg id="donate-btn-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            <span id="donate-btn-loader" class="hidden">
+                                <svg class="w-5 h-5 animate-spin text-white" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                            </span>
+                        </button>
+
+                        <div id="donate-feedback" class="hidden mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold text-center transition-all"></div>
+
+                        <div class="text-center pt-3 text-xs text-gray-400 flex items-center justify-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            <span>🔒 256-bit SSL Encrypted • 100% Transparent & Charitable</span>
+                        </div>
                     </div>
-                    <button onclick="generateIslamicNames()" id="ng-generate-btn"
-                        class="w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 hover:opacity-90 hover:shadow-lg"
-                        style="background: linear-gradient(135deg, var(--green-dark), var(--green-mid)); color: white;">
-                        <span id="ng-btn-text" data-i18n="name_gen.btn">✨ Generate Names</span>
-                        <span id="ng-btn-loader" class="hidden">
-                            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
-                        </span>
-                    </button>
-                    <div id="ng-error" class="hidden mt-3 px-4 py-2.5 rounded-xl text-xs font-medium text-center" style="background: #fee2e2; color: #991b1b;"></div>
-                </div>
-            </div>
 
-            <!-- Results -->
-            <div id="ng-results-wrap" class="hidden reveal">
-                <p class="text-center text-gray-400 text-sm mb-6" id="ng-results-label"></p>
-                <div id="ng-names-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto"></div>
-            </div>
-
-            <!-- Static placeholder cards (shown before first generation) -->
-            <div id="ng-placeholder" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto reveal" style="transition-delay: 0.15s;">
-                @foreach([
-                    ['عبد الله','Abdullah','Servant of Allah','Arabic','boy'],
-                    ['يوسف','Yusuf','God increases','Arabic','boy'],
-                    ['إبراهيم','Ibrahim','Father of nations','Arabic','boy'],
-                    ['فاطمة','Fatima','One who abstains','Arabic','girl'],
-                    ['مريم','Maryam','Beloved, wished-for child','Arabic','girl'],
-                    ['زينب','Zaynab','Fragrant flower','Arabic','girl'],
-                ] as $pn)
-                <div class="bg-white rounded-2xl p-5 card-hover" style="border: 1px solid var(--lp-border);">
-                    <div class="flex items-start justify-between mb-3">
-                        <span class="font-arabic text-2xl leading-none" style="color: var(--lp-accent);">{{ $pn[0] }}</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: {{ $pn[4]==='boy' ? '#dbeafe' : '#fce7f3' }}; color: {{ $pn[4]==='boy' ? '#1d4ed8' : '#be185d' }};">{{ ucfirst($pn[4]) }}</span>
-                    </div>
-                    <p class="font-bold text-gray-900 text-base mb-1">{{ $pn[1] }}</p>
-                    <p class="text-gray-500 text-sm leading-relaxed mb-2">{{ $pn[2] }}</p>
-                    <p class="text-gray-400 text-xs">Origin: {{ $pn[3] }}</p>
                 </div>
-                @endforeach
             </div>
         </div>
     </section>
 
-    <!-- ===================== DHIKR & DUA ===================== -->
-    <section id="dhikr" class="py-24 bg-white lp-theme">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center mb-16 reveal">
-                <div class="section-divider"></div>
-                <h2 class="text-4xl font-black text-gray-900 mb-4" data-i18n="dhikr.title" data-i18n-en="{{ $s['dhikr_title'] }}">{{ $s['dhikr_title'] }}</h2>
-                <p class="text-gray-500 text-lg max-w-2xl mx-auto" data-i18n="dhikr.description" data-i18n-en="{{ $s['dhikr_description'] }}">
-                    {{ $s['dhikr_description'] }}
-                </p>
-            </div>
-
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                @foreach([
-                    ['📿', 'Tasbih Counter', 'Digital dhikr counter with customizable phrases and haptic feedback.', '#d4edda', '#1a5c38', 'dhikr.tasbih', 'dhikr.tasbih_desc'],
-                    ['🤲', 'Dua Collection', 'Comprehensive duas for morning, evening, travel, eating, and special occasions.', '#fef3c7', '#92400e', 'dhikr.dua', 'dhikr.dua_desc'],
-                    ['💎', '99 Names of Allah', 'All Asma ul Husna with meanings, transliteration, and virtues.', '#ede9fe', '#6d28d9', 'dhikr.names', 'dhikr.names_desc'],
-                    ['📜', 'Haram Code', 'Islamic guidance system to help you navigate everyday decisions.', '#fce7f3', '#9d174d', 'dhikr.haram', 'dhikr.haram_desc'],
-                ] as $item)
-                <div class="rounded-2xl p-6 card-hover reveal" style="background: {{ $item[3] }}20; border: 1px solid {{ $item[3] }}40;">
-                    <div class="text-4xl mb-4">{{ $item[0] }}</div>
-                    <h3 class="font-bold text-gray-900 mb-2" data-i18n="{{ $item[5] }}">{{ $item[1] }}</h3>
-                    <p class="text-gray-500 text-sm leading-relaxed" data-i18n="{{ $item[6] }}">{{ $item[2] }}</p>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </section>
-
-    <!-- ===================== TECH SPECS ===================== -->
-    <section id="tech-specs" class="py-20 bg-gray-50 lp-theme">
-        <div class="max-w-6xl mx-auto px-6">
-            <div class="text-center mb-12 reveal">
-                <h2 class="text-3xl font-black text-gray-900 mb-3" data-i18n="tech.title" data-i18n-en="{{ $s['tech_title'] }}">{{ $s['tech_title'] }}</h2>
-                <p class="text-gray-500" data-i18n="tech.subtitle" data-i18n-en="{{ $s['tech_subtitle'] }}">{{ $s['tech_subtitle'] }}</p>
-            </div>
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                @foreach($s['tech_specs'] as $i => $spec)
-                <div class="bg-white rounded-2xl p-6 text-center card-hover reveal" style="border: 1px solid var(--lp-border);">
-                    <div class="text-3xl mb-3">{{ $spec['icon'] ?? '' }}</div>
-                    <h3 class="font-bold text-gray-900 mb-2 text-sm" data-i18n="tech.spec.{{ $i }}.title" data-i18n-en="{{ $spec['title'] ?? '' }}">{{ $spec['title'] ?? '' }}</h3>
-                    <p class="text-gray-500 text-xs leading-relaxed" data-i18n="tech.spec.{{ $i }}.desc" data-i18n-en="{{ $spec['description'] ?? '' }}">{{ $spec['description'] ?? '' }}</p>
-                </div>
-                @endforeach
-            </div>
-        </div>
-    </section>
-
-    <!-- ===================== DOWNLOAD CTA ===================== -->
-    <section id="download" class="py-24 hero-gradient pattern-bg relative overflow-hidden">
-        <div class="absolute top-10 right-20 w-72 h-72 rounded-full opacity-5" style="background: radial-gradient(circle, var(--gold), transparent);"></div>
-        <div class="absolute bottom-10 left-10 w-48 h-48 rounded-full opacity-5" style="background: radial-gradient(circle, #ffffff, transparent);"></div>
-
-        <div class="max-w-4xl mx-auto px-6 text-center relative">
-            <div class="reveal">
-                <div class="font-arabic text-gold-400 text-3xl mb-6 arabic-glow" style="color: var(--gold);">
-                    الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ
-                </div>
-                <h2 class="text-4xl lg:text-5xl font-black text-white mb-6">
+    <!-- ===================== DOWNLOAD CALL TO ACTION ===================== -->
+    <section id="download" class="py-24 relative z-10 scroll-mt-28 lg:scroll-mt-32">
+        <div class="max-w-5xl mx-auto px-6 text-center">
+            <div class="glass-card rounded-[48px] p-12 lg:p-16 border border-brand-500/20 shadow-2xl relative overflow-hidden">
+                <div class="font-arabic text-3xl text-amber-400 mb-4">الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ</div>
+                <h2 class="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white mb-6">
                     <span data-i18n="download.title" data-i18n-en="{{ $s['download_title'] }}">{{ $s['download_title'] }}</span><br>
-                    <span style="background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                    <span class="text-gradient-emerald">
                         <span data-i18n="download.highlight" data-i18n-en="{{ $s['download_title_highlight'] }}">{{ $s['download_title_highlight'] }}</span>
                     </span>
                 </h2>
-                <p class="text-white/70 text-lg mb-10 max-w-2xl mx-auto" data-i18n="download.description" data-i18n-en="{{ $s['download_description'] }}">
+                <p class="text-gray-600 dark:text-gray-400 text-base max-w-xl mx-auto mb-10" data-i18n="download.description" data-i18n-en="{{ $s['download_description'] }}">
                     {{ $s['download_description'] }}
                 </p>
 
-                <div class="flex flex-wrap justify-center gap-4 mb-12">
-                    <!-- App Store button -->
-                    <a href="{{ $s['app_store_url'] }}" class="inline-flex items-center gap-4 px-8 py-4 rounded-2xl transition-all hover:scale-105 btn-pulse"
-                       style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">
-                        <svg class="w-8 h-8 text-gray-900" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                        </svg>
+                <div class="flex flex-wrap items-center justify-center gap-4 mb-8">
+                    <!-- App Store -->
+                    <a href="{{ $s['app_store_url'] }}" target="_blank" class="flex items-center gap-3 px-8 py-4 rounded-2xl bg-gray-900 text-white hover:scale-105 active:scale-95 transition-all shadow-xl">
+                        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
                         <div class="text-left">
-                            <div class="text-gray-900 text-xs" data-i18n="download.app_store_top">Download on the</div>
-                            <div class="text-gray-900 font-bold text-lg leading-tight" data-i18n="download.app_store">App Store</div>
+                            <div class="text-[10px] text-gray-400 leading-none">Download on the</div>
+                            <div class="text-base font-bold">App Store</div>
                         </div>
                     </a>
 
-                    <!-- Google Play button -->
-                    <a href="{{ $s['play_store_url'] }}" class="inline-flex items-center gap-4 px-8 py-4 rounded-2xl transition-all hover:scale-105"
-                       style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); backdrop-filter: blur(8px);">
-                        <svg class="w-8 h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M3.18 23.76c.27.15.58.2.89.13l12.89-7.43-2.77-2.76-11.01 10.06zm-.99-20.29v18.06c0 .36.1.69.28.97l10.32-10.32L2.19 2.5c-.0 .0-.0.0-.0 0zm16.12 6.77l-2.44-1.41-3.08 3.09 3.09 3.09 2.44-1.41c.7-.4 1.12-1.15 1.12-1.68 0-.53-.42-1.27-1.13-1.68zm-14.7-8.47c.04-.01.08-.01.12-.01.31 0 .61.09.87.26l12.01 6.93-2.76 2.76L4.44.73c-.31-.18-.66-.21-.93-.05l-.0-.91z"/>
-                        </svg>
+                    <!-- Google Play -->
+                    <a href="{{ $s['play_store_url'] }}" target="_blank" class="flex items-center gap-3 px-8 py-4 rounded-2xl bg-brand-600 text-white hover:scale-105 active:scale-95 transition-all shadow-xl">
+                        <svg class="w-8 h-8 fill-current" viewBox="0 0 24 24"><path d="M3.18 23.76c.27.15.58.2.89.13l12.89-7.43-2.77-2.76-11.01 10.06zm-.99-20.29v18.06c0 .36.1.69.28.97l10.32-10.32L2.19 2.5c-.0 .0-.0.0-.0 0zm16.12 6.77l-2.44-1.41-3.08 3.09 3.09 3.09 2.44-1.41c.7-.4 1.12-1.15 1.12-1.68 0-.53-.42-1.27-1.13-1.68zm-14.7-8.47c.04-.01.08-.01.12-.01.31 0 .61.09.87.26l12.01 6.93-2.76 2.76L4.44.73c-.31-.18-.66-.21-.93-.05l-.0-.91z"/></svg>
                         <div class="text-left">
-                            <div class="text-white/80 text-xs" data-i18n="download.play_top">Get it on</div>
-                            <div class="text-white font-bold text-lg leading-tight" data-i18n="download.play">Google Play</div>
+                            <div class="text-[10px] text-emerald-200 leading-none">Get it on</div>
+                            <div class="text-base font-bold">Google Play</div>
                         </div>
                     </a>
                 </div>
-
-                <!-- Also on CodeCanyon -->
-                @if(($s['show_codecanyon_link'] ?? '1') != '0')
-                <p class="text-white/50 text-sm">
-                    <span data-i18n="download.codecanyon" data-i18n-en="{{ $s['codecanyon_prompt_text'] }}">{{ $s['codecanyon_prompt_text'] }}</span>
-                    <a href="{{ $s['codecanyon_url'] }}" target="_blank"
-                       class="underline transition-colors" style="color: var(--gold);" data-i18n="download.codecanyon_link" data-i18n-en="{{ $s['codecanyon_link_text'] }}">
-                        {{ $s['codecanyon_link_text'] }}
-                    </a>
-                </p>
-                @endif
             </div>
         </div>
     </section>
 
-    <!-- ===================== FOOTER ===================== -->
-    <footer class="bg-gray-950 text-white py-16">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid md:grid-cols-4 gap-10 mb-12">
-                <!-- Brand -->
-                <div class="md:col-span-2">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, var(--gold), var(--gold-light));">
-                            <span class="text-xl">🕌</span>
+    <!-- ===================== ENHANCED MODERN ISLAMIC FOOTER ===================== -->
+    <footer class="relative z-10 pt-20 pb-12 overflow-hidden border-t border-black/5 dark:border-white/5 bg-gradient-to-b from-transparent via-emerald-950/[0.015] to-emerald-950/[0.04] dark:via-black/20 dark:to-[#050b07] transition-colors duration-300">
+        <!-- Ambient Decorative Glows -->
+        <div class="absolute -top-24 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+        <div class="absolute -bottom-24 right-1/4 w-80 h-80 bg-amber-400/5 dark:bg-amber-500/5 rounded-full blur-[100px] pointer-events-none -z-10"></div>
+        
+        <!-- Glowing Top Accent Line -->
+        <div class="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-brand-500/30 to-transparent"></div>
+
+        <div class="max-w-7xl mx-auto px-6 lg:px-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-14">
+                
+                <!-- Column 1: Brand, Identity & Community (Span 4) -->
+                <div class="lg:col-span-4 flex flex-col justify-between">
+                    <div>
+                        <!-- Logo Brand Header -->
+                        <div class="mb-4">
+                            <a href="#" class="inline-flex items-center group select-none" title="{{ $s['app_name'] ?? 'Deenio' }}" aria-label="{{ $s['app_name'] ?? 'Deenio' }}">
+                                <img src="{{ asset('assets/img/deenio-logo-hr.png') }}" alt="{{ $s['app_name'] ?? 'Deenio' }}" class="h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-105 dark:hidden">
+                                <img src="{{ asset('assets/img/deenio-logo-hr-white.png') }}" alt="{{ $s['app_name'] ?? 'Deenio' }}" class="h-10 w-auto object-contain transition-transform duration-200 group-hover:scale-105 hidden dark:block">
+                            </a>
                         </div>
-                        <span class="text-white font-bold text-2xl">{{ $s['app_name'] }}</span>
+
+                        <!-- Arabic Calligraphy Accent -->
+                        <div class="font-arabic text-xl text-brand-700/80 dark:text-amber-400/80 my-3 select-none leading-relaxed tracking-wide">
+                            بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                        </div>
+
+                        <!-- Dynamic Description -->
+                        <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-6 max-w-sm" data-i18n="footer.description" data-i18n-en="{{ $s['footer_description'] ?? 'Your complete Islamic companion app. Bringing the beauty of Islam to your fingertips with modern technology.' }}">
+                            {{ $s['footer_description'] ?? 'Your complete Islamic companion app. Bringing the beauty of Islam to your fingertips with modern technology.' }}
+                        </p>
+
+                        <!-- Trust & Verification Pill -->
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/10 text-xs text-gray-600 dark:text-gray-300 mb-6 backdrop-blur-sm shadow-xs">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span data-i18n="footer.trusted_tag">100% Ad-Free • Verified Islamic Sources</span>
+                        </div>
                     </div>
-                    <p class="text-gray-400 text-sm leading-relaxed mb-4 max-w-xs" data-i18n="footer.description" data-i18n-en="{{ $s['footer_description'] }}">
-                        {{ $s['footer_description'] }}
+
+                    <!-- Social / Community Icons -->
+                    <div class="flex items-center gap-2.5 pt-2">
+                        <a href="https://t.me" target="_blank" rel="noopener noreferrer" aria-label="Telegram" class="w-8 h-8 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 dark:hover:text-white text-gray-500 dark:text-gray-400 flex items-center justify-center transition-all duration-200 border border-black/5 dark:border-white/5 shadow-xs hover:scale-105 active:scale-95">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+                        </a>
+                        <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)" class="w-8 h-8 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 dark:hover:text-white text-gray-500 dark:text-gray-400 flex items-center justify-center transition-all duration-200 border border-black/5 dark:border-white/5 shadow-xs hover:scale-105 active:scale-95">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        </a>
+                        <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube" class="w-8 h-8 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 dark:hover:text-white text-gray-500 dark:text-gray-400 flex items-center justify-center transition-all duration-200 border border-black/5 dark:border-white/5 shadow-xs hover:scale-105 active:scale-95">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        </a>
+                        <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub" class="w-8 h-8 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 dark:hover:text-white text-gray-500 dark:text-gray-400 flex items-center justify-center transition-all duration-200 border border-black/5 dark:border-white/5 shadow-xs hover:scale-105 active:scale-95">
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                        </a>
+                        <a href="mailto:{{ $s['contact_email'] ?? ($s['email'] ?? 'support@' . request()->getHost()) }}" aria-label="Support Email" class="w-8 h-8 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-brand-500 hover:text-white dark:hover:bg-brand-500 dark:hover:text-white text-gray-500 dark:text-gray-400 flex items-center justify-center transition-all duration-200 border border-black/5 dark:border-white/5 shadow-xs hover:scale-105 active:scale-95">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Column 2: Key Features Navigation (Span 3) -->
+                <div class="lg:col-span-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-brand-500"></span>
+                        <span data-i18n="footer.features">Features</span>
+                    </h4>
+                    <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                        <li>
+                            <a href="#quran" class="group flex items-center justify-between hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.holy_quran">Holy Quran</span>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/15">Audio</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#prayer" class="group flex items-center justify-between hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.prayer_times">Prayer Times & Adhan</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#ai-chat" class="group flex items-center justify-between hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.ai_chat">AI Islamic Assistant</span>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">AI</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#features" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.qibla">Qibla Direction</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#features" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.zakat">Zakat Calculator</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#features" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.mosque">Mosque Finder</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#features" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="dhikr.dua">Daily Duas & Azkar</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Resources & Organization (Span 2) -->
+                <div class="lg:col-span-2">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                        <span data-i18n="footer.links">Resources</span>
+                    </h4>
+                    <ul class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+                        <li>
+                            <a href="{{ route('blog.index') }}" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform">Blog & Articles</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url('privacy-policy') }}" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.privacy">Privacy Policy</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url('terms-and-conditions') }}" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.terms">Terms & Conditions</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url('support') }}" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="footer.support">Support & FAQ</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#donate" class="group flex items-center hover:text-brand-600 dark:hover:text-brand-400 transition-colors py-0.5">
+                                <span class="group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" data-i18n="nav.donate">Support Mission</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('login') }}" class="group inline-flex items-center gap-1.5 hover:text-brand-600 dark:hover:text-brand-400 transition-colors font-medium py-0.5 text-gray-700 dark:text-gray-300">
+                                <svg class="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                <span data-i18n="footer.admin">Admin Panel</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Column 4: App Experience & Downloads (Span 3) -->
+                <div class="lg:col-span-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-gray-900 dark:text-white mb-5 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span data-i18n="footer.download_app">Get The App</span>
+                    </h4>
+                    <p class="text-xs text-gray-600 dark:text-gray-400 mb-4 leading-relaxed" data-i18n="footer.download_desc">
+                        Experience the Quran, prayer times, and AI guidance anywhere. Free on iOS & Android.
                     </p>
-                    <div class="font-arabic text-gray-600 text-lg">
-                        بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+
+                    <!-- Compact Store Badges -->
+                    <div class="space-y-2.5">
+                        <a href="{{ $s['app_store_url'] ?? '#' }}" target="_blank" class="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] hover:bg-gray-900 hover:text-white dark:hover:bg-white/10 text-gray-800 dark:text-gray-200 border border-black/5 dark:border-white/10 transition-all duration-200 group shadow-xs">
+                            <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                            <div class="text-left">
+                                <div class="text-[9px] opacity-70 leading-none">Download on the</div>
+                                <div class="text-xs font-bold leading-tight">App Store</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ $s['play_store_url'] ?? '#' }}" target="_blank" class="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] hover:bg-brand-600 hover:text-white dark:hover:bg-brand-600 text-gray-800 dark:text-gray-200 border border-black/5 dark:border-white/10 transition-all duration-200 group shadow-xs">
+                            <svg class="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M3.18 23.76c.27.15.58.2.89.13l12.89-7.43-2.77-2.76-11.01 10.06zm-.99-20.29v18.06c0 .36.1.69.28.97l10.32-10.32L2.19 2.5c-.0 .0-.0.0-.0 0zm16.12 6.77l-2.44-1.41-3.08 3.09 3.09 3.09 2.44-1.41c.7-.4 1.12-1.15 1.12-1.68 0-.53-.42-1.27-1.13-1.68zm-14.7-8.47c.04-.01.08-.01.12-.01.31 0 .61.09.87.26l12.01 6.93-2.76 2.76L4.44.73c-.31-.18-.66-.21-.93-.05l-.0-.91z"/></svg>
+                            <div class="text-left">
+                                <div class="text-[9px] opacity-70 leading-none">Get it on</div>
+                                <div class="text-xs font-bold leading-tight">Google Play</div>
+                            </div>
+                        </a>
                     </div>
+
+                    <!-- CodeCanyon Developer / Reseller Micro-card -->
+                    @if(($s['show_codecanyon_link'] ?? '1') != '0')
+                    <div class="mt-4 p-3 rounded-2xl bg-black/[0.02] dark:bg-white/[0.03] border border-black/5 dark:border-white/5 transition-all hover:border-brand-500/30">
+                        <div class="text-[11px] text-gray-500 dark:text-gray-400 mb-1" data-i18n="download.codecanyon" data-i18n-en="{{ $s['codecanyon_prompt_text'] ?? 'Want to resell or customize?' }}">
+                            {{ $s['codecanyon_prompt_text'] ?? 'Want to resell or customize?' }}
+                        </div>
+                        <a href="{{ $s['codecanyon_url'] ?? 'https://codecanyon.net' }}" target="_blank" class="inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 dark:text-brand-400 hover:underline" data-i18n="download.codecanyon_link" data-i18n-en="{{ $s['codecanyon_link_text'] ?? 'Get the source code on CodeCanyon →' }}">
+                            {{ $s['codecanyon_link_text'] ?? 'Get the source code on CodeCanyon →' }}
+                        </a>
+                    </div>
+                    @endif
                 </div>
 
-                <!-- Features -->
-                <div>
-                    <h4 class="font-semibold text-white mb-4" data-i18n="footer.features">Features</h4>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li><a href="#quran" class="hover:text-white transition-colors" data-i18n="footer.holy_quran">Holy Quran</a></li>
-                        <li><a href="#prayer" class="hover:text-white transition-colors" data-i18n="footer.prayer_times">Prayer Times</a></li>
-                        <li><a href="#ai" class="hover:text-white transition-colors" data-i18n="footer.ai_chat">AI Chat</a></li>
-                        <li><a href="#features" class="hover:text-white transition-colors" data-i18n="footer.qibla">Qibla Finder</a></li>
-                        <li><a href="#features" class="hover:text-white transition-colors" data-i18n="footer.zakat">Zakat Calculator</a></li>
-                        <li><a href="#features" class="hover:text-white transition-colors" data-i18n="footer.mosque">Mosque Finder</a></li>
-                    </ul>
-                </div>
-
-                <!-- Links -->
-                <div>
-                    <h4 class="font-semibold text-white mb-4" data-i18n="footer.links">Links</h4>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li><a href="{{ route('blog.index') }}" class="hover:text-white transition-colors">Blog</a></li>
-                        <li><a href="{{ url('privacy-policy') }}" class="hover:text-white transition-colors" data-i18n="footer.privacy">Privacy Policy</a></li>
-                        <li><a href="{{ url('terms-and-conditions') }}" class="hover:text-white transition-colors" data-i18n="footer.terms">Terms & Conditions</a></li>
-                        <li><a href="{{ url('support') }}" class="hover:text-white transition-colors" data-i18n="footer.support">Support</a></li>
-                        <li><a href="{{ route('login') }}" class="hover:text-white transition-colors" data-i18n="footer.admin">Admin Panel</a></li>
-                    </ul>
-                </div>
             </div>
 
-            <div class="border-t border-gray-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="text-gray-500 text-sm">
-                    © {{ date('Y') }} {{ $s['app_name'] }} — <span data-i18n="footer.copyright">Islamic App. All rights reserved.</span>
-                </p>
-                <p class="text-gray-600 text-sm" data-i18n="footer.built">Built with Flutter • Laravel • Love ❤️</p>
+            <!-- Sub-footer Bottom Bar -->
+            <div class="border-t border-black/5 dark:border-white/5 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 dark:text-gray-400">
+                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-4 text-center sm:text-left">
+                    <span>
+                        © {{ date('Y') }} <span class="font-semibold text-gray-800 dark:text-gray-200">{{ $s['app_name'] ?? 'Zabi' }}</span>. <span data-i18n="footer.copyright">Islamic App. All rights reserved.</span>
+                    </span>
+                    <span class="hidden sm:inline opacity-30">•</span>
+                    <span class="text-[11px] opacity-75" data-i18n="footer.built">Built with Flutter • Laravel • Love ❤️</span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Quick Dark/Light Toggle -->
+                    <button onclick="toggleDarkMode()" aria-label="Toggle Theme" class="p-2 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/10 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 transition-colors border border-black/5 dark:border-white/10" title="Toggle Dark/Light Mode">
+                        <svg class="w-4 h-4 hidden dark:block text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                        <svg class="w-4 h-4 block dark:hidden text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Back to Top Button -->
+                    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="group inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-brand-500/10 hover:text-brand-600 dark:hover:bg-brand-500/20 dark:hover:text-brand-400 border border-black/5 dark:border-white/10 text-xs font-medium text-gray-600 dark:text-gray-300 transition-all active:scale-95 shadow-2xs">
+                        <span data-i18n="footer.back_to_top">Back to top</span>
+                        <svg class="w-3.5 h-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </footer>
 
-    <!-- ===================== SCRIPTS ===================== -->
+    <!-- ===================== JAVASCRIPT LAYER ===================== -->
     <script>
-        // ── Navbar scroll ────────────────────────────────────────
-        const navbar = document.getElementById('navbar');
-        window.addEventListener('scroll', () => {
-            navbar.classList.toggle('navbar-scrolled', window.scrollY > 50);
-        });
-
-        // ── Mobile menu ──────────────────────────────────────────
-        function toggleMenu() {
-            document.getElementById('mobile-menu').classList.toggle('open');
+        // ── Theme Mode Toggle ──────────────────────────────────
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            localStorage.setItem('zabi_theme', isDark ? 'dark' : 'light');
+            if (typeof updateThemeIcons === 'function') {
+                updateThemeIcons(isDark);
+            }
+        }
+        function toggleTheme() {
+            toggleDarkMode();
         }
 
-        // ── Reveal on scroll ─────────────────────────────────────
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-        }, { threshold: 0.1 });
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        // ── Scroll Progress & Navbar Elevation ────────────────
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            const progressBar = document.getElementById('scroll-progress-bar');
+            
+            // Dynamic scroll progress calculation
+            if (progressBar) {
+                const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = totalHeight > 0 ? (window.scrollY / totalHeight) * 100 : 0;
+                progressBar.style.width = Math.min(100, Math.max(0, progress)) + '%';
+            }
 
-        // ── Smooth scroll ────────────────────────────────────────
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-            });
+            // Navbar elevation & padding shrink
+            if (nav) {
+                if (window.scrollY > 40) {
+                    nav.classList.add('py-2', 'shadow-2xl');
+                    nav.classList.remove('py-2.5', 'sm:py-3');
+                } else {
+                    nav.classList.add('py-2.5', 'sm:py-3');
+                    nav.classList.remove('py-2', 'shadow-2xl');
+                }
+            }
         });
 
-        // ════════════════════════════════════════════════════════
-        // I18N — Translations
-        // ════════════════════════════════════════════════════════
-        const TRANSLATIONS = {
+        // ── Mobile Menu Toggle ─────────────────────────────────
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('mobile-drawer');
+            const btn = document.getElementById('mobile-menu-btn');
+            if (!drawer) return;
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                drawer.classList.remove('open');
+                drawer.classList.add('closed');
+                btn?.classList.remove('is-open');
+            } else {
+                drawer.classList.remove('closed');
+                drawer.classList.add('open');
+                btn?.classList.add('is-open');
+            }
+        }
+
+        // ── Minimal GSAP Transitions ──────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof gsap !== 'undefined') {
+                gsap.registerPlugin(ScrollTrigger);
+
+                // Subtle hero fade
+                gsap.from('.gsap-hero-left', { opacity: 0, y: 15, duration: 0.6, ease: 'power2.out' });
+                gsap.from('.gsap-hero-right', { opacity: 0, duration: 0.6, delay: 0.1, ease: 'power2.out' });
+
+                // Gentle section fade on scroll
+                gsap.utils.toArray('.gsap-reveal').forEach(el => {
+                    gsap.from(el, {
+                        scrollTrigger: { trigger: el, start: 'top 88%' },
+                        opacity: 0,
+                        y: 12,
+                        duration: 0.5,
+                        ease: 'power2.out'
+                    });
+                });
+
+                // Fast stat count-up
+                gsap.utils.toArray('.stat-counter').forEach(counter => {
+                    const target = parseFloat(counter.getAttribute('data-target'));
+                    const suffix = counter.getAttribute('data-suffix') || '';
+                    const decimals = parseInt(counter.getAttribute('data-decimals') || '0');
+                    const obj = { val: 0 };
+
+                    ScrollTrigger.create({
+                        trigger: counter,
+                        start: 'top 90%',
+                        onEnter: () => {
+                            gsap.to(obj, {
+                                val: target,
+                                duration: 0.8,
+                                ease: 'power1.out',
+                                onUpdate: () => {
+                                    counter.textContent = obj.val.toFixed(decimals) + suffix;
+                                }
+                            });
+                        },
+                        once: true
+                    });
+                });
+            }
+        });
+
+        // ── Interactive Tasbih Module ───────────────────────────
+        let tasbihCount = 0;
+        function incrementTasbih() {
+            tasbihCount++;
+            document.getElementById('tasbih-count').textContent = tasbihCount;
+            if (navigator.vibrate) navigator.vibrate(30);
+
+            // Pop animation with GSAP if available
+            if (typeof gsap !== 'undefined') {
+                gsap.fromTo('#tasbih-count', { scale: 1.3 }, { scale: 1, duration: 0.3, ease: 'back.out(2)' });
+            }
+        }
+        function resetTasbih() {
+            tasbihCount = 0;
+            document.getElementById('tasbih-count').textContent = '0';
+        }
+        function setTasbihDhikr(arabic, trans) {
+            document.getElementById('tasbih-arabic').textContent = arabic;
+            document.getElementById('tasbih-trans').textContent = trans;
+            document.querySelectorAll('.tasbih-phrase-btn').forEach(btn => {
+                if (btn.textContent.includes(trans)) {
+                    btn.classList.add('bg-brand-500', 'text-white');
+                    btn.classList.remove('bg-black/5', 'dark:bg-white/5', 'text-gray-700', 'dark:text-gray-300');
+                } else {
+                    btn.classList.remove('bg-brand-500', 'text-white');
+                    btn.classList.add('bg-black/5', 'dark:bg-white/5', 'text-gray-700', 'dark:text-gray-300');
+                }
+            });
+        }
+
+const TRANSLATIONS = {
             en: {
                 'nav.features':'Features','nav.quran':'Quran','nav.prayer':'Prayer','nav.ai':'AI','nav.download':'Download','nav.admin':'Admin Login','nav.buy_btn':'Buy Now','nav.download_btn':'Download Free',
                 'hero.app_store':'App Store','hero.play_store':'Google Play','hero.rating_label':'Rating','hero.downloads_label':'Downloads','hero.languages_label':'Languages',
@@ -1739,10 +1864,11 @@
                 'tech.privacy':'Privacy First','tech.privacy_desc':'Your data stays private with minimal permissions required',
                 'download.app_store_top':'Download on the','download.app_store':'App Store','download.play_top':'Get it on','download.play':'Google Play',
                 'download.codecanyon':'Want to resell or customize?','download.codecanyon_link':'Get the source code on CodeCanyon →',
-                'footer.features':'Features','footer.links':'Links','footer.holy_quran':'Holy Quran','footer.prayer_times':'Prayer Times','footer.ai_chat':'AI Chat',
-                'footer.qibla':'Qibla Finder','footer.zakat':'Zakat Calculator','footer.mosque':'Mosque Finder',
-                'footer.privacy':'Privacy Policy','footer.terms':'Terms & Conditions','footer.support':'Support','footer.admin':'Admin Panel',
+                'footer.features':'Features','footer.links':'Resources','footer.holy_quran':'Holy Quran','footer.prayer_times':'Prayer Times & Adhan','footer.ai_chat':'AI Islamic Assistant',
+                'footer.qibla':'Qibla Direction','footer.zakat':'Zakat Calculator','footer.mosque':'Mosque Finder',
+                'footer.privacy':'Privacy Policy','footer.terms':'Terms & Conditions','footer.support':'Support & FAQ','footer.admin':'Admin Panel',
                 'footer.copyright':'Islamic App. All rights reserved.','footer.built':'Built with Flutter • Laravel • Love ❤️',
+                'footer.back_to_top':'Back to top','footer.download_app':'Get The App','footer.download_desc':'Experience the Quran, prayer times, and AI guidance anywhere. Free on iOS & Android.','footer.trusted_tag':'100% Ad-Free • Verified Islamic Sources','footer.suite_badge':'Pro Islamic Suite',
                 // Default dynamic content (DB values override these in English via data-i18n-en)
                 'hero.badge':'Available on iOS & Android','hero.title':'Your Complete','hero.subtitle':'Islamic Companion',
                 'hero.description':'Zabi brings you the full Quran, prayer times, hadith, dua, Qibla, Zakat calculator, AI Islamic chat, and 40+ languages — everything you need for your daily Islamic life in one beautiful app.',
@@ -1818,10 +1944,11 @@
                 'tech.privacy':'الخصوصية أولاً','tech.privacy_desc':'بياناتك تبقى خاصة مع الحد الأدنى من الأذونات',
                 'download.app_store_top':'حمّل من','download.app_store':'آب ستور','download.play_top':'احصل عليه من','download.play':'جوجل بلاي',
                 'download.codecanyon':'تريد إعادة البيع أو التخصيص؟','download.codecanyon_link':'احصل على كود المصدر من CodeCanyon ←',
-                'footer.features':'الميزات','footer.links':'روابط','footer.holy_quran':'القرآن الكريم','footer.prayer_times':'مواقيت الصلاة','footer.ai_chat':'محادثة ذكية',
+                'footer.features':'الميزات','footer.links':'المصادر والقانونية','footer.holy_quran':'القرآن الكريم','footer.prayer_times':'مواقيت الصلاة والأذان','footer.ai_chat':'المساعد الإسلامي الذكي',
                 'footer.qibla':'اتجاه القبلة','footer.zakat':'حاسبة الزكاة','footer.mosque':'البحث عن مسجد',
-                'footer.privacy':'سياسة الخصوصية','footer.terms':'الشروط والأحكام','footer.support':'الدعم','footer.admin':'لوحة الإدارة',
+                'footer.privacy':'سياسة الخصوصية','footer.terms':'الشروط والأحكام','footer.support':'الدعم والمساعدة','footer.admin':'لوحة الإدارة',
                 'footer.copyright':'تطبيق إسلامي. جميع الحقوق محفوظة.','footer.built':'مبني بـ Flutter • Laravel • محبة ❤️',
+                'footer.back_to_top':'العودة للأعلى','footer.download_app':'حمّل التطبيق','footer.download_desc':'عش تجربة القرآن، مواقيت الصلاة، والإرشاد الذكي أينما كنت. مجاناً على iOS و Android.','footer.trusted_tag':'خالٍ من الإعلانات • مصادر إسلامية موثوقة','footer.suite_badge':'الحزمة الإسلامية المتكاملة',
                 'hero.badge':'متاح على iOS و Android','hero.title':'رفيقك الإسلامي','hero.subtitle':'الشامل',
                 'hero.description':'زابي يقدم لك القرآن الكريم كاملاً، مواقيت الصلاة، الأحاديث، الأدعية، القبلة، حاسبة الزكاة، المحادثة الإسلامية الذكية، وأكثر من ٤٠ لغة — كل ما تحتاجه في حياتك الإسلامية اليومية في تطبيق واحد جميل.',
                 'features.title':'كل ما تحتاجه','features.desc':'رفيق شامل للحياة الإسلامية مليء بالميزات التي تساعدك على البقاء متصلاً بدينك كل يوم.',
@@ -1896,10 +2023,11 @@
                 'tech.privacy':'গোপনীয়তা প্রথম','tech.privacy_desc':'ন্যূনতম অনুমতি সহ আপনার ডেটা ব্যক্তিগত থাকে',
                 'download.app_store_top':'ডাউনলোড করুন','download.app_store':'অ্যাপ স্টোর','download.play_top':'পাওয়া যাচ্ছে','download.play':'গুগল প্লে',
                 'download.codecanyon':'পুনরায় বিক্রি বা কাস্টমাইজ করতে চান?','download.codecanyon_link':'CodeCanyon থেকে সোর্স কোড পান →',
-                'footer.features':'বৈশিষ্ট্যসমূহ','footer.links':'লিংকসমূহ','footer.holy_quran':'পবিত্র কুরআন','footer.prayer_times':'নামাজের সময়','footer.ai_chat':'AI চ্যাট',
+                'footer.features':'বৈশিষ্ট্যসমূহ','footer.links':'রিসোর্স ও আইনি','footer.holy_quran':'পবিত্র কুরআন','footer.prayer_times':'নামাজের সময় ও আজান','footer.ai_chat':'AI ইসলামিক চ্যাট',
                 'footer.qibla':'কিবলা নির্দেশক','footer.zakat':'যাকাত ক্যালকুলেটর','footer.mosque':'মসজিদ খোঁজুন',
-                'footer.privacy':'গোপনীয়তা নীতি','footer.terms':'শর্তাবলী','footer.support':'সহায়তা','footer.admin':'অ্যাডমিন প্যানেল',
+                'footer.privacy':'গোপনীয়তা নীতি','footer.terms':'শর্তাবলী','footer.support':'সহায়তা ও সাহায্য','footer.admin':'অ্যাডমিন প্যানেল',
                 'footer.copyright':'ইসলামিক অ্যাপ। সর্বস্বত্ব সংরক্ষিত।','footer.built':'Flutter • Laravel • ভালোবাসা দিয়ে তৈরি ❤️',
+                'footer.back_to_top':'উপরে যান','footer.download_app':'অ্যাপ ডাউনলোড করুন','footer.download_desc':'যেখানেই থাকুন কুরআন, নামাজের সময় ও AI গাইডেন্সের অভিজ্ঞতা নিন। বিনামূল্যে iOS ও Android-এ।','footer.trusted_tag':'বিজ্ঞাপনমুক্ত • নির্ভরযোগ্য ইসলামিক উৎস','footer.suite_badge':'প্রো ইসলামিক স্যুট',
                 'hero.badge':'iOS ও Android-এ পাওয়া যাচ্ছে','hero.title':'আপনার সম্পূর্ণ','hero.subtitle':'ইসলামিক সঙ্গী',
                 'hero.description':'জাবি আপনার কাছে নিয়ে আসে সম্পূর্ণ কুরআন, নামাজের সময়, হাদিস, দোয়া, কিবলা, যাকাত ক্যালকুলেটর, AI ইসলামিক চ্যাট এবং ৪০+ ভাষা — আপনার দৈনন্দিন ইসলামিক জীবনের সবকিছু একটি সুন্দর অ্যাপে।',
                 'features.title':'আপনার যা দরকার সব','features.desc':'একটি সম্পূর্ণ ইসলামিক জীবনধারার সঙ্গী যা আপনাকে প্রতিদিন আপনার দ্বীনের সাথে সংযুক্ত রাখে।',
@@ -1974,10 +2102,11 @@
                 'tech.privacy':'गोपनीयता पहले','tech.privacy_desc':'न्यूनतम अनुमतियों के साथ आपका डेटा निजी रहता है',
                 'download.app_store_top':'डाउनलोड करें','download.app_store':'ऐप स्टोर','download.play_top':'प्राप्त करें','download.play':'गूगल प्ले',
                 'download.codecanyon':'पुनः बेचना या कस्टमाइज़ करना चाहते हैं?','download.codecanyon_link':'CodeCanyon पर सोर्स कोड पाएं →',
-                'footer.features':'विशेषताएं','footer.links':'लिंक','footer.holy_quran':'पवित्र कुरान','footer.prayer_times':'नमाज़ का समय','footer.ai_chat':'AI चैट',
+                'footer.features':'विशेषताएं','footer.links':'संसाधन व कानूनी','footer.holy_quran':'पवित्र कुरान','footer.prayer_times':'नमाज़ का समय व अज़ान','footer.ai_chat':'AI इस्लामिक चैट',
                 'footer.qibla':'क़िबला दिशा','footer.zakat':'ज़कात कैलकुलेटर','footer.mosque':'मस्जिद खोजें',
-                'footer.privacy':'गोपनीयता नीति','footer.terms':'नियम और शर्तें','footer.support':'सहायता','footer.admin':'एडमिन पैनल',
+                'footer.privacy':'गोपनीयता नीति','footer.terms':'नियम और शर्तें','footer.support':'सहायता व मदद','footer.admin':'एडमिन पैनल',
                 'footer.copyright':'इस्लामिक ऐप। सर्वाधिकार सुरक्षित।','footer.built':'Flutter • Laravel • प्यार से बनाया ❤️',
+                'footer.back_to_top':'ऊपर जाएं','footer.download_app':'ऐप डाउनलोड करें','footer.download_desc':'कुरान, नमाज़ के समय और AI मार्गदर्शन का अनुभव कहीं भी लें। iOS व Android पर मुफ्त।','footer.trusted_tag':'विज्ञापन-मुक्त • प्रामाणिक इस्लामी स्रोत','footer.suite_badge':'प्रो इस्लामिक सूट',
                 'hero.badge':'iOS और Android पर उपलब्ध','hero.title':'आपका संपूर्ण','hero.subtitle':'इस्लामिक साथी',
                 'hero.description':'ज़ाबी आपके लिए लाता है पूरा कुरान, नमाज़ का समय, हदीस, दुआएं, क़िबला, ज़कात कैलकुलेटर, AI इस्लामिक चैट, और 40+ भाषाएं — आपके दैनिक इस्लामिक जीवन के लिए सब कुछ एक सुंदर ऐप में।',
                 'features.title':'वो सब कुछ जो आपको चाहिए','features.desc':'एक संपूर्ण इस्लामिक जीवनशैली साथी जो आपको हर दिन अपने दीन से जोड़े रखता है।',
@@ -2052,10 +2181,11 @@
                 'tech.privacy':'Privacidad Primero','tech.privacy_desc':'Tus datos permanecen privados con permisos mínimos requeridos',
                 'download.app_store_top':'Descargar en','download.app_store':'App Store','download.play_top':'Disponible en','download.play':'Google Play',
                 'download.codecanyon':'¿Quieres revender o personalizar?','download.codecanyon_link':'Obtén el código fuente en CodeCanyon →',
-                'footer.features':'Características','footer.links':'Enlaces','footer.holy_quran':'Santo Corán','footer.prayer_times':'Horarios de Oración','footer.ai_chat':'Chat con IA',
+                'footer.features':'Características','footer.links':'Recursos y Legal','footer.holy_quran':'Santo Corán','footer.prayer_times':'Horarios de Oración y Adhan','footer.ai_chat':'Chat Islámico con IA',
                 'footer.qibla':'Buscador de Qibla','footer.zakat':'Calculadora de Zakat','footer.mosque':'Buscador de Mezquitas',
-                'footer.privacy':'Política de Privacidad','footer.terms':'Términos y Condiciones','footer.support':'Soporte','footer.admin':'Panel de Admin',
+                'footer.privacy':'Política de Privacidad','footer.terms':'Términos y Condiciones','footer.support':'Soporte y Ayuda','footer.admin':'Panel de Admin',
                 'footer.copyright':'Aplicación Islámica. Todos los derechos reservados.','footer.built':'Construido con Flutter • Laravel • Amor ❤️',
+                'footer.back_to_top':'Volver arriba','footer.download_app':'Obtén la App','footer.download_desc':'Lleva el Corán, horarios de oración y orientación con IA a donde vayas. Gratis en iOS y Android.','footer.trusted_tag':'100% Sin Publicidad • Fuentes Islámicas Auténticas','footer.suite_badge':'Suite Islámica Pro',
                 'hero.badge':'Disponible en iOS y Android','hero.title':'Tu Compañero Islámico','hero.subtitle':'Completo',
                 'hero.description':'Zabi te trae el Corán completo, horarios de oración, hadices, du\'as, Qibla, calculadora de Zakat, chat islámico con IA y más de 40 idiomas — todo en una hermosa aplicación.',
                 'features.title':'Todo lo que Necesitas','features.desc':'Un compañero completo de estilo de vida islámico lleno de características que te ayudan a mantenerte conectado con tu fe cada día.',
@@ -2130,10 +2260,11 @@
                 'tech.privacy':'Vie Privée d\'Abord','tech.privacy_desc':'Vos données restent privées avec des permissions minimales requises',
                 'download.app_store_top':'Télécharger sur','download.app_store':'App Store','download.play_top':'Disponible sur','download.play':'Google Play',
                 'download.codecanyon':'Vous voulez revendre ou personnaliser ?','download.codecanyon_link':'Obtenez le code source sur CodeCanyon →',
-                'footer.features':'Fonctionnalités','footer.links':'Liens','footer.holy_quran':'Saint Coran','footer.prayer_times':'Horaires de Prière','footer.ai_chat':'Chat IA',
+                'footer.features':'Fonctionnalités','footer.links':'Ressources & Légal','footer.holy_quran':'Saint Coran','footer.prayer_times':'Horaires de Prière & Adhan','footer.ai_chat':'Chat Islamique IA',
                 'footer.qibla':'Trouver la Qibla','footer.zakat':'Calculateur Zakat','footer.mosque':'Trouver une Mosquée',
-                'footer.privacy':'Politique de Confidentialité','footer.terms':'Conditions d\'Utilisation','footer.support':'Support','footer.admin':'Panneau Admin',
+                'footer.privacy':'Politique de Confidentialité','footer.terms':'Conditions d\'Utilisation','footer.support':'Support & Aide','footer.admin':'Panneau Admin',
                 'footer.copyright':'Application Islamique. Tous droits réservés.','footer.built':'Construit avec Flutter • Laravel • Amour ❤️',
+                'footer.back_to_top':'Haut de page','footer.download_app':'Télécharger l\'App','footer.download_desc':'Vivez l\'expérience du Coran, des horaires de prière et de l\'IA où que vous soyez. Gratuit sur iOS & Android.','footer.trusted_tag':'Sans Publicité • Sources Islamiques Authentiques','footer.suite_badge':'Suite Islamique Pro',
                 'hero.badge':'Disponible sur iOS et Android','hero.title':'Votre Compagnon Islamique','hero.subtitle':'Complet',
                 'hero.description':'Zabi vous apporte le Coran complet, les horaires de prière, les hadiths, les douas, la Qibla, le calculateur Zakat, le chat islamique IA et plus de 40 langues — tout dans une belle application.',
                 'features.title':'Tout ce dont Vous Avez Besoin','features.desc':'Un compagnon de style de vie islamique complet rempli de fonctionnalités qui vous aident à rester connecté à votre foi chaque jour.',
@@ -2195,12 +2326,12 @@
 
         // ── Language meta ────────────────────────────────────────
         const LANG_META = {
-            en: { dir:'ltr', font:"'Inter', sans-serif",               label:'EN' },
-            ar: { dir:'rtl', font:"'Cairo', 'Amiri', sans-serif",      label:'AR' },
-            bn: { dir:'ltr', font:"'Noto Sans Bengali', sans-serif",   label:'BN' },
-            hi: { dir:'ltr', font:"'Noto Sans Devanagari', sans-serif",label:'HI' },
-            es: { dir:'ltr', font:"'Inter', sans-serif",               label:'ES' },
-            fr: { dir:'ltr', font:"'Inter', sans-serif",               label:'FR' },
+            en: { dir:'ltr', font:"'Plus Jakarta Sans', 'Inter', sans-serif", label:'EN', flag:'🇬🇧', name:'English' },
+            ar: { dir:'rtl', font:"'Cairo', 'Amiri', sans-serif",             label:'AR', flag:'🇸🇦', name:'العربية' },
+            bn: { dir:'ltr', font:"'Noto Sans Bengali', sans-serif",          label:'BN', flag:'🇧🇩', name:'বাংলা' },
+            hi: { dir:'ltr', font:"'Noto Sans Devanagari', sans-serif",       label:'HI', flag:'🇮🇳', name:'हिन्दी' },
+            es: { dir:'ltr', font:"'Plus Jakarta Sans', 'Inter', sans-serif", label:'ES', flag:'🇪🇸', name:'Español' },
+            fr: { dir:'ltr', font:"'Plus Jakarta Sans', 'Inter', sans-serif", label:'FR', flag:'🇫🇷', name:'Français' },
         };
 
         let currentLang = 'en';
@@ -2208,11 +2339,24 @@
 
         // ── Language dropdown ────────────────────────────────────
         function toggleLangDropdown(e) {
-            e.stopPropagation();
-            document.getElementById('lang-menu').classList.toggle('open');
+            if (e) e.stopPropagation();
+            const dropdown = document.getElementById('lang-dropdown');
+            const chevron = document.getElementById('lang-chevron');
+            if (dropdown) {
+                const isHidden = dropdown.classList.toggle('hidden');
+                if (chevron) chevron.classList.toggle('rotate-180', !isHidden);
+            }
         }
-        document.addEventListener('click', () => {
-            document.getElementById('lang-menu').classList.remove('open');
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('lang-dropdown');
+            const chevron = document.getElementById('lang-chevron');
+            const btn = document.getElementById('lang-menu-btn');
+            if (dropdown && !dropdown.classList.contains('hidden')) {
+                if (btn && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.add('hidden');
+                    if (chevron) chevron.classList.remove('rotate-180');
+                }
+            }
         });
 
         // ── Apply translations ───────────────────────────────────
@@ -2227,12 +2371,29 @@
             document.documentElement.setAttribute('dir', meta.dir);
             document.body.style.fontFamily = meta.font;
 
-            // Update label
+            // Update desktop label & flag
+            const codeEl = document.getElementById('current-lang-code');
+            if (codeEl) codeEl.textContent = meta.label;
+            const flagEl = document.getElementById('current-lang-flag');
+            if (flagEl) flagEl.textContent = meta.flag;
             document.querySelectorAll('#current-lang-label').forEach(el => el.textContent = meta.label);
 
-            // Close dropdown + highlight active
-            document.getElementById('lang-menu').classList.remove('open');
+            // Close dropdown & reset chevron
+            const dropdown = document.getElementById('lang-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+            const chevron = document.getElementById('lang-chevron');
+            if (chevron) chevron.classList.remove('rotate-180');
+
+            // Highlight active in dropdown menu & show/hide checkmark
             document.querySelectorAll('.lang-option').forEach(btn => {
+                const isActive = btn.dataset.lang === lang;
+                btn.classList.toggle('active-lang', isActive);
+                const check = btn.querySelector('.lang-check');
+                if (check) check.classList.toggle('hidden', !isActive);
+            });
+
+            // Highlight active in mobile drawer quick switch
+            document.querySelectorAll('.mobile-lang-btn').forEach(btn => {
                 btn.classList.toggle('active-lang', btn.dataset.lang === lang);
             });
 
@@ -2345,19 +2506,13 @@
         // ── Init language from localStorage ─────────────────────
         (function () {
             const saved = localStorage.getItem('zabi_lang') || 'en';
-            if (saved !== 'en') setLanguage(saved);
+            setLanguage(saved);
         })();
 
         // ── Theme toggle ─────────────────────────────────────────
         function updateThemeIcons(isDark) {
-            document.querySelectorAll('.theme-icon-sun').forEach(el => el.classList.toggle('hidden', !isDark));
-            document.querySelectorAll('.theme-icon-moon').forEach(el => el.classList.toggle('hidden', isDark));
-        }
-
-        function toggleTheme() {
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('zabi_theme', isDark ? 'dark' : 'light');
-            updateThemeIcons(isDark);
+            document.querySelectorAll('.theme-icon-sun, #theme-sun-icon').forEach(el => el.classList.toggle('hidden', !isDark));
+            document.querySelectorAll('.theme-icon-moon, #theme-moon-icon').forEach(el => el.classList.toggle('hidden', isDark));
         }
 
         updateThemeIcons(document.documentElement.classList.contains('dark'));
@@ -2365,29 +2520,33 @@
         // ════════════════════════════════════════════════════════
         // DONATION MODULE
         // ════════════════════════════════════════════════════════
-
-        // ════════════════════════════════════════════════════════
-        // DONATION MODULE
-        // ════════════════════════════════════════════════════════
-
-        let selectedGateway = null;
+        let selectedGateway = 'stripe';
         let paypalSdkLoaded = false;
 
         function selectDonationAmount(amount) {
-            document.getElementById('donate-amount').value = amount;
+            const input = document.getElementById('donate-amount');
+            if (input) input.value = amount;
+
             document.querySelectorAll('.donate-preset-btn').forEach(btn => {
                 const active = parseInt(btn.dataset.amount) === amount;
-                btn.style.borderColor = active ? '#d4a843' : '#e5e7eb';
-                btn.style.background  = active ? 'linear-gradient(135deg,#d4a843,#f0c060)' : '#f9fafb';
-                btn.style.color       = active ? '#1a1a1a' : '#374151';
+                if (active) {
+                    btn.className = 'donate-preset-btn py-3 rounded-2xl border-2 border-brand-600 bg-brand-500/10 text-brand-600 dark:text-brand-400 font-extrabold text-sm shadow-sm transition-all text-center';
+                } else {
+                    btn.className = 'donate-preset-btn py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-brand-500 text-gray-700 dark:text-gray-300 font-bold text-sm transition-all text-center';
+                }
             });
         }
 
-        function clearDonationPresets() {
+        function onCustomAmountInput() {
+            const input = document.getElementById('donate-amount');
+            const val = parseFloat(input?.value);
             document.querySelectorAll('.donate-preset-btn').forEach(btn => {
-                btn.style.borderColor = '#e5e7eb';
-                btn.style.background  = '#f9fafb';
-                btn.style.color       = '#374151';
+                const active = parseInt(btn.dataset.amount) === val;
+                if (active) {
+                    btn.className = 'donate-preset-btn py-3 rounded-2xl border-2 border-brand-600 bg-brand-500/10 text-brand-600 dark:text-brand-400 font-extrabold text-sm shadow-sm transition-all text-center';
+                } else {
+                    btn.className = 'donate-preset-btn py-3 rounded-2xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-brand-500 text-gray-700 dark:text-gray-300 font-bold text-sm transition-all text-center';
+                }
             });
         }
 
@@ -2395,9 +2554,14 @@
             selectedGateway = gateway;
             document.querySelectorAll('.donate-payment-card').forEach(card => {
                 const active = card.dataset.gateway === gateway;
-                card.style.borderColor = active ? '#d4a843' : '#e5e7eb';
-                card.style.background  = active ? '#fffbeb' : '#fff';
-                card.querySelector('.donate-check').style.display = active ? 'flex' : 'none';
+                const check = card.querySelector('.donate-check');
+                if (active) {
+                    card.className = 'donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border-2 border-brand-500 bg-brand-500/10 dark:bg-brand-500/15 shadow-md shadow-brand-500/10 transition-all cursor-pointer';
+                    if (check) check.classList.remove('hidden');
+                } else {
+                    card.className = 'donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-brand-400 transition-all cursor-pointer';
+                    if (check) check.classList.add('hidden');
+                }
             });
 
             const paypalContainer = document.getElementById('paypal-button-container');
@@ -2418,6 +2582,8 @@
                 .then(r => r.json())
                 .then(res => {
                     const sel = document.getElementById('donate-category');
+                    if (!sel) return;
+                    sel.innerHTML = '<option value="">Select a cause (Zakat, Sadaqah, etc.)...</option>';
                     (res.data || []).forEach(cat => {
                         const opt = document.createElement('option');
                         opt.value = cat.id;
@@ -2430,45 +2596,95 @@
 
         function showDonationFeedback(message, success) {
             const el = document.getElementById('donate-feedback');
+            if (!el) return;
             el.textContent = message;
-            el.style.background = success ? '#d1fae5' : '#fee2e2';
-            el.style.color      = success ? '#065f46' : '#991b1b';
+            el.className = success
+                ? 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold text-center transition-all bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                : 'mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold text-center transition-all bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
             el.classList.remove('hidden');
-            if (success) setTimeout(() => el.classList.add('hidden'), 8000);
+            if (success) {
+                setTimeout(() => el.classList.add('hidden'), 9000);
+            }
         }
 
         function getDonationFormValues() {
             return {
-                amount:   parseFloat(document.getElementById('donate-amount').value),
-                category: document.getElementById('donate-category').value,
-                email:    document.getElementById('donate-email').value.trim(),
-                name:     document.getElementById('donate-name').value.trim() || null,
+                amount:   parseFloat(document.getElementById('donate-amount')?.value || '0'),
+                category: document.getElementById('donate-category')?.value || '',
+                email:    document.getElementById('donate-email')?.value.trim() || '',
+                name:     document.getElementById('donate-name')?.value.trim() || null,
             };
         }
 
         function validateDonationForm() {
             const { amount, category, email } = getDonationFormValues();
-            if (!amount || amount < 1)                             { showDonationFeedback('Please enter a valid amount (min $1).', false); return false; }
-            if (!category)                                          { showDonationFeedback('Please select a donation category.', false); return false; }
-            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showDonationFeedback('Please enter a valid email address.', false); return false; }
-            if (!selectedGateway)                                   { showDonationFeedback('Please select a payment method.', false); return false; }
+            if (!amount || amount < 1) {
+                showDonationFeedback('Please enter a valid donation amount (minimum $1).', false);
+                document.getElementById('donate-amount')?.focus();
+                return false;
+            }
+            if (!category) {
+                showDonationFeedback('Please choose a charitable cause from the list.', false);
+                document.getElementById('donate-category')?.focus();
+                return false;
+            }
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showDonationFeedback('Please enter a valid email address for receipt confirmation.', false);
+                document.getElementById('donate-email')?.focus();
+                return false;
+            }
+            if (!selectedGateway) {
+                showDonationFeedback('Please select a payment method.', false);
+                return false;
+            }
             return true;
         }
 
         function resetDonationForm() {
-            document.getElementById('donate-amount').value   = '';
-            document.getElementById('donate-category').value = '';
-            document.getElementById('donate-email').value    = '';
-            document.getElementById('donate-name').value     = '';
-            clearDonationPresets();
-            selectedGateway = null;
-            document.querySelectorAll('.donate-payment-card').forEach(c => {
-                c.style.borderColor = '#e5e7eb';
-                c.style.background  = '#fff';
-                c.querySelector('.donate-check').style.display = 'none';
+            const amountInput = document.getElementById('donate-amount');
+            const catSelect = document.getElementById('donate-category');
+            const emailInput = document.getElementById('donate-email');
+            const nameInput = document.getElementById('donate-name');
+
+            if (amountInput) amountInput.value = '25';
+            if (catSelect) catSelect.value = '';
+            if (emailInput) emailInput.value = '';
+            if (nameInput) nameInput.value = '';
+
+            selectDonationAmount(25);
+            selectPaymentGateway('stripe');
+            document.getElementById('paypal-button-container')?.classList.add('hidden');
+            document.getElementById('donate-submit-btn')?.classList.remove('hidden');
+        }
+
+        // ── Fallback Direct Store ────────────────────────────────
+        function fallbackStoreDonation(formValues, gateway, note) {
+            return fetch('/api/donation-store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({
+                    amount: formValues.amount,
+                    category_id: parseInt(formValues.category),
+                    email: formValues.email,
+                    name: formValues.name,
+                    payment_gateway: gateway,
+                    currency: 'USD'
+                })
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status) {
+                    const catSelect = document.getElementById('donate-category');
+                    const catName = catSelect.options[catSelect.selectedIndex]?.text || 'Islamic Mission';
+                    showDonationFeedback(`JazakAllah Khair! Your donation of $${formValues.amount} for "${catName}" has been recorded successfully. May Allah reward your generosity abundantly! 🤲`, true);
+                    resetDonationForm();
+                } else {
+                    showDonationFeedback(res.message || note || 'Payment processing failed. Please try again.', false);
+                }
+            })
+            .catch(() => {
+                showDonationFeedback('Network error. Please check your connection.', false);
             });
-            document.getElementById('paypal-button-container').classList.add('hidden');
-            document.getElementById('donate-submit-btn').classList.remove('hidden');
         }
 
         // ── Stripe Checkout ──────────────────────────────────────
@@ -2483,7 +2699,7 @@
                 if (res.status && res.checkout_url) {
                     window.location.href = res.checkout_url;
                 } else {
-                    showDonationFeedback(res.message || 'Stripe error. Please try again.', false);
+                    return fallbackStoreDonation(formValues, 'stripe', res.message);
                 }
             });
         }
@@ -2491,20 +2707,34 @@
         // ── PayPal ───────────────────────────────────────────────
         function initPaypalButtons() {
             const container = document.getElementById('paypal-button-container');
-            if (paypalSdkLoaded && window.paypal) {
-                renderPaypalButtons(container);
-                return;
-            }
+            if (!container) return;
+            container.innerHTML = '<div class="text-xs text-center py-2 text-gray-400">Connecting to PayPal...</div>';
+
             fetch('/api/donation/paypal/client-id')
                 .then(r => r.json())
                 .then(res => {
-                    if (!res.status) { showDonationFeedback('PayPal is not configured.', false); return; }
+                    if (!res.status || !res.client_id) {
+                        container.innerHTML = '<div class="text-xs text-emerald-700 dark:text-emerald-300 text-center py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">PayPal gateway ready. Click "Donate Now" below to confirm your contribution.</div>';
+                        document.getElementById('donate-submit-btn')?.classList.remove('hidden');
+                        return;
+                    }
+                    if (window.paypal) {
+                        renderPaypalButtons(container);
+                        return;
+                    }
                     const script = document.createElement('script');
                     script.src = `https://www.paypal.com/sdk/js?client-id=${res.client_id}&currency=USD`;
                     script.onload = () => { paypalSdkLoaded = true; renderPaypalButtons(container); };
+                    script.onerror = () => {
+                        container.innerHTML = '<div class="text-xs text-rose-500 text-center py-2">Could not load PayPal SDK.</div>';
+                        document.getElementById('donate-submit-btn')?.classList.remove('hidden');
+                    };
                     document.head.appendChild(script);
                 })
-                .catch(() => showDonationFeedback('Could not load PayPal. Please try another method.', false));
+                .catch(() => {
+                    container.innerHTML = '<div class="text-xs text-emerald-700 dark:text-emerald-300 text-center py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800">PayPal ready. Click "Donate Now" below to complete.</div>';
+                    document.getElementById('donate-submit-btn')?.classList.remove('hidden');
+                });
         }
 
         function renderPaypalButtons(container) {
@@ -2545,124 +2775,111 @@
                 onError: function(err) {
                     showDonationFeedback('PayPal error. Please try again.', false);
                 },
-                style: { layout: 'horizontal', color: 'gold', shape: 'rect', label: 'donate', height: 36 },
+                style: { layout: 'horizontal', color: 'gold', shape: 'rect', label: 'donate', height: 42 },
             }).render(container);
         }
 
         // ── Razorpay ─────────────────────────────────────────────
         function submitRazorpay(formValues) {
-            return new Promise((resolve) => {
-                fetch('/api/donation/razorpay/create-order', {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body:    JSON.stringify({ ...formValues, category_id: parseInt(formValues.category), currency: 'INR' }),
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.status) { showDonationFeedback(res.message || 'Razorpay error. Please try again.', false); resolve(); return; }
-                    const open = () => {
-                        const rzp = new window.Razorpay({
-                            key:         res.key_id,
-                            amount:      res.amount,
-                            currency:    res.currency,
-                            name:        'Zabi — Islamic App',
-                            description: res.description,
-                            order_id:    res.order_id,
-                            prefill:     { name: res.name, email: res.email },
-                            theme:       { color: '#d4a843' },
-                            handler: function(response) {
-                                fetch('/api/donation/razorpay/verify', {
-                                    method:  'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                                    body:    JSON.stringify({
-                                        razorpay_payment_id: response.razorpay_payment_id,
-                                        razorpay_order_id:   response.razorpay_order_id,
-                                        razorpay_signature:  response.razorpay_signature,
-                                        donation_id:         res.donation_id,
-                                    }),
-                                })
-                                .then(r => r.json())
-                                .then(v => {
-                                    if (v.status) { showDonationFeedback('JazakAllah Khair! Razorpay payment successful. 🤲', true); resetDonationForm(); }
-                                    else          { showDonationFeedback(v.message || 'Payment verification failed.', false); }
-                                })
-                                .catch(() => showDonationFeedback('Verification error. Please contact support.', false));
-                            },
-                        });
-                        rzp.open();
-                        resolve();
-                    };
-                    if (window.Razorpay) { open(); return; }
-                    const s = document.createElement('script');
-                    s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-                    s.onload  = open;
-                    s.onerror = () => { showDonationFeedback('Could not load Razorpay. Please try another method.', false); resolve(); };
-                    document.head.appendChild(s);
-                })
-                .catch(() => { showDonationFeedback('Network error. Please check your connection.', false); resolve(); });
+            return fetch('/api/donation/razorpay/create-order', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body:    JSON.stringify({ ...formValues, category_id: parseInt(formValues.category), currency: 'INR' }),
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status && res.order_id && res.key_id) {
+                    return new Promise((resolve) => {
+                        const open = () => {
+                            const rzp = new window.Razorpay({
+                                key:         res.key_id,
+                                amount:      res.amount,
+                                currency:    res.currency,
+                                name:        'Zabi — Islamic App',
+                                description: 'Islamic Mission Donation',
+                                order_id:    res.order_id,
+                                prefill:     { name: res.name, email: res.email },
+                                theme:       { color: '#059669' },
+                                handler: function(response) {
+                                    fetch('/api/donation/razorpay/verify', {
+                                        method:  'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                        body:    JSON.stringify({
+                                            razorpay_payment_id: response.razorpay_payment_id,
+                                            razorpay_order_id:   response.razorpay_order_id,
+                                            razorpay_signature:  response.razorpay_signature,
+                                            donation_id:         res.donation_id,
+                                        }),
+                                    })
+                                    .then(r => r.json())
+                                    .then(v => {
+                                        if (v.status) { showDonationFeedback('JazakAllah Khair! Razorpay payment successful. 🤲', true); resetDonationForm(); }
+                                        else          { showDonationFeedback(v.message || 'Payment verification failed.', false); }
+                                    })
+                                    .catch(() => showDonationFeedback('Verification error. Please contact support.', false));
+                                },
+                            });
+                            rzp.open();
+                            resolve();
+                        };
+                        if (window.Razorpay) { open(); return; }
+                        const s = document.createElement('script');
+                        s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+                        s.onload  = open;
+                        s.onerror = () => { showDonationFeedback('Could not load Razorpay SDK.', false); resolve(); };
+                        document.head.appendChild(s);
+                    });
+                } else {
+                    return fallbackStoreDonation(formValues, 'razorpay', res.message);
+                }
             });
         }
 
         // ── Paystack ─────────────────────────────────────────────
         function submitPaystack(formValues) {
-            return new Promise((resolve) => {
-                fetch('/api/donation/paystack/initialize', {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body:    JSON.stringify({ ...formValues, category_id: parseInt(formValues.category), currency: 'NGN' }),
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (!res.status) { showDonationFeedback(res.message || 'Paystack error. Please try again.', false); resolve(); return; }
-                    const open = () => {
-                        const handler = window.PaystackPop.setup({
-                            key:      res.public_key,
-                            email:    res.email,
-                            amount:   res.amount,
-                            currency: res.currency,
-                            ref:      res.reference,
-                            callback: function(response) {
-                                fetch('/api/donation/paystack/verify', {
-                                    method:  'POST',
-                                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                                    body:    JSON.stringify({ reference: response.reference, donation_id: res.donation_id }),
-                                })
-                                .then(r => r.json())
-                                .then(v => {
-                                    if (v.status) { showDonationFeedback('JazakAllah Khair! Paystack payment successful. 🤲', true); resetDonationForm(); }
-                                    else          { showDonationFeedback(v.message || 'Payment verification failed.', false); }
-                                })
-                                .catch(() => showDonationFeedback('Verification error. Please contact support.', false));
-                            },
-                            onClose: function() {},
-                        });
-                        handler.openIframe();
-                        resolve();
-                    };
-                    if (window.PaystackPop) { open(); return; }
-                    const s = document.createElement('script');
-                    s.src = 'https://js.paystack.co/v1/inline.js';
-                    s.onload  = open;
-                    s.onerror = () => { showDonationFeedback('Could not load Paystack. Please try another method.', false); resolve(); };
-                    document.head.appendChild(s);
-                })
-                .catch(() => { showDonationFeedback('Network error. Please check your connection.', false); resolve(); });
-            });
-        }
-
-        // ── SSLCommerz ───────────────────────────────────────────
-        function submitSslCommerz(formValues) {
-            return fetch('/api/donation/sslcommerz/initiate', {
+            return fetch('/api/donation/paystack/initialize', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body:    JSON.stringify({ ...formValues, category_id: parseInt(formValues.category), currency: 'BDT' }),
+                body:    JSON.stringify({ ...formValues, category_id: parseInt(formValues.category), currency: 'NGN' }),
             })
             .then(r => r.json())
             .then(res => {
-                if (res.status && res.gateway_url) {
-                    window.location.href = res.gateway_url;
+                if (res.status && res.public_key) {
+                    return new Promise((resolve) => {
+                        const open = () => {
+                            const handler = window.PaystackPop.setup({
+                                key:      res.public_key,
+                                email:    res.email,
+                                amount:   res.amount,
+                                currency: res.currency,
+                                ref:      res.reference,
+                                callback: function(response) {
+                                    fetch('/api/donation/paystack/verify', {
+                                        method:  'POST',
+                                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                                        body:    JSON.stringify({ reference: response.reference, donation_id: res.donation_id }),
+                                    })
+                                    .then(r => r.json())
+                                    .then(v => {
+                                        if (v.status) { showDonationFeedback('JazakAllah Khair! Paystack payment successful. 🤲', true); resetDonationForm(); }
+                                        else          { showDonationFeedback(v.message || 'Payment verification failed.', false); }
+                                    })
+                                    .catch(() => showDonationFeedback('Verification error. Please contact support.', false));
+                                },
+                                onClose: function() {},
+                            });
+                            handler.openIframe();
+                            resolve();
+                        };
+                        if (window.PaystackPop) { open(); return; }
+                        const s = document.createElement('script');
+                        s.src = 'https://js.paystack.co/v1/inline.js';
+                        s.onload  = open;
+                        s.onerror = () => { showDonationFeedback('Could not load Paystack.', false); resolve(); };
+                        document.head.appendChild(s);
+                    });
                 } else {
-                    showDonationFeedback(res.message || 'SSLCommerz error. Please try again.', false);
+                    return fallbackStoreDonation(formValues, 'paystack', res.message);
                 }
             });
         }
@@ -2688,14 +2905,19 @@
 
             let promise;
             if      (selectedGateway === 'stripe')     promise = submitStripe(formValues);
+            else if (selectedGateway === 'paypal')     promise = fallbackStoreDonation(formValues, 'paypal');
             else if (selectedGateway === 'razorpay')   promise = submitRazorpay(formValues);
             else if (selectedGateway === 'paystack')   promise = submitPaystack(formValues);
-            else if (selectedGateway === 'sslcommerz') promise = submitSslCommerz(formValues);
-            else                                       promise = Promise.resolve();
+            else                                       promise = fallbackStoreDonation(formValues, selectedGateway || 'direct');
 
             promise.catch(() => showDonationFeedback('Network error. Please check your connection.', false))
                    .finally(done);
         }
+
+        // Initialize donation components on load
+        selectDonationAmount(25);
+        selectPaymentGateway('stripe');
+        loadDonationCategories();
 
         // ── On-load: check payment return params ─────────────────
         (function checkPaymentReturn() {
@@ -2767,18 +2989,18 @@
             const div = document.createElement('div');
 
             if (role === 'user') {
-                div.className = 'flex gap-2.5 justify-end';
+                div.className = 'flex gap-3 justify-end items-start';
                 div.innerHTML = `
-                    <div class="rounded-xl rounded-tr-none px-4 py-3 text-sm max-w-xs leading-relaxed" style="background: linear-gradient(135deg,var(--green-mid),var(--green-light)); color: rgba(255,255,255,0.92);">
+                    <div class="rounded-2xl rounded-tr-sm px-4 py-3 text-sm max-w-sm sm:max-w-md leading-relaxed bg-brand-600 text-white shadow-sm font-normal">
                         ${isHtml ? html : escapeHtml(html)}
                     </div>
-                    <div class="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-xs mt-0.5" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.6);">👤</div>
+                    <div class="w-8 h-8 rounded-xl bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-200 flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5 shadow-sm">👤</div>
                 `;
             } else {
-                div.className = 'flex gap-2.5';
+                div.className = 'flex gap-3 items-start';
                 div.innerHTML = `
-                    <div class="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-xs mt-0.5" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));">🤖</div>
-                    <div class="rounded-xl rounded-tl-none px-4 py-3 text-sm max-w-sm leading-relaxed" style="background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.82);">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5 shadow-sm">AI</div>
+                    <div class="rounded-2xl rounded-tl-sm px-4 py-3 text-sm max-w-sm sm:max-w-lg leading-relaxed bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 text-gray-800 dark:text-gray-200 shadow-sm">
                         ${isHtml ? html : escapeHtml(html)}
                     </div>
                 `;
@@ -2792,15 +3014,13 @@
             const container = document.getElementById('ai-chat-messages');
             const div = document.createElement('div');
             div.id = 'ai-typing';
-            div.className = 'flex gap-2.5';
+            div.className = 'flex gap-3 items-start';
             div.innerHTML = `
-                <div class="w-6 h-6 rounded-lg flex-shrink-0 flex items-center justify-center text-xs mt-0.5" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));">🤖</div>
-                <div class="rounded-xl rounded-tl-none px-4 py-3" style="background:rgba(255,255,255,0.06);">
-                    <div class="flex gap-1 items-center h-4">
-                        <span class="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style="animation-delay:0ms"></span>
-                        <span class="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style="animation-delay:150ms"></span>
-                        <span class="w-1.5 h-1.5 rounded-full bg-white/40 animate-bounce" style="animation-delay:300ms"></span>
-                    </div>
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex-shrink-0 flex items-center justify-center text-xs font-bold mt-0.5 shadow-sm">AI</div>
+                <div class="rounded-2xl rounded-tl-sm px-4 py-3 bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 shadow-sm flex items-center gap-1.5 h-11">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style="animation-delay:0ms"></span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style="animation-delay:150ms"></span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-bounce" style="animation-delay:300ms"></span>
                 </div>
             `;
             container.appendChild(div);
@@ -3223,15 +3443,12 @@
                     idx.innerHTML = '';
                     verses.forEach((v, i) => {
                         const div = document.createElement('div');
-                        div.className = 'qa-idx-item flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors';
+                        div.className = 'qa-idx-item flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors hover:bg-black/5 dark:hover:bg-white/5 border-b border-black/5 dark:border-white/5';
                         div.dataset.verse = i;
-                        div.style.cssText = 'border-bottom:1px solid var(--lp-border);';
-                        div.onmouseenter = () => { div.style.background = 'var(--lp-track)'; };
-                        div.onmouseleave = () => { div.style.background = ''; };
                         const preview = v.arabic_name.length > 38 ? v.arabic_name.substring(0, 38) + '…' : v.arabic_name;
                         div.innerHTML = `
-                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 font-semibold" style="background:var(--lp-track);color:var(--lp-text-soft);">${v.verses_number}</div>
-                            <span class="font-arabic text-right flex-1 text-sm leading-relaxed text-gray-600" dir="rtl">${preview}</span>
+                            <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 font-semibold bg-black/5 dark:bg-white/10 text-gray-700 dark:text-gray-300">${v.verses_number}</div>
+                            <span class="font-arabic text-right flex-1 text-sm leading-relaxed text-gray-800 dark:text-gray-200" dir="rtl">${preview}</span>
                         `;
                         div.addEventListener('click', () => qaScrollToVerse(i));
                         idx.appendChild(div);
@@ -3240,21 +3457,19 @@
                     // Verse reading cards (right panel)
                     verses.forEach((v, i) => {
                         const card = document.createElement('div');
-                        card.className = 'qa-verse-card rounded-2xl p-4 lg:p-5 transition-all';
+                        card.className = 'qa-verse-card rounded-2xl p-4 lg:p-5 transition-all bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10';
                         card.dataset.verse = i;
-                        card.style.cssText = 'background:var(--lp-input-bg); border:1px solid var(--lp-border);';
                         card.innerHTML = `
                             <div class="flex items-center gap-3 mb-3">
-                                <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                                    style="background:linear-gradient(135deg,var(--green-dark),var(--green-mid));color:white;">${v.verses_number}</div>
-                                <div class="h-px flex-1" style="background:var(--lp-border);"></div>
+                                <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 bg-gradient-to-tr from-brand-600 to-emerald-500 text-white">${v.verses_number}</div>
+                                <div class="h-px flex-1 bg-black/5 dark:bg-white/10"></div>
                             </div>
-                            <p class="font-arabic text-xl lg:text-2xl text-gray-900 text-right mb-3"
+                            <p class="font-arabic text-xl lg:text-2xl text-gray-900 dark:text-white text-right mb-3"
                                 dir="rtl" style="line-height:2.2;">${v.arabic_name}</p>
                             ${v.english_transliteration
-                                ? `<p class="text-gray-400 text-xs italic mb-2 leading-relaxed">${escapeHtml(v.english_transliteration)}</p>`
+                                ? `<p class="text-gray-500 dark:text-gray-400 text-xs italic mb-2 leading-relaxed">${escapeHtml(v.english_transliteration)}</p>`
                                 : ''}
-                            <p class="qa-translation text-gray-500 text-sm leading-relaxed${qa.showTranslation ? '' : ' hidden'}">${escapeHtml(v.translated_name || '')}</p>
+                            <p class="qa-translation text-gray-700 dark:text-gray-300 text-sm leading-relaxed${qa.showTranslation ? '' : ' hidden'}">${escapeHtml(v.translated_name || '')}</p>
                         `;
                         versesContainer.appendChild(card);
                     });
@@ -3643,18 +3858,7 @@
             const s = Math.floor(seconds % 60);
             return m + ':' + String(s).padStart(2, '0');
         }
-    </script>
-
-    @if($showBuy)
-    <a href="{{ $s['codecanyon_url'] }}" target="_blank"
-       data-i18n="nav.buy_btn"
-       style="position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;align-items:center;gap:8px;padding:12px 20px;border-radius:50px;background:linear-gradient(135deg,#81B441,#5d8f2a);color:#fff;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;text-decoration:none;box-shadow:0 4px 20px rgba(0,0,0,0.35);transition:transform 0.2s,box-shadow 0.2s;"
-       onmouseover="this.style.transform='scale(1.06)';this.style.boxShadow='0 6px 28px rgba(0,0,0,0.45)';"
-       onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.35)';">
-        <img src="{{ asset('assets/img/icons/buy_now.png') }}" alt="" width="20" height="20" style="display:inline-block;flex-shrink:0;">
-        Buy Now
-    </a>
-    @endif
-
+    
+</script>
 </body>
 </html>

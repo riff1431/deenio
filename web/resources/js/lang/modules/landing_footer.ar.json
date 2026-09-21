@@ -1,23 +1,28 @@
 {
     "landing_footer": {
         "title": "التذييل",
-        "subtitle": "إدارة نص العلامة التجارية في تذييل صفحتك الرئيسية",
+        "subtitle": "إدارة نص العلامة التجارية ومحتوى تذييل صفحتك الرئيسية",
         "preview_page": "معاينة الصفحة",
         "error_saving": "حدث خطأ أثناء الحفظ",
         "section": {
-            "brand": "العلامة التجارية",
-            "footer_preview": "معاينة التذييل"
+            "brand": "العلامة التجارية والمحتوى",
+            "footer_preview": "معاينة حية للتذييل"
         },
         "form": {
             "app_name_label": "اسم التطبيق",
-            "app_name_hint": "يظهر في التذييل",
-            "app_name_placeholder": "أدخل اسم التطبيق",
+            "app_name_hint": "يظهر في التذييل وحقوق النشر",
+            "app_name_placeholder": "مثال: زابي",
             "footer_description_label": "وصف التذييل",
-            "footer_description_placeholder": "أدخل وصف التذييل"
+            "footer_description_placeholder": "أدخل وصفاً موجزاً لتطبيقك الإسلامي..."
         },
         "preview": {
-            "default_description": "رفيقك الإسلامي الشامل.",
-            "copyright_suffix": "· جميع الحقوق محفوظة."
+            "default_description": "رفيقك الإسلامي الشامل. نجلب لك جمال الإسلام بين يديك بالتكنولوجيا الحديثة.",
+            "copyright_suffix": "· جميع الحقوق محفوظة.",
+            "mode_dark": "معاينة داكنة",
+            "mode_light": "معاينة فاتحة",
+            "features_title": "الميزات",
+            "resources_title": "المصادر",
+            "get_app_title": "حمّل التطبيق"
         }
     }
 }

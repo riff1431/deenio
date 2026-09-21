@@ -8,9 +8,7 @@ import 'package:zabi/controller/internet_check_controller.dart';
 import 'package:zabi/controller/package_prayer_time_controller.dart';
 import 'package:zabi/controller/quran_settings_controller.dart';
 import 'package:zabi/shimmer/all_shimmer_loder.dart';
-import 'package:zabi/theme/light_theme.dart';
 import 'package:zabi/theme/modern_light_theme.dart';
-import 'package:zabi/util/dimensions.dart';
 import 'package:zabi/util/images.dart';
 import 'package:zabi/util/styles.dart';
 import 'package:zabi/view/screens/ai_islamic_assistant/ai_islamic_assistant.dart';
@@ -23,9 +21,12 @@ import 'package:zabi/view/screens/home/modern/widget/modern_quran_milestone_card
 
 class ModernHomeScreen extends StatelessWidget {
   const ModernHomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final hasInternet = Get.find<InternetController>().hasInternet.value;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GetBuilder<SettingsController>(
       builder: (settingsController) {
         return GetBuilder<PrayerTimeController>(
@@ -38,9 +39,9 @@ class ModernHomeScreen extends StatelessWidget {
 
             return Scaffold(
               extendBodyBehindAppBar: true,
-              backgroundColor: Theme.of(context).brightness == Brightness.dark
-                  ? Theme.of(context).scaffoldBackgroundColor
-                  : AppColorModern.emeraldSoftBg,
+              backgroundColor: isDark
+                  ? const Color(0xFF0F1713)
+                  : const Color(0xFFF6F8F6),
               body: isLoading || (mosqueData == null && !hasInternet)
                   ? const SafeArea(child: DashbordShimmerScreen())
                   : _buildBody(context, mosqueData, prayerTimeController),
@@ -75,10 +76,10 @@ class ModernHomeScreen extends StatelessWidget {
         children: [
           ModernGreetingHeader(mosqueData: mosqueData),
           Transform.translate(
-            offset: const Offset(0, -25),
+            offset: const Offset(0, -22),
             child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: Dimensions.PADDING_SIZE_DEFAULT,
+                horizontal: 16,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -86,17 +87,15 @@ class ModernHomeScreen extends StatelessWidget {
                   ModernNextPrayerCard(
                     prayerTimeController: prayerTimeController,
                   ),
-                  const SizedBox(height: Dimensions.PADDING_SIZE_DEFAULT),
+                  const SizedBox(height: 14),
                   const ModernQuranMilestoneCard(),
-                  const SizedBox(height: Dimensions.PADDING_SIZE_SMALL),
-                  ModernQuickActions(),
-                  const SizedBox(height: Dimensions.PADDING_SIZE_SMALL),
-
-                  // const ModernInfoCards(),
-                  IslamicFeatureGrid(),
-                  const SizedBox(height: Dimensions.PADDING_SIZE_SMALL),
+                  const SizedBox(height: 14),
+                  const ModernQuickActions(),
+                  const SizedBox(height: 14),
+                  const IslamicFeatureGrid(),
+                  const SizedBox(height: 14),
                   const ModernQuranCtaBanner(),
-                  const SizedBox(height: Dimensions.PADDING_SIZE_DEFAULT * 3),
+                  const SizedBox(height: 130),
                 ],
               ),
             ),
@@ -107,32 +106,39 @@ class ModernHomeScreen extends StatelessWidget {
   }
 
   Widget _buildAiFab(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () => Get.to(() => const AiIslamicAssistantScreen()),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(28),
               gradient: LinearGradient(
-                colors: [
-                  AppColorModern.emerald.withOpacity(0.35),
-                  AppColorModern.emerald.withOpacity(0.08),
-                ],
+                colors: isDark
+                    ? [
+                        const Color(0xFF1E5B3D).withOpacity(0.9),
+                        const Color(0xFF14402A).withOpacity(0.9),
+                      ]
+                    : [
+                        AppColorModern.emerald,
+                        AppColorModern.emeraldDark,
+                      ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               border: Border.all(
-                color: AppColorModern.emerald.withOpacity(0.5),
+                color: Colors.white.withOpacity(0.25),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
-                  blurRadius: 12,
+                  color: AppColorModern.emerald.withOpacity(0.35),
+                  blurRadius: 16,
                   offset: const Offset(0, 6),
                 ),
               ],
@@ -141,24 +147,22 @@ class ModernHomeScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 5,
-                    vertical: 2,
-                  ),
-                  decoration: const BoxDecoration(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
-                    color: AppColor.cardColor,
                   ),
-                  child: Image.asset(Images.aiAssistant, width: 30, height: 30),
+                  alignment: Alignment.center,
+                  child: Image.asset(Images.aiAssistant, width: 18, height: 18),
                 ),
-                const SizedBox(width: 2),
+                const SizedBox(width: 8),
                 Text(
-                  "${"ask_ai_key".tr} ",
-                  style: robotoRegular.copyWith(
-                    color: Get.isDarkMode
-                        ? AppColor.cardColor
-                        : AppColorModern.emeraldDark,
-                    fontWeight: FontWeight.w600,
+                  'ask_ai_key'.tr.isNotEmpty ? 'ask_ai_key'.tr : 'Ask AI',
+                  style: robotoBold.copyWith(
+                    color: Colors.white,
+                    fontSize: 13,
+                    letterSpacing: 0.3,
                   ),
                 ),
               ],

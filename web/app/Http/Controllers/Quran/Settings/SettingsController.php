@@ -19,11 +19,9 @@ class SettingsController extends Controller
         $data = $this->service->getFormattedSettings();
         $values = [];
         foreach ($data as $key => $value) {
-            if ($key === 'google_map_key' || $key === 'islamic_name_api_key') {
-                $values[$key] = encrypt($value);
-            } else {
-                $values[$key] = $value;
-            }
+            // The DB stores these already encrypted via safeDecrypt on save.
+            // Return as-is; the frontend only uses them for display (masked).
+            $values[$key] = $value;
         }
 
         // Ensure ai_provider and ai_model have defaults

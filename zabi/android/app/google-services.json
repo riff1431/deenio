@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "916504784352",
+    "project_id": "deenio-8304a",
+    "storage_bucket": "deenio-8304a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:916504784352:android:57d08a452d5434d0004f85",
+        "android_client_info": {
+          "package_name": "com.Deenio.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAlUObJvD45vd5GaZ4m9cvxwZHR018Fca0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:zabi/helper/route_helper.dart';
 import 'package:zabi/theme/modern_light_theme.dart';
-import 'package:zabi/util/dimensions.dart';
 import 'package:zabi/util/images.dart';
 import 'package:zabi/util/styles.dart';
 import 'package:zabi/view/screens/category/category_screen.dart';
@@ -15,61 +14,75 @@ class ModernQuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final items = [
       _QuickAction(
-        Images.ModernIcon_ReadQuran,
-        'quran'.tr,
-        RouteHelper.suraList,
+        icon: Images.ModernIcon_ReadQuran,
+        label: 'quran'.tr,
+        route: RouteHelper.suraList,
+        accentColor: const Color(0xFF2E7D5B),
       ),
       _QuickAction(
-        Images.ModernIcon_AudioQuran,
-        'audio_quran'.tr,
-        RouteHelper.recters,
+        icon: Images.ModernIcon_AudioQuran,
+        label: 'audio_quran'.tr,
+        route: RouteHelper.recters,
+        accentColor: const Color(0xFF0F766E),
       ),
-      _QuickAction(Images.ModernIcon_Duas, 'dua'.tr, RouteHelper.dua),
-      _QuickAction(Images.ModernIcon_Dhikr, 'dikir'.tr, RouteHelper.dhikr),
       _QuickAction(
-        Images.ModernIcon_QiblaKaaba,
-        'compass'.tr,
-        RouteHelper.compass,
+        icon: Images.ModernIcon_Duas,
+        label: 'dua'.tr,
+        route: RouteHelper.dua,
+        accentColor: const Color(0xFFD97706),
+      ),
+      _QuickAction(
+        icon: Images.ModernIcon_Dhikr,
+        label: 'dikir'.tr,
+        route: RouteHelper.dhikr,
+        accentColor: const Color(0xFF4F46E5),
+      ),
+      _QuickAction(
+        icon: Images.ModernIcon_QiblaKaaba,
+        label: 'compass'.tr,
+        route: RouteHelper.compass,
+        accentColor: const Color(0xFF059669),
         tint: false,
       ),
     ];
 
     return Container(
-      padding: const EdgeInsets.all(Dimensions.PADDING_SIZE_SMALL),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(Dimensions.RADIUS_EXTRA_LARGE),
+        color: isDark ? const Color(0xFF1B2620) : Colors.white,
+        borderRadius: BorderRadius.circular(22),
         border: Border.all(
-          color: Get.isDarkMode
-              ? AppColorModern.emerald.withOpacity(0.05)
-              : Colors.white.withOpacity(0.05),
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : AppColorModern.emerald.withOpacity(0.1),
+          width: 1,
         ),
-        boxShadow: Get.isDarkMode
-            ? null
-            : [
-                BoxShadow(
-                  color: Get.isDarkMode
-                      ? Colors.black.withOpacity(0.25)
-                      : Colors.grey.withOpacity(0.15),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
-                ),
-              ],
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'quick_actions'.tr,
-                style: robotoMedium.copyWith(
-                  color: Get.isDarkMode
-                      ? Colors.white.withValues(alpha: 0.9)
-                      : AppColorModern.textPrimary,
+                style: robotoBold.copyWith(
+                  fontSize: 15,
+                  color: isDark ? Colors.white : AppColorModern.textPrimary,
                 ),
               ),
               GestureDetector(
@@ -80,14 +93,14 @@ class ModernQuickActions extends StatelessWidget {
                     Text(
                       'view_all'.tr,
                       style: robotoMedium.copyWith(
-                        fontSize: Dimensions.FONT_SIZE_SMALL,
+                        fontSize: 12,
                         color: AppColorModern.emerald,
                       ),
                     ),
-                    const SizedBox(width: 2),
+                    const SizedBox(width: 3),
                     const Icon(
-                      Icons.arrow_forward,
-                      size: 14,
+                      Icons.arrow_forward_rounded,
+                      size: 13,
                       color: AppColorModern.emerald,
                     ),
                   ],
@@ -95,25 +108,23 @@ class ModernQuickActions extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: Dimensions.PADDING_SIZE_SMALL),
-          SizedBox(
-            height: 86,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: items.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(width: Dimensions.PADDING_SIZE_DEFAULT),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return _QuickActionTile(
+          const SizedBox(height: 14),
+
+          // 5-item Balanced Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: items.map((item) {
+              return Expanded(
+                child: _QuickActionTile(
                   icon: item.icon,
                   label: item.label,
                   route: item.route,
+                  accentColor: item.accentColor,
                   tint: item.tint,
-                );
-              },
-            ),
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -125,60 +136,75 @@ class _QuickAction {
   final String icon;
   final String label;
   final String route;
+  final Color accentColor;
   final bool tint;
-  _QuickAction(this.icon, this.label, this.route, {this.tint = true});
+
+  _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.route,
+    required this.accentColor,
+    this.tint = true,
+  });
 }
 
 class _QuickActionTile extends StatelessWidget {
   final String icon;
   final String label;
   final String route;
+  final Color accentColor;
   final bool tint;
+
   const _QuickActionTile({
     required this.icon,
     required this.label,
     required this.route,
+    required this.accentColor,
     required this.tint,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
-      borderRadius: BorderRadius.circular(Dimensions.RADIUS_LARGE),
+      borderRadius: BorderRadius.circular(16),
       onTap: () => Get.toNamed(route),
-      child: SizedBox(
-        width: 64,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                color: Get.isDarkMode
-                    ? Colors.grey.withValues(alpha: 0.05)
-                    : AppColorModern.emerald.withOpacity(0.07),
-                borderRadius: BorderRadius.circular(Dimensions.RADIUS_LARGE),
-                border: Border.all(color: AppColorModern.emerald, width: 0.08),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
-                    SvgPicture.asset(
-                      icon,
-                      color: tint ? AppColorModern.emerald : null,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: robotoRegular.copyWith(
-                        fontSize: Dimensions.FONT_SIZE_EXTRA_SMALL,
-                      ),
-                    ),
-                  ],
+                color: isDark
+                    ? accentColor.withOpacity(0.18)
+                    : accentColor.withOpacity(0.09),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: accentColor.withOpacity(isDark ? 0.3 : 0.2),
+                  width: 1,
                 ),
+              ),
+              alignment: Alignment.center,
+              child: SvgPicture.asset(
+                icon,
+                width: 26,
+                height: 26,
+                color: tint ? accentColor : null,
+              ),
+            ),
+            const SizedBox(height: 7),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: robotoMedium.copyWith(
+                fontSize: 11,
+                color: isDark ? Colors.white70 : AppColorModern.textPrimary,
               ),
             ),
           ],

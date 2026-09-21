@@ -4,7 +4,7 @@ import 'package:zabi/util/images.dart';
 
 class AppConstants {
   // Flutter SDK Version  3.44.0
-  static const String APP_NAME = 'Zabi';
+  static const String APP_NAME = 'Deenio';
   static const String APP_VERSION = "7.0";
 
   // main base url
