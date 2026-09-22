@@ -245,19 +245,22 @@ class _OfflineAyanTranslationWidgetState
                         const SizedBox(
                           height: Dimensions.PADDING_SIZE_EXTRA_SMALL,
                         ),
-                        Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                            apiData.pageNumber.toString(),
-                            textAlign: TextAlign.justify,
-                            style: robotoMedium.copyWith(
-                              fontSize: Dimensions.FONT_SIZE_LARGE,
-                              color: Theme.of(
-                                context,
-                              ).textTheme.bodyMedium!.color,
+                        if ((apiData.pageNumber != null && apiData.pageNumber.toString() != 'null' && apiData.pageNumber.toString().isNotEmpty) || apiData.engPageNumber != null)
+                          Align(
+                            alignment: Alignment.center,
+                            child: Text(
+                              (apiData.pageNumber != null && apiData.pageNumber.toString() != 'null' && apiData.pageNumber.toString().isNotEmpty)
+                                  ? apiData.pageNumber.toString()
+                                  : apiData.engPageNumber.toString(),
+                              textAlign: TextAlign.justify,
+                              style: robotoMedium.copyWith(
+                                fontSize: Dimensions.FONT_SIZE_LARGE,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium!.color,
+                              ),
                             ),
                           ),
-                        ),
                         const SizedBox(
                           height: Dimensions.PADDING_SIZE_EXTRA_SMALL,
                         ),

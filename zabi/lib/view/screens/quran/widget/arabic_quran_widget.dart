@@ -85,9 +85,17 @@ class _ArabicQuranWidgetState extends State<ArabicQuranWidget> {
     );
   }
 
-  Widget _buildPageNumber(BuildContext context, String pageNumber) {
+  Widget _buildPageNumber(BuildContext context, String? pageNumber, [int? engPage]) {
+    String display = '';
+    if (pageNumber != null && pageNumber.isNotEmpty && pageNumber != 'null') {
+      display = pageNumber;
+    } else if (engPage != null) {
+      display = engPage.toString();
+    }
+    if (display.isEmpty) return const SizedBox();
+
     return SelectableText(
-      pageNumber,
+      display,
       textDirection: TextDirection.rtl,
       textAlign: TextAlign.center,
       style: robotoMedium.copyWith(
@@ -189,7 +197,11 @@ class _ArabicQuranWidgetState extends State<ArabicQuranWidget> {
             children: [
               const Expanded(child: SizedBox()),
               Expanded(
-                child: _buildPageNumber(context, apiData.pageNumber.toString()),
+                child: _buildPageNumber(
+                  context,
+                  apiData.pageNumber?.toString(),
+                  apiData.engPageNumber,
+                ),
               ),
               Expanded(
                 child: Row(

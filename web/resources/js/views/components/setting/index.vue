@@ -173,6 +173,185 @@
                 </div>
             </div>
 
+            <!-- Section: AI & Intelligence Engine -->
+            <div class="settings-card ai-settings-card">
+                <div class="card-header-flex">
+                    <div class="card-label">
+                        <span class="label-dot ai-dot"></span>
+                        AI & Intelligence Engine (Deenio AI)
+                    </div>
+                    <div class="ai-status-pill" :class="formData.ai_enabled ? 'status-active' : 'status-inactive'">
+                        <span class="status-indicator-dot"></span>
+                        {{ formData.ai_enabled ? 'AI Enabled' : 'AI Disabled' }}
+                    </div>
+                </div>
+                <p class="section-desc">
+                    Configure the AI provider and model that powers the Deenio Islamic Scholar Q&A, Tafsir guidance, and smart Islamic services.
+                </p>
+
+                <!-- Master Enable/Disable Toggle -->
+                <div class="toggle-item toggle-item--ai mb-4">
+                    <div class="toggle-info">
+                        <span class="toggle-label">Enable AI Assistant in Mobile App</span>
+                        <span class="toggle-desc">When disabled, the mobile app hides or gracefully pauses AI queries.</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="ai_enabled" v-model="formData.ai_enabled" />
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    </label>
+                </div>
+
+                <!-- Provider Selection Cards -->
+                <div class="field-label mb-2">Select AI Provider</div>
+                <div class="ai-provider-grid mb-4">
+                    <button
+                        type="button"
+                        v-for="(prov, pKey) in AI_PROVIDERS"
+                        :key="pKey"
+                        class="ai-provider-card"
+                        :class="{ 'ai-provider-card--active': formData.ai_provider === pKey }"
+                        @click="setAiProvider(pKey)"
+                    >
+                        <div class="provider-header">
+                            <span class="provider-badge">{{ prov.badge }}</span>
+                            <span v-if="formData.ai_provider === pKey" class="provider-check">✓</span>
+                        </div>
+                        <div class="provider-name">{{ prov.name }}</div>
+                        <div class="provider-key-source">{{ prov.keyLabel }}</div>
+                    </button>
+                </div>
+
+                <div class="fields-grid mb-3">
+                    <!-- Curated Model Selector -->
+                    <div class="field-group">
+                        <label class="field-label" for="ai_model_select">
+                            AI Model
+                            <span class="badge-subtle" v-if="currentModelTag">{{ currentModelTag }}</span>
+                        </label>
+                        <select class="field-input" id="ai_model_select" v-model="selectedModelChoice" @change="onModelSelectChange">
+                            <option v-for="m in currentProviderModels" :key="m.id" :value="m.id">
+                                {{ m.name }} — {{ m.tag }}
+                            </option>
+                            <option value="__custom__">✏️ Custom Model ID...</option>
+                        </select>
+                        <small class="field-helper" v-if="currentModelDesc">{{ currentModelDesc }}</small>
+                    </div>
+
+                    <!-- Custom Model Input (if custom selected) -->
+                    <div class="field-group" v-if="isCustomModel">
+                        <label class="field-label" for="ai_custom_model">Custom Model Identifier <span class="required">*</span></label>
+                        <input type="text" class="field-input" id="ai_custom_model" placeholder="e.g. meta-llama/llama-3.2-3b-instruct" v-model="formData.ai_model" />
+                        <small class="field-helper">Enter the exact model ID required by the endpoint.</small>
+                    </div>
+
+                    <!-- API Key Input -->
+                    <div class="field-group">
+                        <label class="field-label" for="islamic_name_api_key">
+                            {{ aiProviderName }} API Key
+                            <a :href="aiKeyUrl" target="_blank" class="ai-key-link">
+                                Get key from {{ aiKeyLabel }} ↗
+                            </a>
+                        </label>
+                        <div class="ai-key-wrapper">
+                            <input :type="showAiKey ? 'text' : 'password'" class="field-input ai-key-input" id="islamic_name_api_key"
+                                   :placeholder="formData.ai_provider === 'gemini' ? 'Paste Google AI Studio key (AQ... or AIzaSy...)' : 'Enter API key'" v-model="formData.islamic_name_api_key" />
+                            <button type="button" @click="showAiKey = !showAiKey" class="ai-key-toggle-btn" :title="showAiKey ? 'Hide' : 'Show'">
+                                {{ showAiKey ? '🙈' : '👁️' }}
+                            </button>
+                        </div>
+                        <small v-if="formData.ai_provider === 'gemini'" class="field-helper">
+                            Supports official Google AI Studio keys (<code>AQ...</code> or <code>AIzaSy...</code>). Generate for free at <a :href="aiKeyUrl" target="_blank" class="text-emerald-600 underline">Google AI Studio</a>.
+                        </small>
+                        <small class="field-error" v-if="errors.islamic_name_api_key">{{ errors.islamic_name_api_key[0] }}</small>
+                    </div>
+                </div>
+
+                <!-- Advanced Configuration (Collapsible) -->
+                <div class="ai-advanced-toggle mb-3" @click="showAdvancedAi = !showAdvancedAi">
+                    <span class="advanced-toggle-title">⚙️ Advanced Persona & Generation Parameters</span>
+                    <span class="advanced-toggle-arrow">{{ showAdvancedAi ? '▲ Hide' : '▼ Expand' }}</span>
+                </div>
+
+                <div v-if="showAdvancedAi" class="ai-advanced-panel mb-4">
+                    <div class="field-group mb-3">
+                        <div class="flex-between mb-1">
+                            <label class="field-label" for="ai_system_prompt">Deenio AI Persona & System Instructions</label>
+                            <button type="button" class="btn-link-sm" @click="resetSystemPrompt">Reset to Default</button>
+                        </div>
+                        <textarea class="field-input field-textarea" id="ai_system_prompt" rows="3" v-model="formData.ai_system_prompt" placeholder="Enter system instructions for the AI scholar..."></textarea>
+                        <small class="field-helper">Shapes scholar tone, Quran/Hadith citation rules, and boundaries.</small>
+                    </div>
+
+                    <div class="fields-grid two-col">
+                        <div class="field-group">
+                            <label class="field-label" for="ai_temperature">Creativity (Temperature: {{ formData.ai_temperature }})</label>
+                            <input type="range" class="field-range" id="ai_temperature" min="0.1" max="1.2" step="0.05" v-model.number="formData.ai_temperature" />
+                            <div class="range-labels">
+                                <span>Strict (0.1)</span>
+                                <span>Balanced (0.7)</span>
+                                <span>Creative (1.2)</span>
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label" for="ai_max_tokens">Max Output Tokens</label>
+                            <input type="number" class="field-input" id="ai_max_tokens" min="100" max="3000" step="50" v-model.number="formData.ai_max_tokens" />
+                            <small class="field-helper">Controls maximum reply length (default: 600).</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Testing & Diagnostics Section -->
+                <div class="ai-test-section">
+                    <div class="ai-test-header">
+                        <div>
+                            <div class="test-section-title">⚡ AI Connection & Diagnostics</div>
+                            <div class="test-section-subtitle">Verify your API credentials and model latency.</div>
+                        </div>
+                        <button type="button" class="test-connection-btn" @click="testAiConnection" :disabled="aiTestLoading">
+                            <span v-if="aiTestLoading" class="spinner-sm"></span>
+                            {{ aiTestLoading ? 'Testing...' : '⚡ Test Connection' }}
+                        </button>
+                    </div>
+
+                    <div v-if="aiTestResult" :class="['test-result-banner mt-3', aiTestResult.success ? 'banner-success' : 'banner-error']">
+                        <div class="banner-title-row">
+                            <span class="status-icon">{{ aiTestResult.success ? '✅' : '❌' }}</span>
+                            <strong>{{ aiTestResult.provider }} — {{ aiTestResult.model }}</strong>
+                            <span v-if="aiTestResult.latency_ms" class="latency-badge">{{ aiTestResult.latency_ms }}ms</span>
+                        </div>
+                        <div class="banner-msg">{{ aiTestResult.message }}</div>
+                    </div>
+
+                    <!-- Live Chat Sandbox -->
+                    <div class="ai-playground mt-3">
+                        <div class="playground-header">
+                            <span class="playground-title">💬 Live Test Sandbox</span>
+                            <span class="playground-sub">Ask a sample question to inspect real model generation.</span>
+                        </div>
+                        <div class="sample-chips">
+                            <span class="chip-caption">Presets:</span>
+                            <button type="button" class="sample-chip" @click="runPlaygroundPrompt('What are the five pillars of Islam?')">Five Pillars</button>
+                            <button type="button" class="sample-chip" @click="runPlaygroundPrompt('Explain the significance of Ayat al-Kursi with English translation.')">Ayat al-Kursi</button>
+                            <button type="button" class="sample-chip" @click="runPlaygroundPrompt('What is the dua when leaving home?')">Dua for Leaving Home</button>
+                        </div>
+                        <div class="playground-input-row">
+                            <input type="text" class="field-input playground-input" placeholder="Type a test question for Deenio AI..." v-model="playgroundQuery" @keydown.enter.prevent="runPlaygroundPrompt(playgroundQuery)" />
+                            <button type="button" class="playground-send-btn" @click="runPlaygroundPrompt(playgroundQuery)" :disabled="playgroundLoading || !playgroundQuery">
+                                <span v-if="playgroundLoading" class="spinner-sm"></span>
+                                {{ playgroundLoading ? 'Generating...' : 'Ask AI' }}
+                            </button>
+                        </div>
+                        <div v-if="playgroundResponse" class="playground-bubble mt-3">
+                            <div class="bubble-header">
+                                <span class="bubble-tag">Deenio AI Response ({{ playgroundLatency }}ms)</span>
+                                <button type="button" class="btn-copy" @click="copyResponse">📋 Copy</button>
+                            </div>
+                            <div class="bubble-content">{{ playgroundResponse }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Section: Integrations -->
             <div class="settings-card">
                 <div class="card-label">
@@ -185,54 +364,6 @@
                         <label class="field-label" for="google_map_key">{{ $t('setting.index.integrations.google_map_key_label') }}</label>
                         <input type="text" class="field-input" id="google_map_key" :placeholder="$t('setting.index.integrations.google_map_key_placeholder')" v-model="formData.google_map_key" />
                         <small class="field-error" v-if="errors.google_map_key">{{ errors.google_map_key[0] }}</small>
-                    </div>
-
-                    <!-- AI Provider Dropdown -->
-                    <div class="field-group">
-                        <label class="field-label" for="ai_provider">AI Provider</label>
-                        <select class="field-input" id="ai_provider" v-model="formData.ai_provider" @change="onProviderChange">
-                            <option value="groq">Groq</option>
-                            <option value="openai">OpenAI</option>
-                            <option value="openrouter">OpenRouter</option>
-                            <option value="gemini">Google Gemini</option>
-                        </select>
-                    </div>
-
-                    <!-- AI Model -->
-                    <div class="field-group">
-                        <label class="field-label" for="ai_model">AI Model <small class="text-muted">({{ aiModelHint }})</small></label>
-                        <input type="text" class="field-input" id="ai_model" :placeholder="aiModelPlaceholder" v-model="formData.ai_model" />
-                    </div>
-
-                    <!-- AI API Key -->
-                    <div class="field-group">
-                        <label class="field-label" for="islamic_name_api_key">
-                            AI API Key
-                            <a :href="aiKeyUrl" target="_blank" class="text-primary" style="margin-left:6px;">
-                                Get key from {{ aiKeyLabel }} →
-                            </a>
-                        </label>
-                        <div style="position:relative;">
-                            <input :type="showAiKey ? 'text' : 'password'" class="field-input" id="islamic_name_api_key"
-                                   placeholder="Enter your API key" v-model="formData.islamic_name_api_key"
-                                   style="padding-right:42px;" />
-                            <button type="button" @click="showAiKey = !showAiKey"
-                                    style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--theme-text-muted);font-size:13px;">
-                                {{ showAiKey ? '🙈' : '👁️' }}
-                            </button>
-                        </div>
-                        <small class="field-error" v-if="errors.islamic_name_api_key">{{ errors.islamic_name_api_key[0] }}</small>
-                    </div>
-
-                    <!-- Test Connection Button -->
-                    <div class="field-group" style="display:flex;align-items:flex-end;gap:12px;">
-                        <button type="button" class="test-connection-btn" @click="testAiConnection" :disabled="aiTestLoading">
-                            <span v-if="aiTestLoading" class="spinner-sm"></span>
-                            {{ aiTestLoading ? 'Testing...' : '⚡ Test Connection' }}
-                        </button>
-                        <div v-if="aiTestResult" :class="['test-result', aiTestResult.success ? 'test-success' : 'test-error']">
-                            {{ aiTestResult.message }}
-                        </div>
                     </div>
 
                     <div class="field-group">
@@ -402,32 +533,130 @@ const mediaItems = computed(() => [
     { key: 'donation_banner', label: t('setting.index.media.donation_banner'), imgId: 'app_donation_img', inputId: 'app_donation_banner', handler: changeDonationBanner },
 ]);
 
-// ── AI Provider Config ──────────────────────────
+// ── AI Provider & Model Config ──────────────────────────
+const DEFAULT_SYSTEM_PROMPT = 'You are Deenio AI, a knowledgeable Islamic scholar assistant. Answer questions about Islam, Quran, Hadith, prayer, fiqh, Islamic history, halal/haram, duas, and Islamic lifestyle. Be respectful, accurate, and cite Quranic verses or hadith references when relevant. Include Arabic text for prayers and duas with English translation. Keep answers helpful, clear, and concise. If asked about unrelated topics, politely redirect to Islamic subjects.';
+
 const AI_PROVIDERS = {
-    groq:       { name: 'Groq',              keyLabel: 'Groq Console',        defaultModel: 'llama-3.3-70b-versatile',           keyUrl: 'https://console.groq.com/keys' },
-    openai:     { name: 'OpenAI',            keyLabel: 'OpenAI Platform',     defaultModel: 'gpt-4o-mini',                       keyUrl: 'https://platform.openai.com/api-keys' },
-    openrouter: { name: 'OpenRouter',        keyLabel: 'OpenRouter',          defaultModel: 'meta-llama/llama-3.3-70b-instruct', keyUrl: 'https://openrouter.ai/keys' },
-    gemini:     { name: 'Google Gemini',     keyLabel: 'Google AI Studio',    defaultModel: 'gemini-2.0-flash',                  keyUrl: 'https://aistudio.google.com/apikey' },
+    groq: {
+        name: 'Groq',
+        badge: '⚡ Fastest & Free Tier',
+        keyLabel: 'Groq Console',
+        keyUrl: 'https://console.groq.com/keys',
+        defaultModel: 'llama-3.3-70b-versatile',
+        models: [
+            { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile', tag: 'Recommended', desc: 'Flagship speed & intelligence, 128k context window' },
+            { id: 'llama-3.1-8b-instant', name: 'Llama 3.1 8B Instant', tag: 'Ultra Fast', desc: 'Lightning quick response times for high-volume questions' },
+            { id: 'mixtral-8x7b-32768', name: 'Mixtral 8x7B 32k', tag: 'MoE Context', desc: 'Mixture-of-Experts architecture with 32k context' },
+            { id: 'gemma2-9b-it', name: 'Gemma 2 9B Instruct', tag: 'Google LPU', desc: 'Google open weights model running on Groq LPU speed' },
+        ],
+    },
+    gemini: {
+        name: 'Google Gemini',
+        badge: '🧠 Advanced Multimodal',
+        keyLabel: 'Google AI Studio',
+        keyUrl: 'https://aistudio.google.com/apikey',
+        defaultModel: 'gemini-3.6-flash',
+        models: [
+            { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash', tag: 'Recommended', desc: 'Google flagship GA model, ultra-fast generation, superior Islamic reasoning' },
+            { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', tag: 'Deep Reasoning', desc: 'Complex Islamic jurisprudence, fiqh comparisons, and deep tafsir analysis' },
+        ],
+    },
+    openai: {
+        name: 'OpenAI',
+        badge: '🌟 Industry Standard',
+        keyLabel: 'OpenAI Platform',
+        keyUrl: 'https://platform.openai.com/api-keys',
+        defaultModel: 'gpt-4o-mini',
+        models: [
+            { id: 'gpt-4o-mini', name: 'GPT-4o Mini', tag: 'Recommended', desc: 'Affordable, fast, highly capable across English & Arabic' },
+            { id: 'gpt-4o', name: 'GPT-4o (Omni)', tag: 'Flagship', desc: 'Top-tier OpenAI intelligence across multilingual tasks' },
+            { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', tag: 'Legacy', desc: 'Classic lightweight OpenAI model' },
+        ],
+    },
+    openrouter: {
+        name: 'OpenRouter',
+        badge: '🌐 Multi-Provider Router',
+        keyLabel: 'OpenRouter Console',
+        keyUrl: 'https://openrouter.ai/keys',
+        defaultModel: 'meta-llama/llama-3.3-70b-instruct',
+        models: [
+            { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B Instruct', tag: 'Recommended', desc: 'Meta open weights model routed via lowest-latency host' },
+            { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini 2.0 Flash (Free)', tag: '100% Free', desc: 'Free-tier Gemini routed via OpenRouter free cluster' },
+            { id: 'deepseek/deepseek-chat', name: 'DeepSeek V3', tag: 'High Intelligence', desc: '671B MoE model with strong multilingual and reasoning capability' },
+            { id: 'mistralai/mistral-7b-instruct:free', name: 'Mistral 7B (Free)', tag: 'Free Tier', desc: 'Fast, lightweight free option for simple queries' },
+        ],
+    },
 };
 
 const showAiKey = ref(false);
+const showAdvancedAi = ref(false);
 const aiTestLoading = ref(false);
 const aiTestResult = ref(null);
+
+const playgroundQuery = ref('What are the five pillars of Islam?');
+const playgroundResponse = ref('');
+const playgroundLatency = ref(0);
+const playgroundLoading = ref(false);
 
 const aiProviderName = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.name || 'Groq');
 const aiKeyLabel    = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.keyLabel || aiProviderName.value);
 const aiKeyUrl      = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.keyUrl || AI_PROVIDERS.groq.keyUrl);
-const aiModelPlaceholder = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.defaultModel || '');
-const aiModelHint = computed(() => `Default: ${aiModelPlaceholder.value}`);
 
-const onProviderChange = () => {
-    // Set default model when switching provider (only if model is empty or was a default from another provider)
-    const currentModel = formData.value.ai_model || '';
-    const isDefaultOfAnyProvider = Object.values(AI_PROVIDERS).some(p => p.defaultModel === currentModel);
-    if (!currentModel || isDefaultOfAnyProvider) {
-        formData.value.ai_model = AI_PROVIDERS[formData.value.ai_provider]?.defaultModel || '';
+const currentProviderModels = computed(() => AI_PROVIDERS[formData.value.ai_provider]?.models || []);
+
+const isCustomModel = ref(false);
+const selectedModelChoice = computed({
+    get() {
+        let cur = formData.value.ai_model || '';
+        // Auto-upgrade deprecated Gemini models to 3.6 Flash
+        if (cur === 'gemini-2.0-flash' || cur === 'gemini-2.5-flash' || cur.includes('gemini-1.5')) {
+            cur = 'gemini-3.6-flash';
+            formData.value.ai_model = 'gemini-3.6-flash';
+        }
+        const exists = currentProviderModels.value.some(m => m.id === cur);
+        if (!exists && cur !== '') {
+            return '__custom__';
+        }
+        return cur || (AI_PROVIDERS[formData.value.ai_provider]?.defaultModel || '');
+    },
+    set(val) {
+        if (val === '__custom__') {
+            isCustomModel.value = true;
+        } else {
+            isCustomModel.value = false;
+            formData.value.ai_model = val;
+        }
     }
+});
+
+const currentModelObj = computed(() => {
+    return currentProviderModels.value.find(m => m.id === formData.value.ai_model) || null;
+});
+
+const currentModelTag = computed(() => currentModelObj.value?.tag || (isCustomModel.value ? 'Custom' : ''));
+const currentModelDesc = computed(() => currentModelObj.value?.desc || '');
+
+const setAiProvider = (pKey) => {
+    formData.value.ai_provider = pKey;
+    const defaultModel = AI_PROVIDERS[pKey]?.defaultModel || '';
+    formData.value.ai_model = defaultModel;
+    isCustomModel.value = false;
     aiTestResult.value = null;
+};
+
+const onModelSelectChange = () => {
+    aiTestResult.value = null;
+};
+
+const resetSystemPrompt = () => {
+    formData.value.ai_system_prompt = DEFAULT_SYSTEM_PROMPT;
+};
+
+const copyResponse = () => {
+    if (playgroundResponse.value) {
+        navigator.clipboard.writeText(playgroundResponse.value);
+        toast.success('Copied to clipboard');
+    }
 };
 
 const testAiConnection = () => {
@@ -437,9 +666,6 @@ const testAiConnection = () => {
     const payload = {
         ai_provider: formData.value.ai_provider || 'groq',
         ai_model: formData.value.ai_model || '',
-        // Always send the current key; backend will decrypt if stored encrypted.
-        // If user typed a new unsaved key, is_typed_islamic_name is true and we pass it raw.
-        // If loaded from saved settings, we pass the stored value and backend safeDecrypts it.
         ai_api_key: formData.value.islamic_name_api_key || '',
         is_key_encrypted: !formData.value.is_typed_islamic_name,
     };
@@ -449,10 +675,41 @@ const testAiConnection = () => {
         .catch(({ response }) => {
             aiTestResult.value = {
                 success: false,
-                message: response?.data?.message || 'Connection test failed. Check your settings.',
+                message: response?.data?.message || 'Connection test failed. Check your API key and settings.',
             };
         })
         .finally(() => { aiTestLoading.value = false; });
+};
+
+const runPlaygroundPrompt = (query) => {
+    if (!query || !query.trim()) return;
+    playgroundLoading.value = true;
+    playgroundResponse.value = '';
+    playgroundQuery.value = query;
+
+    const payload = {
+        ai_provider: formData.value.ai_provider || 'groq',
+        ai_model: formData.value.ai_model || '',
+        ai_api_key: formData.value.islamic_name_api_key || '',
+        is_key_encrypted: !formData.value.is_typed_islamic_name,
+        test_prompt: query,
+    };
+
+    Axios.post('ai/test-connection', payload)
+        .then(({ data }) => {
+            if (data.success) {
+                playgroundResponse.value = data.reply || data.message;
+                playgroundLatency.value = data.latency_ms || 0;
+            } else {
+                playgroundResponse.value = '❌ ' + (data.message || 'Generation failed.');
+            }
+        })
+        .catch(({ response }) => {
+            playgroundResponse.value = '❌ Error: ' + (response?.data?.message || 'Request failed.');
+        })
+        .finally(() => {
+            playgroundLoading.value = false;
+        });
 };
 
 const submit = () => {
@@ -465,6 +722,7 @@ const submit = () => {
     formData.value.show_donation_banner = formData.value.show_donation_banner === true ? 1 : 0;
     formData.value.show_donation_icon   = formData.value.show_donation_icon   === true ? 1 : 0;
     formData.value.ramadan_schedule     = formData.value.ramadan_schedule     === true ? 1 : 0;
+    formData.value.ai_enabled           = formData.value.ai_enabled           === true ? 1 : 0;
 
     // Persist custom theme colors (or clear them when custom mode is off).
     formData.value.theme_use_custom = useCustom.value ? '1' : '0';
@@ -511,8 +769,15 @@ const getServerData = () => {
             formData.value.google_map_key       = data.google_map_key || '';
             originalGoogleMapKey.value          = data.google_map_key || '';
 
+            formData.value.ai_enabled           = data.ai_enabled === undefined || data.ai_enabled === null ? true : Number(data.ai_enabled) === 1;
             formData.value.ai_provider          = data.ai_provider || 'groq';
-            formData.value.ai_model             = data.ai_model || '';
+            formData.value.ai_model             = data.ai_model || AI_PROVIDERS[formData.value.ai_provider]?.defaultModel || 'llama-3.3-70b-versatile';
+            if (formData.value.ai_model === 'gemini-2.0-flash' || formData.value.ai_model === 'gemini-2.5-flash' || (formData.value.ai_model && formData.value.ai_model.includes('gemini-1.5'))) {
+                formData.value.ai_model = 'gemini-3.6-flash';
+            }
+            formData.value.ai_system_prompt     = data.ai_system_prompt || DEFAULT_SYSTEM_PROMPT;
+            formData.value.ai_temperature       = Number(data.ai_temperature || 0.7);
+            formData.value.ai_max_tokens        = Number(data.ai_max_tokens || 600);
 
             isInitialLoadComplete.value         = true;
         }
@@ -576,8 +841,17 @@ onMounted(() => {
                 originalIslamicNameApiKey.value     = data.islamic_name_api_key || '';
                 formData.value.google_map_key       = data.google_map_key || '';
                 originalGoogleMapKey.value          = data.google_map_key || '';
+
+                formData.value.ai_enabled           = data.ai_enabled === undefined || data.ai_enabled === null ? true : Number(data.ai_enabled) === 1;
                 formData.value.ai_provider          = data.ai_provider || 'groq';
-                formData.value.ai_model             = data.ai_model || '';
+                formData.value.ai_model             = data.ai_model || AI_PROVIDERS[formData.value.ai_provider]?.defaultModel || 'llama-3.3-70b-versatile';
+                if (formData.value.ai_model === 'gemini-2.0-flash' || formData.value.ai_model === 'gemini-2.5-flash' || (formData.value.ai_model && formData.value.ai_model.includes('gemini-1.5'))) {
+                    formData.value.ai_model = 'gemini-3.6-flash';
+                }
+                formData.value.ai_system_prompt     = data.ai_system_prompt || DEFAULT_SYSTEM_PROMPT;
+                formData.value.ai_temperature       = Number(data.ai_temperature || 0.7);
+                formData.value.ai_max_tokens        = Number(data.ai_max_tokens || 600);
+
                 isInitialLoadComplete.value         = true;
             }
         }),
@@ -865,51 +1139,406 @@ onMounted(() => {
     .media-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
-/* ── AI Test Connection ── */
+/* ── AI & Intelligence Engine Section ── */
+.ai-settings-card {
+    border-top: 3px solid var(--theme-secondary, #2E7D32);
+}
+.card-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.ai-dot {
+    background: linear-gradient(135deg, #10B981, #6366F1) !important;
+}
+.ai-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+.status-active {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+}
+.status-inactive {
+    background: rgba(100, 116, 139, 0.12);
+    color: #64748B;
+    border: 1px solid rgba(100, 116, 139, 0.25);
+}
+.status-indicator-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.toggle-item--ai {
+    background: var(--theme-muted-bg);
+    border: 1px solid var(--theme-border);
+    padding: 12px 14px;
+    border-radius: 10px;
+}
+
+/* ── AI Provider Grid ── */
+.ai-provider-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}
+.ai-provider-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+    background: var(--theme-muted-bg);
+    border: 1.5px solid var(--theme-border);
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+    transition: all .18s ease;
+}
+.ai-provider-card:hover {
+    border-color: #94A3B8;
+    transform: translateY(-1px);
+}
+.ai-provider-card--active {
+    border-color: var(--theme-secondary, #2E7D32);
+    background: var(--theme-card);
+    box-shadow: 0 0 0 3px rgba(var(--theme-secondary-rgb, 46, 125, 50), 0.12);
+}
+.provider-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.provider-badge {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--theme-text-muted);
+}
+.provider-check {
+    font-size: 11px;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--theme-secondary, #2E7D32);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.provider-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--theme-text);
+}
+.provider-key-source {
+    font-size: 11px;
+    color: var(--theme-text-faint);
+    margin-top: 2px;
+}
+
+/* ── Model & Key Styling ── */
+.badge-subtle {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 12px;
+    background: rgba(var(--theme-primary-rgb, 26, 107, 74), 0.1);
+    color: var(--theme-primary, #1A6B4A);
+    margin-left: 6px;
+}
+.field-helper {
+    display: block;
+    font-size: 11px;
+    color: var(--theme-text-faint);
+    margin-top: 4px;
+    line-height: 1.35;
+}
+.ai-key-link {
+    font-size: 11px;
+    color: var(--theme-primary, #1A6B4A);
+    text-decoration: underline;
+    margin-left: 8px;
+}
+.ai-key-wrapper {
+    position: relative;
+}
+.ai-key-input {
+    padding-right: 42px;
+}
+.ai-key-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--theme-text-muted);
+    padding: 4px;
+}
+
+/* ── Advanced AI Settings ── */
+.ai-advanced-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--theme-muted-bg);
+    border: 1px solid var(--theme-border);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--theme-text);
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+}
+.ai-advanced-toggle:hover {
+    background: var(--theme-card);
+}
+.ai-advanced-panel {
+    padding: 14px;
+    background: var(--theme-muted-bg);
+    border: 1px solid var(--theme-border);
+    border-radius: 10px;
+}
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.btn-link-sm {
+    font-size: 11px;
+    color: var(--theme-primary, #1A6B4A);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.field-range {
+    width: 100%;
+    margin-top: 6px;
+    accent-color: var(--theme-primary, #1A6B4A);
+}
+.range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--theme-text-faint);
+    margin-top: 2px;
+}
+
+/* ── Testing & Diagnostics ── */
+.ai-test-section {
+    background: var(--theme-muted-bg);
+    border: 1px solid var(--theme-border);
+    border-radius: 12px;
+    padding: 14px;
+}
+.ai-test-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.test-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--theme-text);
+}
+.test-section-subtitle {
+    font-size: 11px;
+    color: var(--theme-text-faint);
+}
 .test-connection-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 18px;
-    background: var(--theme-primary, #2E7D32);
+    padding: 8px 16px;
+    background: var(--theme-primary, #1A6B4A);
     color: #fff;
     border: none;
     border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
-    transition: all .2s;
-    white-space: nowrap;
+    transition: all .18s;
 }
 .test-connection-btn:hover:not(:disabled) {
-    opacity: .88;
+    opacity: .9;
     transform: translateY(-1px);
 }
 .test-connection-btn:disabled {
     opacity: .6;
     cursor: not-allowed;
 }
-.test-result {
-    font-size: 13px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    max-width: 400px;
+
+.test-result-banner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+}
+.banner-success {
+    background: #ECFDF5;
+    border: 1px solid #A7F3D0;
+    color: #065F46;
+}
+.banner-error {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    color: #991B1B;
+}
+.banner-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+.latency-badge {
+    background: rgba(0,0,0,0.08);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+}
+.banner-msg {
+    margin-top: 4px;
+    font-size: 12px;
     word-break: break-word;
 }
-.test-success {
-    color: #1b5e20;
-    background: #e8f5e9;
-    border: 1px solid #a5d6a7;
+
+/* ── Interactive Playground ── */
+.ai-playground {
+    border-top: 1px solid var(--theme-border);
+    padding-top: 12px;
 }
-.test-error {
-    color: #b71c1c;
-    background: #ffebee;
-    border: 1px solid #ef9a9a;
+.playground-header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 8px;
 }
+.playground-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--theme-text);
+}
+.playground-sub {
+    font-size: 11px;
+    color: var(--theme-text-faint);
+}
+.sample-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.chip-caption {
+    font-size: 11px;
+    color: var(--theme-text-faint);
+    font-weight: 500;
+}
+.sample-chip {
+    background: var(--theme-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 14px;
+    padding: 3px 9px;
+    font-size: 11px;
+    color: var(--theme-text);
+    cursor: pointer;
+    transition: all .15s;
+}
+.sample-chip:hover {
+    border-color: var(--theme-secondary, #2E7D32);
+    color: var(--theme-secondary, #2E7D32);
+}
+.playground-input-row {
+    display: flex;
+    gap: 8px;
+}
+.playground-input {
+    flex: 1;
+    font-size: 13px;
+}
+.playground-send-btn {
+    padding: 8px 16px;
+    background: var(--theme-secondary, #2E7D32);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: opacity .18s;
+}
+.playground-send-btn:hover:not(:disabled) {
+    opacity: .9;
+}
+.playground-send-btn:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.playground-bubble {
+    background: var(--theme-card);
+    border: 1px solid var(--theme-border);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.bubble-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--theme-border);
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+}
+.bubble-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--theme-secondary, #2E7D32);
+}
+.btn-copy {
+    background: none;
+    border: none;
+    font-size: 11px;
+    color: var(--theme-text-muted);
+    cursor: pointer;
+}
+.btn-copy:hover {
+    color: var(--theme-text);
+}
+.bubble-content {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--theme-text);
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
 .spinner-sm {
     display: inline-block;
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     border: 2px solid rgba(255,255,255,.3);
     border-top-color: #fff;
     border-radius: 50%;

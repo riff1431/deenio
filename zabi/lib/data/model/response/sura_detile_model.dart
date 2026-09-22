@@ -92,7 +92,7 @@ class Chapter {
 
 
 class ChapterInfo {
-  int? pageNumber;
+  dynamic pageNumber;
   List<PageVerses>? pageVerses;
   String? pageArabicAyah;
   int? pageKey;
@@ -107,7 +107,15 @@ class ChapterInfo {
   });
 
   ChapterInfo.fromJson(Map<String, dynamic> json) {
-    pageNumber = parseInt(json['page_number']);
+    final rawPage = json['page_number'];
+    final rawEng = json['eng_page_number'];
+    if (rawPage != null && rawPage.toString() != 'null' && rawPage.toString().trim().isNotEmpty) {
+      pageNumber = rawPage.toString();
+    } else if (rawEng != null && rawEng.toString() != 'null') {
+      pageNumber = rawEng.toString();
+    } else {
+      pageNumber = null;
+    }
     if (json['page_verses'] != null) {
       pageVerses = <PageVerses>[];
       json['page_verses'].forEach((v) {

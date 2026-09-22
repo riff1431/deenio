@@ -170,10 +170,18 @@ class _OfflineArabicQuranAutoDetectScreenState
     });
   }
 
-  Widget _buildPageNumber(BuildContext context, String pageNumber) {
+  Widget _buildPageNumber(BuildContext context, String? pageNumber, [int? engPage]) {
+    String display = '';
+    if (pageNumber != null && pageNumber.isNotEmpty && pageNumber != 'null') {
+      display = pageNumber;
+    } else if (engPage != null) {
+      display = engPage.toString();
+    }
+    if (display.isEmpty) return const SizedBox();
+
     return Center(
       child: SelectableText(
-        pageNumber,
+        display,
         textAlign: TextAlign.center,
         style: robotoMedium.copyWith(
           color: Get.isDarkMode ? Colors.white : Colors.black,
@@ -285,7 +293,7 @@ class _OfflineArabicQuranAutoDetectScreenState
             children: [
               const Expanded(child: SizedBox()),
               Expanded(
-                child: _buildPageNumber(context, apiData.pageNumber.toString()),
+                child: _buildPageNumber(context, apiData.pageNumber?.toString(), apiData.engPageNumber),
               ),
               Expanded(
                 child: _buildBookmarkButton(

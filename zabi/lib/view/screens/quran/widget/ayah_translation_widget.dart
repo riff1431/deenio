@@ -99,14 +99,17 @@ class AyanTranslationWidget extends StatelessWidget {
           },
         ),
         const SizedBox(height: Dimensions.PADDING_SIZE_EXTRA_SMALL),
-        Text(
-          chapterData.pageNumber.toString(),
-          textAlign: TextAlign.center,
-          style: robotoMedium.copyWith(
-            fontSize: Dimensions.FONT_SIZE_LARGE,
-            color: Theme.of(context).textTheme.bodyMedium!.color,
+        if ((chapterData.pageNumber != null && chapterData.pageNumber.toString() != 'null' && chapterData.pageNumber.toString().isNotEmpty) || chapterData.engPageNumber != null)
+          Text(
+            (chapterData.pageNumber != null && chapterData.pageNumber.toString() != 'null' && chapterData.pageNumber.toString().isNotEmpty)
+                ? chapterData.pageNumber.toString()
+                : chapterData.engPageNumber.toString(),
+            textAlign: TextAlign.center,
+            style: robotoMedium.copyWith(
+              fontSize: Dimensions.FONT_SIZE_LARGE,
+              color: Theme.of(context).textTheme.bodyMedium!.color,
+            ),
           ),
-        ),
         const SizedBox(height: Dimensions.PADDING_SIZE_EXTRA_SMALL),
       ],
     );
