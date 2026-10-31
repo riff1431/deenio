@@ -17,13 +17,11 @@ class HadithController extends GetxController {
   RxBool isLoadingHadith = false.obs;
 
   // hadith api key
-  String hadithApiKey =
-      "\$2y\$10\$IpN2jMeSLbrGxZ6zwEu3KAEr1ZmUjwQCYhRbiReqscXswndm";
+  String get hadithApiKey => AppConstants.HADITH_API_KEY;
 
   @override
   void onInit() {
     getHadishBookNameData();
-
     super.onInit();
   }
 
@@ -35,8 +33,6 @@ class HadithController extends GetxController {
   getHadishBookNameData() async {
     isLoadingHadithChapter(true);
     try {
-      const hadithApiKey =
-          "\$2y\$10\$IpN2jMeSLbrGxZ6zwEu3KAEr1ZmUjwQCYhRbiReqscXswndm";
       final response = await http.get(
         Uri.parse(
           "${AppConstants.HADITH_BASE_URL}/api/books?apiKey=$hadithApiKey",
@@ -47,6 +43,9 @@ class HadithController extends GetxController {
       if (response.statusCode == 200) {
         hadisBookModel = HadisBookModel.fromJson(data);
         update();
+      } else {
+        showCustomSnackBar(data['message'] ?? "Failed to load hadith books",
+            isError: true);
       }
     } catch (error) {
       print("Error fetching data: $error");
@@ -71,6 +70,10 @@ class HadithController extends GetxController {
 
         hadithChapterModel = HadithChapterModel.fromJson(data);
         update();
+      } else {
+        var data = jsonDecode(response.body);
+        showCustomSnackBar(data['message'] ?? "Failed to load chapters",
+            isError: true);
       }
     } catch (error) {
       print("Error fetching data: $error");
