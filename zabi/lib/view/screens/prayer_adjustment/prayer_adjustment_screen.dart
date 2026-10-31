@@ -63,7 +63,14 @@ class PrayerAdjustmentScreen extends StatelessWidget {
                 child: GetBuilder<PrayerTimeController>(
                   builder: (autoController) {
                     final data = autoController.prayerTimeModel?.data;
-                    if (data == null) return const SizedBox();
+                    if (data == null) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 60),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
 
                     // Build prayer items list
                     final prayerItems = _buildPrayerItems(data);

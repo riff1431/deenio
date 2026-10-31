@@ -50,58 +50,62 @@ class PrayerTimeController extends GetxController implements GetxService {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       saveLocalStoreCity = prefs.getString(AppConstants.saveCityName);
 
-      bool serviceEnabled = false;
-      try {
-        serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      } catch (_) {
-        serviceEnabled = false;
-      }
-
-      if (!serviceEnabled && !kIsWeb) {
+      if (!kIsWeb) {
+        bool serviceEnabled = false;
         try {
-          await Geolocator.openLocationSettings();
-        } catch (_) {}
-      }
+          serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        } catch (_) {
+          serviceEnabled = false;
+        }
 
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        if (!serviceEnabled) {
+          try {
+            await Geolocator.openLocationSettings();
+          } catch (_) {}
+        }
+
+        LocationPermission permission = await Geolocator.checkPermission();
         if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+          if (permission == LocationPermission.denied) {
+            await prefs.setBool("isLocationDenied", true);
+            isLocationDenied.value = true;
+            final isPrayerTme = prefs.getBool(AppConstants.isPrayerTme) ?? false;
+            fetchPrayerTime(
+              reload: false,
+              isManualPrayerTme: isPrayerTme,
+              manualCity: saveLocalStoreCity ?? "Dhaka",
+            );
+            return;
+          }
+        }
+
+        if (permission == LocationPermission.deniedForever) {
           await prefs.setBool("isLocationDenied", true);
           isLocationDenied.value = true;
           final isPrayerTme = prefs.getBool(AppConstants.isPrayerTme) ?? false;
           fetchPrayerTime(
             reload: false,
             isManualPrayerTme: isPrayerTme,
-            manualCity: saveLocalStoreCity ?? "Makkah",
+            manualCity: saveLocalStoreCity ?? "Dhaka",
           );
           return;
         }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        await prefs.setBool("isLocationDenied", true);
-        isLocationDenied.value = true;
-        final isPrayerTme = prefs.getBool(AppConstants.isPrayerTme) ?? false;
-        fetchPrayerTime(
-          reload: false,
-          isManualPrayerTme: isPrayerTme,
-          manualCity: saveLocalStoreCity ?? "Makkah",
-        );
-        return;
       }
 
       Position? position;
       try {
         position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.medium,
-          timeLimit: const Duration(seconds: 4),
+          timeLimit: Duration(seconds: kIsWeb ? 2 : 4),
         );
       } catch (e) {
         debugPrint("Location fetch timeout or error: $e");
-        try {
-          position = await Geolocator.getLastKnownPosition();
-        } catch (_) {}
+        if (!kIsWeb) {
+          try {
+            position = await Geolocator.getLastKnownPosition();
+          } catch (_) {}
+        }
       }
 
       if (position != null) {
@@ -122,10 +126,13 @@ class PrayerTimeController extends GetxController implements GetxService {
             }
           } catch (_) {}
         }
+      } else {
+        latitude ??= 23.8103;
+        longitude ??= 90.4125;
       }
 
       if (currentAddress.value.isEmpty || currentAddress.value == '--') {
-        currentAddress.value = saveLocalStoreCity ?? 'Makkah';
+        currentAddress.value = saveLocalStoreCity ?? (kIsWeb ? 'Dhaka' : 'Dhaka');
       }
 
       final isPrayerTme = prefs.getBool(AppConstants.isPrayerTme) ?? false;
@@ -140,6 +147,11 @@ class PrayerTimeController extends GetxController implements GetxService {
       update();
     } catch (e) {
       debugPrint("Error in getLocation: $e");
+      fetchPrayerTime(
+        reload: false,
+        isManualPrayerTme: false,
+        manualCity: "Dhaka",
+      );
     }
   }
 
@@ -263,19 +275,21 @@ class PrayerTimeController extends GetxController implements GetxService {
       saveAddress.value = saveLocalStoreCity ?? "";
 
       Position? position;
-      try {
-        position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.medium,
-          timeLimit: const Duration(seconds: 4),
-        );
-      } catch (e) {
+      if (!kIsWeb) {
         try {
-          position = await Geolocator.getLastKnownPosition();
-        } catch (_) {}
+          position = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.medium,
+            timeLimit: const Duration(seconds: 4),
+          );
+        } catch (e) {
+          try {
+            position = await Geolocator.getLastKnownPosition();
+          } catch (_) {}
+        }
       }
 
-      double lat = position?.latitude ?? (latitude ?? 21.4225);
-      double lng = position?.longitude ?? (longitude ?? 39.8262);
+      double lat = position?.latitude ?? (latitude ?? 23.8103);
+      double lng = position?.longitude ?? (longitude ?? 90.4125);
       latitude = lat;
       longitude = lng;
 
@@ -295,7 +309,7 @@ class PrayerTimeController extends GetxController implements GetxService {
       }
 
       if (currentAddress.value.isEmpty || currentAddress.value == '--') {
-        currentAddress.value = saveLocalStoreCity ?? (kIsWeb ? 'Makkah' : 'Makkah');
+        currentAddress.value = saveLocalStoreCity ?? (kIsWeb ? 'Dhaka' : 'Dhaka');
       }
 
       DateTime currentDate = DateTime.now();
@@ -304,15 +318,18 @@ class PrayerTimeController extends GetxController implements GetxService {
       var prayerMethod = _selectedCalculationMethod ?? '1';
       var school = _selectedPrayerMadhab ?? 'STANDARD';
 
-      String timezone = 'UTC';
+      String timezone = 'Asia/Dhaka';
       try {
         timezone = await FlutterTimezone.getLocalTimezone();
       } catch (_) {
-        timezone = DateTime.now().timeZoneName;
+        timezone = 'Asia/Dhaka';
+      }
+      if (timezone == 'Bangladesh Standard Time' || timezone.isEmpty) {
+        timezone = 'Asia/Dhaka';
       }
 
       final cityParam = isManualPrayerTme
-          ? (manualCity != null && manualCity.isNotEmpty ? manualCity : currentAddress.value)
+          ? (manualCity != null && manualCity.isNotEmpty && manualCity != '--' ? manualCity : currentAddress.value)
           : currentAddress.value;
 
       final response = await apiClient.postData(
@@ -320,7 +337,7 @@ class PrayerTimeController extends GetxController implements GetxService {
         {
           "type": isManualPrayerTme ? "manual" : "automatic",
           "date": formattedDate,
-          "city": cityParam,
+          "city": cityParam == '--' ? 'Dhaka' : cityParam,
           "lat": "$lat",
           "lng": "$lng",
           "prayer_method": prayerMethod,
@@ -357,37 +374,44 @@ class PrayerTimeController extends GetxController implements GetxService {
     magribStart.value = apiwaktTime.maghribStart ?? "--";
     ishaStart.value = apiwaktTime.ishaStart ?? "--";
 
+    DateTime? safeParseTime(String? timeStr) {
+      if (timeStr == null || !timeStr.contains(':')) return null;
+      try {
+        final parts = timeStr.trim().split(':');
+        final h = parts[0].padLeft(2, '0');
+        final m = parts.length > 1 ? parts[1].padLeft(2, '0') : '00';
+        return DateTime.parse('2000-01-01 $h:$m:00');
+      } catch (_) {
+        return null;
+      }
+    }
+
     try {
-      if (finalCurrentTime.isBefore(
-        DateTime.parse('2000-01-01 ${apiwaktTime.fajrStart}:00'),
-      )) {
+      final fajrDt = safeParseTime(apiwaktTime.fajrStart);
+      final sunriseDt = safeParseTime(apiwaktTime.sunrise);
+      final zuhrDt = safeParseTime(apiwaktTime.zuhrStart);
+      final asrDt = safeParseTime(apiwaktTime.asrStart);
+      final maghribDt = safeParseTime(apiwaktTime.maghribStart);
+      final ishaDt = safeParseTime(apiwaktTime.ishaStart);
+
+      if (fajrDt != null && finalCurrentTime.isBefore(fajrDt)) {
         currentWaqtName.value = "fajr".tr;
         currentWaktTime.value = apiwaktTime.fajrStart.toString();
-      } else if (finalCurrentTime.isBefore(
-        DateTime.parse('2000-01-01 ${apiwaktTime.sunrise}:00'),
-      )) {
+      } else if (sunriseDt != null && finalCurrentTime.isBefore(sunriseDt)) {
         currentWaqtName.value = "sunrise".tr;
         currentWaktTime.value = apiwaktTime.sunrise.toString();
-      } else if (finalCurrentTime.isBefore(
-        DateTime.parse('2000-01-01 ${apiwaktTime.zuhrStart}:00'),
-      )) {
+      } else if (zuhrDt != null && finalCurrentTime.isBefore(zuhrDt)) {
         currentWaqtName.value = DateTime.now().weekday == DateTime.friday
             ? "jumuah".tr
             : "dhuhr".tr;
         currentWaktTime.value = apiwaktTime.zuhrStart.toString();
-      } else if (finalCurrentTime.isBefore(
-        DateTime.parse('2000-01-01 ${apiwaktTime.asrStart}:00'),
-      )) {
+      } else if (asrDt != null && finalCurrentTime.isBefore(asrDt)) {
         currentWaqtName.value = "asr".tr;
         currentWaktTime.value = apiwaktTime.asrStart.toString();
-      } else if (finalCurrentTime.isBefore(
-        DateTime.parse('2000-01-01 ${apiwaktTime.maghribStart}:00'),
-      )) {
+      } else if (maghribDt != null && finalCurrentTime.isBefore(maghribDt)) {
         currentWaqtName.value = "magrib".tr;
         currentWaktTime.value = apiwaktTime.maghribStart.toString();
-      } else if (finalCurrentTime.isBefore(
-        DateTime.parse('2000-01-01 ${apiwaktTime.ishaStart}:00'),
-      )) {
+      } else if (ishaDt != null && finalCurrentTime.isBefore(ishaDt)) {
         currentWaqtName.value = "isha".tr;
         currentWaktTime.value = apiwaktTime.ishaStart.toString();
       } else {
@@ -395,6 +419,7 @@ class PrayerTimeController extends GetxController implements GetxService {
         currentWaktTime.value = apiwaktTime.fajrStart.toString();
       }
     } catch (_) {}
+    update();
   }
 
   RxBool isCityListLoading = false.obs;

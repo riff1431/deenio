@@ -5,9 +5,10 @@ class PrayerTimeModel {
 
   PrayerTimeModel({this.status, this.message, this.data});
 
-  PrayerTimeModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    message = json['message'];
+  PrayerTimeModel.fromJson(dynamic json) {
+    if (json is! Map) return;
+    status = json['status'] == true || json['status'] == 1 || json['status'] == 'true';
+    message = json['message']?.toString();
     data = json['data'] != null ? Data.fromJson(json['data']) : null;
   }
 
@@ -49,18 +50,19 @@ class Data {
     this.iftarStart,
   });
 
-  Data.fromJson(Map<String, dynamic> json) {
-    date = json['date'];
-    isJumma = json['is_jumma'];
-    imsak = json['imsak'];
-    fajrStart = json['fajr_start'];
-    sunrise = json['sunrise'];
-    zuhrStart = json['zuhr_start'];
-    asrStart = json['asr_start'];
-    maghribStart = json['maghrib_start'];
-    ishaStart = json['isha_start'];
-    sehriEnd = json['sehri'];
-    iftarStart = json['iftar'];
+  Data.fromJson(dynamic json) {
+    if (json is! Map) return;
+    date = json['date']?.toString();
+    isJumma = json['is_jumma'] == true || json['is_jumma'] == 1;
+    imsak = json['imsak']?.toString();
+    fajrStart = json['fajr_start']?.toString();
+    sunrise = json['sunrise']?.toString();
+    zuhrStart = json['zuhr_start']?.toString();
+    asrStart = json['asr_start']?.toString();
+    maghribStart = json['maghrib_start']?.toString();
+    ishaStart = json['isha_start']?.toString();
+    sehriEnd = json['sehri']?.toString();
+    iftarStart = json['iftar']?.toString();
   }
 
   Map<String, dynamic> toJson() {

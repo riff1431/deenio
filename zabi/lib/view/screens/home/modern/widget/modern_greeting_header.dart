@@ -42,11 +42,6 @@ class ModernGreetingHeader extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final prayerTimeController = Get.find<PrayerTimeController>();
 
-    final city = prayerTimeController.saveLocalStoreCity ??
-        (prayerTimeController.currentAddress.isNotEmpty == true
-            ? prayerTimeController.currentAddress.toString()
-            : 'location'.tr);
-
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -290,15 +285,23 @@ class ModernGreetingHeader extends StatelessWidget {
                               const SizedBox(width: 5),
                               ConstrainedBox(
                                 constraints: const BoxConstraints(maxWidth: 140),
-                                child: Text(
-                                  city,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: robotoMedium.copyWith(
-                                    fontSize: Dimensions.FONT_SIZE_SMALL,
-                                    color: Colors.white,
-                                  ),
-                                ),
+                                child: Obx(() {
+                                  final addr = prayerTimeController.saveAddress.value.isNotEmpty
+                                      ? prayerTimeController.saveAddress.value
+                                      : (prayerTimeController.currentAddress.value.isNotEmpty &&
+                                              prayerTimeController.currentAddress.value != '--'
+                                          ? prayerTimeController.currentAddress.value
+                                          : (prayerTimeController.saveLocalStoreCity ?? 'Dhaka'));
+                                  return Text(
+                                    addr,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: robotoMedium.copyWith(
+                                      fontSize: Dimensions.FONT_SIZE_SMALL,
+                                      color: Colors.white,
+                                    ),
+                                  );
+                                }),
                               ),
                             ],
                           ),
