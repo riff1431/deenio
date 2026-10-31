@@ -19,13 +19,11 @@ class PrayerTimeCalculationSettings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      Get.find<PrayerTimeController>().getLocation();
-      Get.find<PrayerTimeController>().cityCategoryListData();
-      Get.find<PrayerTimeController>().fetchPrayerTime();
+      final ctrl = Get.find<PrayerTimeController>();
+      ctrl.cityCategoryListData();
+      ctrl.loadPrayerTimeSettings();
+      ctrl.loadSwitchValue();
     });
-    Get.put(PrayerTimeController(apiClient: Get.find()));
-    Get.find<PrayerTimeController>().loadPrayerTimeSettings();
-    Get.find<PrayerTimeController>().loadSwitchValue();
 
     return GetBuilder<PrayerTimeController>(
       builder: (prayerTimeController) {

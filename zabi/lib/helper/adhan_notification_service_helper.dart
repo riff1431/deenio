@@ -117,6 +117,8 @@ class AdhanNotificationServiceImpl implements AdhanNotificationService {
     required DateTime dateTime,
     String? payload,
   }) async {
+    if (GetPlatform.isWeb) return;
+
     final prefs = await SharedPreferences.getInstance();
     final selectedSound = prefs.getString('selectedSoundName') ?? 'azan_1';
 
@@ -151,21 +153,25 @@ class AdhanNotificationServiceImpl implements AdhanNotificationService {
 
   @override
   Future<void> cancelAllNotifications() async {
+    if (GetPlatform.isWeb) return;
     await _flutterLocalNotificationsPlugin.cancelAll();
   }
 
   @override
   Future<void> cancelNotification(int id) async {
+    if (GetPlatform.isWeb) return;
     await _flutterLocalNotificationsPlugin.cancel(id);
   }
 
   @override
   Future<List<ActiveNotification>> getActiveNotifications() async {
+    if (GetPlatform.isWeb) return [];
     return _flutterLocalNotificationsPlugin.getActiveNotifications();
   }
 
   @override
   Future<List<PendingNotificationRequest>> getPendingNotifications() async {
+    if (GetPlatform.isWeb) return [];
     return _flutterLocalNotificationsPlugin.pendingNotificationRequests();
   }
 
