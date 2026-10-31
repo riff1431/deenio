@@ -1063,7 +1063,7 @@
                             <div class="absolute left-2.5 text-xs font-bold text-gray-400">W</div>
                             
                             <!-- Rotating Needle Pivot -->
-                            <div id="qibla-needle-pivot" class="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-out" style="transform: rotate(268deg);">
+                            <div id="qibla-needle-pivot" class="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-out" style="transform: rotate(278deg);">
                                 <div class="relative w-full h-full flex items-center justify-center pointer-events-none">
                                     <!-- Needle shaft -->
                                     <div class="w-1.5 h-28 bg-gradient-to-t from-gray-400 via-amber-400 to-emerald-500 rounded-full shadow-lg"></div>
@@ -1083,7 +1083,7 @@
                         </div>
 
                         <div class="mt-3 w-full">
-                            <div id="qibla-angle-text" class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Kaaba Angle: 268° W</div>
+                            <div id="qibla-angle-text" class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Kaaba Angle: 278° W</div>
                             <div id="qibla-location-text" class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">Accurate from Dhaka, Bangladesh</div>
                         </div>
                     </div>
@@ -2528,8 +2528,11 @@ const TRANSLATIONS = {
             return directions[idx];
         }
 
+        let currentQiblaAngle = 278; // Dhaka default 278° WNW
+
         function updateQiblaCompass(lat, lng, cityName) {
             const angle = calculateQibla(lat, lng);
+            currentQiblaAngle = angle;
             const dir = getCardinalDirection(angle);
             const pivot = document.getElementById('qibla-needle-pivot');
             const angleText = document.getElementById('qibla-angle-text');
@@ -2545,6 +2548,62 @@ const TRANSLATIONS = {
                 locText.textContent = `Accurate from ${cityName}`;
             }
         }
+
+        // ── Real-time Mobile Sensor (Electronic Compass) ─────────
+        function initMobileCompass() {
+            if (!window.DeviceOrientationEvent) return;
+
+            const handleOrientation = (e) => {
+                let compassHeading = null;
+                // iOS Safari
+                if (e.webkitCompassHeading !== undefined) {
+                    compassHeading = e.webkitCompassHeading;
+                }
+                // Android Chrome / Standard
+                else if (e.alpha !== null) {
+                    compassHeading = (360 - e.alpha) % 360;
+                }
+
+                if (compassHeading !== null && currentQiblaAngle !== null) {
+                    const relativeAngle = (currentQiblaAngle - compassHeading + 360) % 360;
+                    const pivot = document.getElementById('qibla-needle-pivot');
+                    if (pivot) {
+                        pivot.style.transform = `rotate(${relativeAngle}deg)`;
+                    }
+
+                    const isAligned = Math.abs(relativeAngle) < 10 || Math.abs(relativeAngle - 360) < 10;
+                    const locText = document.getElementById('qibla-location-text');
+                    if (locText) {
+                        if (isAligned) {
+                            locText.innerHTML = '<span class="text-emerald-500 font-extrabold animate-pulse">✓ Facing the Kaaba!</span>';
+                        } else {
+                            const turnDeg = Math.round(relativeAngle > 180 ? relativeAngle - 360 : relativeAngle);
+                            locText.textContent = `Turn ${Math.abs(turnDeg)}° ${turnDeg > 0 ? 'right' : 'left'} to align`;
+                        }
+                    }
+                }
+            };
+
+            // Support iOS 13+ permission dialog
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                const card = document.getElementById('qibla-needle-pivot')?.closest('.glass-card');
+                if (card) {
+                    card.addEventListener('click', () => {
+                        DeviceOrientationEvent.requestPermission()
+                            .then(state => {
+                                if (state === 'granted') {
+                                    window.addEventListener('deviceorientation', handleOrientation, true);
+                                }
+                            })
+                            .catch(console.error);
+                    }, { once: true });
+                }
+            } else {
+                window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+                window.addEventListener('deviceorientation', handleOrientation, true);
+            }
+        }
+        initMobileCompass();
 
         function loadPrayerTimes(lat, lng) {
             const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
