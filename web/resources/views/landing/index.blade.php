@@ -1358,45 +1358,39 @@
                         <label class="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-2.5">
                             Select Payment Method <span class="text-rose-500">*</span>
                         </label>
-                        <div id="donate-payment-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <!-- Stripe -->
-                            <button type="button" onclick="selectPaymentGateway('stripe')" data-gateway="stripe" class="donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all cursor-pointer group">
-                                <div class="w-10 h-10 rounded-xl bg-[#635BFF]/10 text-[#635BFF] flex items-center justify-center mb-2 font-bold text-xs">
-                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.594-7.305h.003z"/></svg>
+                        <div id="donate-payment-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            <!-- Buy Me a Coffee -->
+                            <button type="button" onclick="selectPaymentGateway('buymeacoffee')" data-gateway="buymeacoffee" class="donate-payment-card relative flex items-center gap-3.5 p-4 rounded-2xl border transition-all cursor-pointer group text-left">
+                                <div class="w-12 h-12 rounded-xl bg-[#FFDD00]/20 text-[#FF813F] flex items-center justify-center shrink-0 border border-[#FFDD00]/30 shadow-sm">
+                                    <svg class="w-6 h-6 text-[#FF813F]" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.224-.59-.517-.745C17.272 1.523 16.945 1.5 16.617 1.5H3.68c-.604 0-1.157.37-1.385.944-.228.574-.08 1.229.37 1.636l1.238 1.118c.032.029.055.066.071.106l1.988 8.448c.189.803.906 1.368 1.733 1.368h8.042c.813 0 1.522-.547 1.724-1.332l.711-2.775c1.472-.254 2.656-1.408 2.853-2.912.083-.637-.024-1.284-.209-1.686zm-2.584 2.836c-.104.795-.742 1.393-1.542 1.455l.389-1.517c.061-.238.125-.475.191-.711.238-.857.48-1.713.72-2.57.177.086.326.223.409.4.152.327.085 1.737-.167 2.943z"/>
+                                    </svg>
                                 </div>
-                                <span class="font-bold text-xs text-gray-900 dark:text-white">Stripe</span>
-                                <span class="text-[10px] text-gray-400">Cards / Apple Pay</span>
-                                <div class="donate-check absolute top-2 right-2 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px]">✓</div>
+                                <div class="flex-1 min-w-0 pr-6">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-bold text-sm text-gray-900 dark:text-white">Buy Me a Coffee</span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">Global</span>
+                                    </div>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">Cards • Apple Pay • Google Pay</span>
+                                </div>
+                                <div class="donate-check absolute top-3.5 right-3.5 w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs">✓</div>
                             </button>
 
-                            <!-- PayPal -->
-                            <button type="button" onclick="selectPaymentGateway('paypal')" data-gateway="paypal" class="donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all cursor-pointer group">
-                                <div class="w-10 h-10 rounded-xl bg-[#003087]/10 text-[#003087] dark:text-[#0079c1] flex items-center justify-center mb-2 font-bold text-xs">
-                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/></svg>
+                            <!-- Support Kori -->
+                            <button type="button" onclick="selectPaymentGateway('supportkori')" data-gateway="supportkori" class="donate-payment-card relative flex items-center gap-3.5 p-4 rounded-2xl border transition-all cursor-pointer group text-left">
+                                <div class="w-12 h-12 rounded-xl bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0 border border-rose-500/20 shadow-sm">
+                                    <svg class="w-6 h-6 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>
+                                    </svg>
                                 </div>
-                                <span class="font-bold text-xs text-gray-900 dark:text-white">PayPal</span>
-                                <span class="text-[10px] text-gray-400">Balance & Cards</span>
-                                <div class="donate-check absolute top-2 right-2 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px]">✓</div>
-                            </button>
-
-                            <!-- Razorpay -->
-                            <button type="button" onclick="selectPaymentGateway('razorpay')" data-gateway="razorpay" class="donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all cursor-pointer group">
-                                <div class="w-10 h-10 rounded-xl bg-[#0c2340]/10 text-[#0c2340] dark:text-[#3395ff] flex items-center justify-center mb-2 font-bold text-xs">
-                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3L3 10.53v.98l6.84 2.65L21 3zm0 0l-8.16 9.95 3 1.15L21 3z"/></svg>
+                                <div class="flex-1 min-w-0 pr-6">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-bold text-sm text-gray-900 dark:text-white">Support Kori</span>
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30">BD & Global</span>
+                                    </div>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 block mt-0.5">bKash • Nagad • Rocket • Cards</span>
                                 </div>
-                                <span class="font-bold text-xs text-gray-900 dark:text-white">Razorpay</span>
-                                <span class="text-[10px] text-gray-400">UPI / Netbanking</span>
-                                <div class="donate-check absolute top-2 right-2 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px]">✓</div>
-                            </button>
-
-                            <!-- Paystack -->
-                            <button type="button" onclick="selectPaymentGateway('paystack')" data-gateway="paystack" class="donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border transition-all cursor-pointer group">
-                                <div class="w-10 h-10 rounded-xl bg-[#00c3f7]/10 text-[#00c3f7] flex items-center justify-center mb-2 font-bold text-xs">
-                                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M2 8h20v2.5H2zm0 5h20V15.5H2zm0 5h12V20.5H2z"/></svg>
-                                </div>
-                                <span class="font-bold text-xs text-gray-900 dark:text-white">Paystack</span>
-                                <span class="text-[10px] text-gray-400">Cards & Transfer</span>
-                                <div class="donate-check absolute top-2 right-2 w-4 h-4 rounded-full bg-brand-600 text-white flex items-center justify-center text-[10px]">✓</div>
+                                <div class="donate-check hidden absolute top-3.5 right-3.5 w-5 h-5 rounded-full bg-brand-600 text-white flex items-center justify-center text-xs">✓</div>
                             </button>
                         </div>
                     </div>
@@ -1407,12 +1401,23 @@
                     <!-- 5. Submit Button -->
                     <div>
                         <button id="donate-submit-btn" onclick="submitDonation()" type="button" class="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold text-base shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2">
-                            <span id="donate-btn-text" data-i18n="donate.btn">Donate Now</span>
+                            <span id="donate-btn-text">Support via Buy Me a Coffee ☕</span>
                             <svg id="donate-btn-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                             <span id="donate-btn-loader" class="hidden">
                                 <svg class="w-5 h-5 animate-spin text-white" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
                             </span>
                         </button>
+
+                        <div class="mt-3.5 flex items-center justify-center gap-2.5 text-xs text-gray-500 dark:text-gray-400">
+                            <span>Direct links:</span>
+                            <a href="https://buymeacoffee.com/riff1431" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-semibold text-amber-600 dark:text-amber-400 hover:underline">
+                                BuyMeACoffee ↗
+                            </a>
+                            <span>•</span>
+                            <a href="https://www.supportkori.com/arifurfullstack" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 font-semibold text-rose-600 dark:text-rose-400 hover:underline">
+                                SupportKori ↗
+                            </a>
+                        </div>
 
                         <div id="donate-feedback" class="hidden mt-4 p-4 rounded-2xl text-xs sm:text-sm font-semibold text-center transition-all"></div>
 
@@ -2520,7 +2525,7 @@ const TRANSLATIONS = {
         // ════════════════════════════════════════════════════════
         // DONATION MODULE
         // ════════════════════════════════════════════════════════
-        let selectedGateway = 'stripe';
+        let selectedGateway = 'buymeacoffee';
         let paypalSdkLoaded = false;
 
         function selectDonationAmount(amount) {
@@ -2556,24 +2561,25 @@ const TRANSLATIONS = {
                 const active = card.dataset.gateway === gateway;
                 const check = card.querySelector('.donate-check');
                 if (active) {
-                    card.className = 'donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border-2 border-brand-500 bg-brand-500/10 dark:bg-brand-500/15 shadow-md shadow-brand-500/10 transition-all cursor-pointer';
+                    card.className = 'donate-payment-card relative flex items-center gap-3.5 p-4 rounded-2xl border-2 border-brand-500 bg-brand-500/10 dark:bg-brand-500/15 shadow-md shadow-brand-500/10 transition-all cursor-pointer text-left';
                     if (check) check.classList.remove('hidden');
                 } else {
-                    card.className = 'donate-payment-card relative flex flex-col items-center text-center p-3.5 rounded-2xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-brand-400 transition-all cursor-pointer';
+                    card.className = 'donate-payment-card relative flex items-center gap-3.5 p-4 rounded-2xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-brand-400 transition-all cursor-pointer text-left';
                     if (check) check.classList.add('hidden');
                 }
             });
 
             const paypalContainer = document.getElementById('paypal-button-container');
             const submitBtn       = document.getElementById('donate-submit-btn');
+            const btnTxt          = document.getElementById('donate-btn-text');
 
-            if (gateway === 'paypal') {
-                submitBtn.classList.add('hidden');
-                paypalContainer.classList.remove('hidden');
-                initPaypalButtons();
-            } else {
-                submitBtn.classList.remove('hidden');
-                paypalContainer.classList.add('hidden');
+            if (submitBtn) submitBtn.classList.remove('hidden');
+            if (paypalContainer) paypalContainer.classList.add('hidden');
+
+            if (btnTxt) {
+                btnTxt.textContent = gateway === 'supportkori'
+                    ? 'Support via Support Kori ❤️'
+                    : 'Support via Buy Me a Coffee ☕';
             }
         }
 
@@ -2893,30 +2899,55 @@ const TRANSLATIONS = {
             const btnTxt     = document.getElementById('donate-btn-text');
             const loader     = document.getElementById('donate-btn-loader');
 
-            btn.disabled       = true;
-            btnTxt.textContent = 'Processing…';
-            loader.classList.remove('hidden');
+            const targetUrl = selectedGateway === 'supportkori'
+                ? 'https://www.supportkori.com/arifurfullstack'
+                : 'https://buymeacoffee.com/riff1431';
+
+            const gatewayName = selectedGateway === 'supportkori' ? 'Support Kori' : 'Buy Me a Coffee';
+
+            if (btn) btn.disabled = true;
+            if (btnTxt) btnTxt.textContent = 'Redirecting…';
+            if (loader) loader.classList.remove('hidden');
 
             const done = () => {
-                btn.disabled       = false;
-                btnTxt.textContent = (TRANSLATIONS[currentLang] || TRANSLATIONS.en)['donate.btn'] || 'Donate Now';
-                loader.classList.add('hidden');
+                if (btn) btn.disabled = false;
+                if (btnTxt) {
+                    btnTxt.textContent = selectedGateway === 'supportkori'
+                        ? 'Support via Support Kori ❤️'
+                        : 'Support via Buy Me a Coffee ☕';
+                }
+                if (loader) loader.classList.add('hidden');
             };
 
-            let promise;
-            if      (selectedGateway === 'stripe')     promise = submitStripe(formValues);
-            else if (selectedGateway === 'paypal')     promise = fallbackStoreDonation(formValues, 'paypal');
-            else if (selectedGateway === 'razorpay')   promise = submitRazorpay(formValues);
-            else if (selectedGateway === 'paystack')   promise = submitPaystack(formValues);
-            else                                       promise = fallbackStoreDonation(formValues, selectedGateway || 'direct');
+            // Record donor intention asynchronously in backend
+            try {
+                fetch('/api/donation/manual', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        amount: formValues.amount,
+                        donation_category_id: formValues.category || null,
+                        email: formValues.email || null,
+                        name: formValues.name || null,
+                        payment_gateway: selectedGateway,
+                    })
+                }).catch(() => {});
+            } catch (_) {}
 
-            promise.catch(() => showDonationFeedback('Network error. Please check your connection.', false))
-                   .finally(done);
+            showDonationFeedback(`JazakAllah Khair! Opening ${gatewayName} to complete your donation... 🤲`, true);
+
+            setTimeout(() => {
+                const win = window.open(targetUrl, '_blank');
+                if (!win || win.closed || typeof win.closed === 'undefined') {
+                    window.location.href = targetUrl;
+                }
+                done();
+            }, 600);
         }
 
         // Initialize donation components on load
         selectDonationAmount(25);
-        selectPaymentGateway('stripe');
+        selectPaymentGateway('buymeacoffee');
         loadDonationCategories();
 
         // ── On-load: check payment return params ─────────────────
