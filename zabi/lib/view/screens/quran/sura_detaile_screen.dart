@@ -37,7 +37,7 @@ class SuraDetaileScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: CustomAppBar(
-            title: isLoading
+            title: isLoading || sura == null
                 ? "--"
                 : "${sura?.translatedName}\n${sura?.versesTranslateName}: ${sura?.versesCount}",
             isBackButtonExist: appBackButton,

@@ -12,7 +12,7 @@ class VerseController extends Controller
 
     public function index(Chapter $chapter)
     {
-        $translatorId = request('translator_id');
+        $translatorId = request('translator_id') ?: 1;
 
         try {
 
