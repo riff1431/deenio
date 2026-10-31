@@ -15,7 +15,7 @@ import '../../../base/loading_indicator.dart';
 import '../../offline_quran/offline_surah_detail_screen.dart';
 
 class BookmarkTab extends StatelessWidget {
-  BookmarkTab({super.key});
+  const BookmarkTab({super.key});
 
   BookMarkController get bookMarkController =>
       Get.isRegistered<BookMarkController>()

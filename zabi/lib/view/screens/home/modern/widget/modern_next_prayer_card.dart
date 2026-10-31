@@ -52,10 +52,7 @@ class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
       prayerData?.ishaStart,
     ];
     final activeIndex = _activePrayerIndex(times);
-    if (_lastActiveIndex != activeIndex) {
-      _lastActiveIndex = activeIndex;
-      widget.prayerTimeController.prayerNameAndTimes();
-    }
+
 
     final timeStr = (times.isNotEmpty && times[activeIndex] != null)
         ? times[activeIndex]!
@@ -130,10 +127,7 @@ class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
       prayerData?.ishaStart,
     ];
     final activeIndex = _activePrayerIndex(times);
-    if (_lastActiveIndex != activeIndex) {
-      _lastActiveIndex = activeIndex;
-      widget.prayerTimeController.prayerNameAndTimes();
-    }
+
 
 
     final prayerNames = [
