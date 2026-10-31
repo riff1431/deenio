@@ -113,6 +113,7 @@
 
     <style>
         :root {
+            color-scheme: light;
             --lp-primary: var(--theme-primary, #059669);
             --lp-secondary: var(--theme-secondary, #10b981);
             --lp-accent: var(--theme-accent, #f59e0b);
@@ -123,12 +124,29 @@
             --lp-text-muted: #64748b;
         }
 
-        .dark {
+        .dark, html.dark {
+            color-scheme: dark;
             --lp-bg: #060b08;
             --lp-card: #0d1611;
             --lp-border: rgba(255, 255, 255, 0.08);
             --lp-text: #f8fafc;
             --lp-text-muted: #94a3b8;
+        }
+
+        /* Form Select & Dropdown Option Styling */
+        select {
+            color-scheme: light;
+        }
+        .dark select, html.dark select {
+            color-scheme: dark;
+        }
+        select option {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+        }
+        .dark select option, html.dark select option {
+            background-color: #0d1611 !important;
+            color: #f8fafc !important;
         }
 
         html {
@@ -865,14 +883,14 @@
                     <div class="flex flex-wrap items-center gap-3">
                         <!-- Surah Selector -->
                         <div class="relative">
-                            <select id="qa-surah-select" onchange="qaLoadSurah(this.value)" class="glass-island rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none cursor-pointer border border-black/10 dark:border-white/10">
+                            <select id="qa-surah-select" onchange="qaLoadSurah(this.value)" class="glass-island rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none cursor-pointer border border-black/10 dark:border-white/10 bg-white/95 dark:bg-[#0d1611] shadow-sm">
                                 <option value="" disabled selected>Select Surah...</option>
                             </select>
                         </div>
 
                         <!-- Reciter Selector -->
                         <div class="relative">
-                            <select id="qa-reciter-select" onchange="qaSetReciter(this.value)" class="glass-island rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none cursor-pointer border border-black/10 dark:border-white/10">
+                            <select id="qa-reciter-select" onchange="qaSetReciter(this.value)" class="glass-island rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold text-gray-800 dark:text-gray-200 outline-none cursor-pointer border border-black/10 dark:border-white/10 bg-white/95 dark:bg-[#0d1611] shadow-sm">
                                 <option value="" disabled selected>Select Reciter...</option>
                             </select>
                         </div>
@@ -3356,7 +3374,6 @@ const TRANSLATIONS = {
                 const opt = document.createElement('option');
                 opt.value = s.id;
                 opt.textContent = s.id + '. ' + s.ar + '  –  ' + s.en;
-                opt.style.background = '#0a2e1e';
                 sel.appendChild(opt);
             });
 
@@ -3398,7 +3415,6 @@ const TRANSLATIONS = {
                         const opt = document.createElement('option');
                         opt.value = rec.id;
                         opt.textContent = rec.name;
-                        opt.style.background = '#0a2e1e';
                         rSel.appendChild(opt);
                     });
                     if (list.length > 0) rSel.value = list[0].id;
