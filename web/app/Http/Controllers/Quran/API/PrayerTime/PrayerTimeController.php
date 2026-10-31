@@ -68,31 +68,28 @@ class PrayerTimeController extends Controller
             $date = $request->get('date', date('Y-m-d'));
             $city = $request->get('city', 'Makkah');
 
-            $data = PrayerTime::query()
+            $record = PrayerTime::query()
                 ->where('date', $date)
                 ->where('city', $city)
                 ->select($this->columns())
                 ->first();
 
-            if (!$data) {
-                $data = (object) $this->defaultPrayerTimeResponse();
+            if ($record) {
+                $data = $record->toArray();
+                $data['is_jumma'] = date('l', strtotime($date)) === 'Friday';
+                $this->fillDefaultPrayerTimeValues($data);
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Manual prayer time data retrieved successfully.',
+                    'data' => $data,
+                ]);
             }
 
-            $data = (array) $data;
-            $data['is_jumma'] = date('l', strtotime($date)) === 'Friday';
-            $this->fillDefaultPrayerTimeValues($data);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Manual prayer time data retrieved successfully.',
-                'data' => $data,
-            ]);
+            // Fallback to automatic prayer times when manual date/city is not found
+            return $this->getAutomaticPrayerTime($request);
         } catch (\Throwable $e) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Default prayer times used.',
-                'data' => $this->defaultPrayerTimeResponse(),
-            ]);
+            return $this->getAutomaticPrayerTime($request);
         }
     }
 
@@ -157,14 +154,17 @@ class PrayerTimeController extends Controller
     private function defaultPrayerTimeResponse(): array
     {
         return [
-            'date' => '',
-            'imsak' => '0:00',
-            'fajr_start' => '0:00',
-            'sunrise' => '0:00',
-            'zuhr_start' => '0:00',
-            'asr_start' => '0:00',
-            'maghrib_start' => '0:00',
-            'isha_start' => '0:00',
+            'date' => date('Y-m-d'),
+            'is_jumma' => date('l') === 'Friday',
+            'imsak' => '04:30',
+            'fajr_start' => '04:45',
+            'sunrise' => '06:05',
+            'zuhr_start' => '11:45',
+            'asr_start' => '15:00',
+            'maghrib_start' => '17:25',
+            'isha_start' => '18:40',
+            'sehri' => '04:45',
+            'iftar' => '17:25',
         ];
     }
 
@@ -173,9 +173,9 @@ class PrayerTimeController extends Controller
      *
      * @param array $data
      */
-    private function fillDefaultPrayerTimeValues($data)
+    private function fillDefaultPrayerTimeValues(&$data)
     {
-        $fields = ['date', 'imsak', 'sunrise', 'fajr_start', 'zuhr_start', 'asr_start', 'maghrib_start', 'isha_start','sehri','iftar'];
+        $fields = ['date', 'imsak', 'sunrise', 'fajr_start', 'zuhr_start', 'asr_start', 'maghrib_start', 'isha_start', 'sehri', 'iftar'];
         foreach ($fields as $field) {
             $data[$field] = $data[$field] ?? '0:00';
         }

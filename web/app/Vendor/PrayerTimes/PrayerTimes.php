@@ -542,7 +542,9 @@ class PrayerTimes
      */
     private function gregorianToJulianDate(): float
     {
-        $julianDate = gregoriantojd($this->date->format('n'), $this->date->format('d'), $this->date->format('Y'));
+        $julianDate = function_exists('gregoriantojd')
+            ? gregoriantojd((int)$this->date->format('n'), (int)$this->date->format('d'), (int)$this->date->format('Y'))
+            : (int)floor($this->julianDate((int)$this->date->format('Y'), (int)$this->date->format('n'), (int)$this->date->format('d')) + 0.5);
 
         //correct for half-day offset
         $dayfrac = date('G') / 24 - .5;
@@ -552,7 +554,6 @@ class PrayerTimes
         $frac = $dayfrac + (date('i') + date('s') / 60) / 60 / 24;
 
         return ($julianDate + $frac);
-
     }
 
     /**

@@ -22,22 +22,31 @@ class AllHadithScreen extends StatefulWidget {
 
 class _AllHadithScreenState extends State<AllHadithScreen> {
   late final HadithController ctrl;
+  String bookName = 'Sahih Bukhari';
+  String bookSlug = 'sahih-bukhari';
+  dynamic chapterNumber = 1;
 
   @override
   void initState() {
     super.initState();
     ctrl = Get.find<HadithController>();
-    // Get.arguments[0] = book name display
-    // Get.arguments[1] = bookSlug
-    // Get.arguments[2] = chapterNumber
-    ctrl.getAllHadithData(Get.arguments[1], Get.arguments[2]);
+    if (Get.arguments != null && Get.arguments is List && (Get.arguments as List).isNotEmpty) {
+      bookName = Get.arguments[0]?.toString() ?? 'Sahih Bukhari';
+      if ((Get.arguments as List).length > 1) {
+        bookSlug = Get.arguments[1]?.toString() ?? 'sahih-bukhari';
+      }
+      if ((Get.arguments as List).length > 2) {
+        chapterNumber = Get.arguments[2] ?? 1;
+      }
+    }
+    ctrl.getAllHadithData(bookSlug, chapterNumber);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: "${Get.arguments[0]} ${"hadith".tr}",
+        title: "$bookName ${"hadith".tr}",
         isBackButtonExist: widget.appBackButton,
       ),
       body: Obx(() {

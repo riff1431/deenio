@@ -17,20 +17,28 @@ class HadithChaptersScreen extends StatefulWidget {
 
 class _HadithChaptersScreenState extends State<HadithChaptersScreen> {
   late final HadithController ctrl;
+  String bookSlug = 'sahih-bukhari';
+  String bookName = 'Sahih Bukhari';
 
   @override
   void initState() {
     super.initState();
     ctrl = Get.find<HadithController>();
+    if (Get.arguments != null && Get.arguments is List && (Get.arguments as List).isNotEmpty) {
+      bookSlug = Get.arguments[0]?.toString() ?? 'sahih-bukhari';
+      if ((Get.arguments as List).length > 1) {
+        bookName = Get.arguments[1]?.toString() ?? 'Sahih Bukhari';
+      }
+    }
     // Fetch chapters for this book
-    ctrl.getHadithBookChaptersData(Get.arguments[0]);
+    ctrl.getHadithBookChaptersData(bookSlug);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: "${Get.arguments[1]} ${"chapters".tr}",
+        title: "$bookName ${"chapters".tr}",
         isBackButtonExist: widget.appBackButton,
       ),
       body: Obx(() {
@@ -68,9 +76,9 @@ class _HadithChaptersScreenState extends State<HadithChaptersScreen> {
             return GestureDetector(
               onTap: () {
                 Get.toNamed(RouteHelper.allHadith, arguments: [
-                  Get.arguments[1],     // book name (display)
-                  chapter.bookSlug,     // book slug for API
-                  chapter.chapterNumber, // chapter number for API
+                  bookName,
+                  chapter.bookSlug ?? bookSlug,
+                  chapter.chapterNumber ?? (index + 1),
                 ]);
               },
               child: Card(

@@ -43,6 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gd \
         zip \
         intl \
+        calendar \
         opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
