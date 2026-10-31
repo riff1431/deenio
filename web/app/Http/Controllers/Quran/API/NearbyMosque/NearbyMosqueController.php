@@ -37,20 +37,20 @@ class NearbyMosqueController extends Controller
                 ];
             }
 
-            // 2. Open-source Fallback: OpenStreetMap Overpass API
-            $overpassResults = $this->fetchFromOverpass($lat, $lng, $radiusMeters);
-            if (!empty($overpassResults)) {
+            // 2. Open-source High-Speed Engine: OpenStreetMap Nominatim (300ms pre-indexed search)
+            $nominatimResults = $this->fetchFromNominatim($lat, $lng, $radiusMeters);
+            if (!empty($nominatimResults)) {
                 return [
-                    'source' => 'openstreetmap_overpass',
-                    'places' => $overpassResults,
+                    'source' => 'openstreetmap_nominatim',
+                    'places' => $nominatimResults,
                 ];
             }
 
-            // 3. Secondary Open-source Fallback: OpenStreetMap Nominatim
-            $nominatimResults = $this->fetchFromNominatim($lat, $lng, $radiusMeters);
+            // 3. Secondary Open-source Fallback: OpenStreetMap Overpass API
+            $overpassResults = $this->fetchFromOverpass($lat, $lng, $radiusMeters);
             return [
-                'source' => 'openstreetmap_nominatim',
-                'places' => $nominatimResults,
+                'source' => 'openstreetmap_overpass',
+                'places' => $overpassResults,
             ];
         });
 
