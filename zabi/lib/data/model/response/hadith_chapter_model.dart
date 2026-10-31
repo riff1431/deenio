@@ -7,7 +7,7 @@ class HadithChapterModel {
 
   HadithChapterModel.fromJson(dynamic json) {
     status = json['status'];
-    message = json['message'];
+    message = json['message']?.toString();
     if (json['chapters'] != null) {
       chapters = [];
       json['chapters'].forEach((v) {
@@ -51,11 +51,11 @@ class Chapters {
 
   Chapters.fromJson(dynamic json) {
     id = json['id'];
-    chapterNumber = json['chapterNumber'];
-    chapterEnglish = json['chapterEnglish'];
-    chapterUrdu = json['chapterUrdu'];
-    chapterArabic = json['chapterArabic'];
-    bookSlug = json['bookSlug'];
+    chapterNumber = json['chapterNumber']?.toString();
+    chapterEnglish = json['chapterEnglish']?.toString();
+    chapterUrdu = json['chapterUrdu']?.toString();
+    chapterArabic = json['chapterArabic']?.toString();
+    bookSlug = json['bookSlug']?.toString();
   }
   num? id;
   String? chapterNumber;
