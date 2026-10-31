@@ -8,7 +8,8 @@ class AppConstants {
   static const String APP_VERSION = "7.0";
 
   // main base url
-  static const String BASE_URL = "http://127.0.0.1:8000";
+  static const String BASE_URL = "https://deenio.huipper.com";
+  // static const String BASE_URL = "http://127.0.0.1:8000";
   // static const String BASE_URL = "https://zabi.theme29.com";
   // static const String BASE_URL = "https://zabi-dev.theme29.com";
 
