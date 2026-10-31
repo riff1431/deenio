@@ -184,7 +184,7 @@ class _BentoCard extends StatelessWidget {
                     width: 72,
                     height: 72,
                     fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
                   ),
                 ),
               ),

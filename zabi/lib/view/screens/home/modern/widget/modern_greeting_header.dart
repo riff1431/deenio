@@ -90,7 +90,7 @@ class ModernGreetingHeader extends StatelessWidget {
               child: Image.asset(
                 Images.ModernIllustration_MosqueHeader,
                 fit: BoxFit.fitHeight,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                errorBuilder: (_, _, _) => const SizedBox.shrink(),
               ),
             ),
           ),
