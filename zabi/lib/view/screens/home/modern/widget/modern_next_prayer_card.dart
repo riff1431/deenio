@@ -41,7 +41,19 @@ class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
   }
 
   void _recompute() {
-    final timeStr = widget.prayerTimeController.currentWaktTime.value;
+    widget.prayerTimeController.prayerNameAndTimes();
+    final prayerData = widget.prayerTimeController.prayerTimeModel?.data;
+    final times = [
+      prayerData?.fajrStart,
+      prayerData?.zuhrStart,
+      prayerData?.asrStart,
+      prayerData?.maghribStart,
+      prayerData?.ishaStart,
+    ];
+    final activeIndex = _activePrayerIndex(times);
+    final timeStr = (times.isNotEmpty && times[activeIndex] != null)
+        ? times[activeIndex]!
+        : widget.prayerTimeController.currentWaktTime.value;
     try {
       final now = DateTime.now();
       var target = DateFormat('HH:mm').parse(timeStr);
@@ -113,12 +125,22 @@ class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
     ];
     final activeIndex = _activePrayerIndex(times);
 
-    final currentWaqt = controller.currentWaqtName.value.isNotEmpty
-        ? controller.currentWaqtName.value
-        : 'fajr'.tr;
+    final prayerNames = [
+      'fajr'.tr,
+      (prayerData?.isJumma == true || DateTime.now().weekday == DateTime.friday)
+          ? 'jumuah'.tr
+          : 'dhuhr'.tr,
+      'asr'.tr,
+      'magrib'.tr,
+      'isha'.tr,
+    ];
+    final currentWaqt = prayerNames[activeIndex];
+
+
+
 
     final nextFormattedTime = DateConverter.formatPrayerTime(
-      controller.currentWaktTime.value,
+      (times[activeIndex] ?? controller.currentWaktTime.value),
       is24HourFormat,
     );
 
