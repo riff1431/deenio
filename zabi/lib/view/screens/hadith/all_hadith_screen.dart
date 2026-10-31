@@ -21,15 +21,16 @@ class AllHadithScreen extends StatefulWidget {
 }
 
 class _AllHadithScreenState extends State<AllHadithScreen> {
-  late final HadithController hadithController;
+  late final HadithController ctrl;
 
   @override
   void initState() {
     super.initState();
-    hadithController = Get.find<HadithController>();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      hadithController.getAllHadithData(Get.arguments[1], Get.arguments[2]);
-    });
+    ctrl = Get.find<HadithController>();
+    // Get.arguments[0] = book name display
+    // Get.arguments[1] = bookSlug
+    // Get.arguments[2] = chapterNumber
+    ctrl.getAllHadithData(Get.arguments[1], Get.arguments[2]);
   }
 
   @override
@@ -39,92 +40,85 @@ class _AllHadithScreenState extends State<AllHadithScreen> {
         title: "${Get.arguments[0]} ${"hadith".tr}",
         isBackButtonExist: widget.appBackButton,
       ),
-      body: GetBuilder<HadithController>(
-        builder: (ctrl) {
-          // ── Loading ──
-          if (ctrl.isLoadingHadithBool) {
-            return const Center(child: HadisChapterShimmer());
-          }
-
-          // ── Empty / error ──
-          final hadiths = ctrl.hadithModel?.hadiths?.data;
-          if (hadiths == null || hadiths.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.menu_book_outlined,
-                        size: 64, color: Theme.of(context).primaryColor),
-                    const SizedBox(height: 16),
-                    Text(
-                      "no_hadith_found_in_this_chapter".tr,
+      body: Obx(() {
+        // Loading
+        if (ctrl.isLoadingHadith.value) {
+          return const Center(child: HadisChapterShimmer());
+        }
+        // Empty
+        final hadiths = ctrl.hadithsRx.value?.hadiths?.data;
+        if (hadiths == null || hadiths.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.menu_book_outlined,
+                      size: 64, color: Theme.of(context).primaryColor),
+                  const SizedBox(height: 16),
+                  Text("no_hadith_found_in_this_chapter".tr,
                       textAlign: TextAlign.center,
-                      style: robotoMedium.copyWith(fontSize: 16),
-                    ),
-                  ],
+                      style: robotoMedium.copyWith(fontSize: 16)),
+                ],
+              ),
+            ),
+          );
+        }
+        // Data
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(
+              horizontal: Dimensions.PADDING_SIZE_SMALL),
+          itemCount: hadiths.length,
+          itemBuilder: (context, index) {
+            final hadith = hadiths[index];
+            return GestureDetector(
+              onTap: () {
+                Get.toNamed(RouteHelper.hadithDetails, arguments: hadith);
+              },
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                color: Theme.of(context).cardColor,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL),
+                  horizontalTitleGap: 5,
+                  leading: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        Images.Icon_Star,
+                        height: 50,
+                        fit: BoxFit.fill,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      Text(
+                        (index + 1).toString(),
+                        style: robotoMedium.copyWith(
+                          fontSize: Dimensions.FONT_SIZE_DEFAULT,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ],
+                  ),
+                  title: Text(
+                    hadith.hadithEnglish ?? "",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: robotoMedium.copyWith(
+                        fontSize: Dimensions.FONT_SIZE_DEFAULT),
+                  ),
+                  subtitle: Text(
+                    "${"writer:".tr} ${hadith.book?.writerName ?? ""}",
+                    style: robotoMedium.copyWith(
+                        fontSize: Dimensions.FONT_SIZE_DEFAULT),
+                  ),
                 ),
               ),
             );
-          }
-
-          // ── Data ──
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(
-                horizontal: Dimensions.PADDING_SIZE_SMALL),
-            itemCount: hadiths.length,
-            itemBuilder: (context, index) {
-              final hadith = hadiths[index];
-              return GestureDetector(
-                onTap: () {
-                  Get.toNamed(RouteHelper.hadithDetails, arguments: hadith);
-                },
-                child: Card(
-                  clipBehavior: Clip.antiAlias,
-                  color: Theme.of(context).cardColor,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL),
-                    horizontalTitleGap: 5,
-                    leading: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SvgPicture.asset(
-                          Images.Icon_Star,
-                          height: 50,
-                          fit: BoxFit.fill,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        Text(
-                          (index + 1).toString(),
-                          style: robotoMedium.copyWith(
-                            fontSize: Dimensions.FONT_SIZE_DEFAULT,
-                            color:
-                                Theme.of(context).textTheme.bodyMedium?.color,
-                          ),
-                        ),
-                      ],
-                    ),
-                    title: Text(
-                      hadith.hadithEnglish ?? "",
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: robotoMedium.copyWith(
-                          fontSize: Dimensions.FONT_SIZE_DEFAULT),
-                    ),
-                    subtitle: Text(
-                      "${"writer:".tr} ${hadith.book?.writerName ?? ""}",
-                      style: robotoMedium.copyWith(
-                          fontSize: Dimensions.FONT_SIZE_DEFAULT),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+          },
+        );
+      }),
     );
   }
 }

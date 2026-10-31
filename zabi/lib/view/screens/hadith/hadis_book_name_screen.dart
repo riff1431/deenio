@@ -17,86 +17,69 @@ class HadisBookNameScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ctrl = Get.find<HadithController>();
     return Scaffold(
       appBar: CustomAppBar(
         title: "hadith_books".tr,
         isBackButtonExist: appBackButton,
       ),
-      body: GetBuilder<HadithController>(
-        builder: (ctrl) {
-          // ── Loading ──
-          if (ctrl.isLoadingHadithChapterBool) {
-            return const Center(child: HadisBookShimmer());
-          }
-
-          // ── Empty / error ──
-          final books = ctrl.hadisBookModel?.books;
-          if (books == null || books.isEmpty) {
-            return Center(
-              child: Text(
-                "no_data_found".tr,
-                style: robotoMedium.copyWith(fontSize: 16),
-              ),
-            );
-          }
-
-          // ── Data ──
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(
-                horizontal: Dimensions.PADDING_SIZE_SMALL),
-            itemCount: books.length,
-            itemBuilder: (context, index) {
-              final book = books[index];
-              return GestureDetector(
-                onTap: () {
-                  Get.toNamed(
-                    RouteHelper.hadithChapters,
-                    arguments: [book.bookSlug, book.bookName],
-                  );
-                },
-                child: Card(
-                  clipBehavior: Clip.antiAlias,
-                  color: Theme.of(context).cardColor,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL + 2,
-                        vertical: Dimensions.PADDING_SIZE_EXTRA_SMALL),
-                    horizontalTitleGap: 0,
-                    leading: SvgPicture.asset(
-                      Images.Icon_Hadith,
-                      color: Theme.of(context).primaryColor,
-                      height: 50,
-                    ),
-                    title: Text(
-                      book.bookName ?? "",
+      body: Obx(() {
+        if (ctrl.isLoadingBooks.value) {
+          return const Center(child: HadisBookShimmer());
+        }
+        final books = ctrl.booksRx.value?.books;
+        if (books == null || books.isEmpty) {
+          return Center(
+            child: Text("no_data_found".tr,
+                style: robotoMedium.copyWith(fontSize: 16)),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(
+              horizontal: Dimensions.PADDING_SIZE_SMALL),
+          itemCount: books.length,
+          itemBuilder: (context, index) {
+            final book = books[index];
+            return GestureDetector(
+              onTap: () {
+                Get.toNamed(RouteHelper.hadithChapters,
+                    arguments: [book.bookSlug, book.bookName]);
+              },
+              child: Card(
+                clipBehavior: Clip.antiAlias,
+                color: Theme.of(context).cardColor,
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL + 2,
+                      vertical: Dimensions.PADDING_SIZE_EXTRA_SMALL),
+                  horizontalTitleGap: 0,
+                  leading: SvgPicture.asset(
+                    Images.Icon_Hadith,
+                    color: Theme.of(context).primaryColor,
+                    height: 50,
+                  ),
+                  title: Text(book.bookName ?? "",
                       style: robotoMedium.copyWith(
-                          fontSize: Dimensions.FONT_SIZE_LARGE),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 5),
-                        Text(
-                          book.writerName ?? "",
-                          textAlign: TextAlign.left,
+                          fontSize: Dimensions.FONT_SIZE_LARGE)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 5),
+                      Text(book.writerName ?? "",
                           style: robotoMedium.copyWith(
-                              fontSize: Dimensions.FONT_SIZE_DEFAULT),
-                        ),
-                        const SizedBox(height: 5),
-                        Text(
-                          "${"hadiths".tr}: ${book.hadithsCount ?? ""}",
+                              fontSize: Dimensions.FONT_SIZE_DEFAULT)),
+                      const SizedBox(height: 5),
+                      Text("${"hadiths".tr}: ${book.hadithsCount ?? ""}",
                           style: robotoMedium.copyWith(
-                              fontSize: Dimensions.FONT_SIZE_SMALL),
-                        ),
-                      ],
-                    ),
+                              fontSize: Dimensions.FONT_SIZE_SMALL)),
+                    ],
                   ),
                 ),
-              );
-            },
-          );
-        },
-      ),
+              ),
+            );
+          },
+        );
+      }),
     );
   }
 }

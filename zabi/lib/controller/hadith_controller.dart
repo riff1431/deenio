@@ -12,51 +12,51 @@ import 'package:zabi/util/app_constants.dart';
 import 'package:zabi/view/base/custom_snackbar.dart';
 
 class HadithController extends GetxController {
-  // loading flags – plain bool, toggled via update()
-  bool isLoadingHadithChapterBool = false;
-  bool isLoadingHadithBool = false;
+  // Reactive loading flags — Obx will auto-update UI
+  final RxBool isLoadingBooks = false.obs;
+  final RxBool isLoadingChapters = false.obs;
+  final RxBool isLoadingHadith = false.obs;
 
-  // keep RxBool aliases so existing code that reads .value keeps compiling
-  bool get isLoadingHadithChapterVal => isLoadingHadithChapterBool;
-  bool get isLoadingHadithVal => isLoadingHadithBool;
+  // Reactive data holders
+  final Rx<HadisBookModel?> booksRx = Rx<HadisBookModel?>(null);
+  final Rx<HadithChapterModel?> chaptersRx = Rx<HadithChapterModel?>(null);
+  final Rx<HadithModel?> hadithsRx = Rx<HadithModel?>(null);
 
-  // hadith api key
+  // Keep old names for any remaining references
+  HadisBookModel? get hadisBookModel => booksRx.value;
+  HadithChapterModel? get hadithChapterModel => chaptersRx.value;
+  HadithModel? get hadithModel => hadithsRx.value;
+  set hadisBookModel(HadisBookModel? v) => booksRx.value = v;
+  set hadithChapterModel(HadithChapterModel? v) => chaptersRx.value = v;
+  set hadithModel(HadithModel? v) => hadithsRx.value = v;
+
   String get hadithApiKey => AppConstants.HADITH_API_KEY;
 
   @override
   void onInit() {
-    getHadishBookNameData();
     super.onInit();
+    getHadishBookNameData();
   }
-
-  HadisBookModel? hadisBookModel;
-  HadithChapterModel? hadithChapterModel;
-  HadithModel? hadithModel;
 
   // ──────────────────────────────────────────────
   //  BOOKS
   // ──────────────────────────────────────────────
   Future<void> getHadishBookNameData() async {
-    isLoadingHadithChapterBool = true;
-    update();
+    isLoadingBooks.value = true;
     try {
-      final response = await http.get(
-        Uri.parse(
-            "${AppConstants.HADITH_BASE_URL}/api/books?apiKey=$hadithApiKey"),
-      );
+      final response = await http.get(Uri.parse(
+          "${AppConstants.HADITH_BASE_URL}/api/books?apiKey=$hadithApiKey"));
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        hadisBookModel = HadisBookModel.fromJson(data);
+        booksRx.value = HadisBookModel.fromJson(data);
       } else {
-        showCustomSnackBar(
-            data['message'] ?? "Failed to load hadith books",
+        showCustomSnackBar(data['message'] ?? "Failed to load hadith books",
             isError: true);
       }
-    } catch (error) {
-      print("Error fetching hadith books: $error");
+    } catch (e) {
+      print("Error fetching hadith books: $e");
     } finally {
-      isLoadingHadithChapterBool = false;
-      update();
+      isLoadingBooks.value = false;
     }
   }
 
@@ -64,28 +64,23 @@ class HadithController extends GetxController {
   //  CHAPTERS
   // ──────────────────────────────────────────────
   Future<void> getHadithBookChaptersData(dynamic bookSlug) async {
-    hadithChapterModel = null;
-    isLoadingHadithChapterBool = true;
-    update();
+    chaptersRx.value = null;
+    isLoadingChapters.value = true;
     try {
-      final response = await http.get(
-        Uri.parse(
-            "${AppConstants.HADITH_BASE_URL}/api/$bookSlug/chapters?apiKey=$hadithApiKey"),
-      );
+      final response = await http.get(Uri.parse(
+          "${AppConstants.HADITH_BASE_URL}/api/$bookSlug/chapters?apiKey=$hadithApiKey"));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        hadithChapterModel = HadithChapterModel.fromJson(data);
+        chaptersRx.value = HadithChapterModel.fromJson(data);
       } else {
         final data = jsonDecode(response.body);
-        showCustomSnackBar(
-            data['message'] ?? "Failed to load chapters",
+        showCustomSnackBar(data['message'] ?? "Failed to load chapters",
             isError: true);
       }
-    } catch (error) {
-      print("Error fetching hadith chapters: $error");
+    } catch (e) {
+      print("Error fetching hadith chapters: $e");
     } finally {
-      isLoadingHadithChapterBool = false;
-      update();
+      isLoadingChapters.value = false;
     }
   }
 
@@ -93,26 +88,23 @@ class HadithController extends GetxController {
   //  HADITHS
   // ──────────────────────────────────────────────
   Future<void> getAllHadithData(dynamic bookName, dynamic chapter) async {
-    hadithModel = null;
-    isLoadingHadithBool = true;
-    update();
+    hadithsRx.value = null;
+    isLoadingHadith.value = true;
     try {
-      final response = await http.get(
-        Uri.parse(
-            "${AppConstants.HADITH_BASE_URL}/api/hadiths/?apiKey=$hadithApiKey&book=$bookName&chapter=$chapter&paginate=500"),
-      );
+      final url =
+          "${AppConstants.HADITH_BASE_URL}/api/hadiths/?apiKey=$hadithApiKey&book=$bookName&chapter=$chapter&paginate=500";
+      final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        hadithModel = HadithModel.fromJson(data);
+        hadithsRx.value = HadithModel.fromJson(data);
       } else {
         showCustomSnackBar("no_hadith_found_in_this_chapter".tr,
             isError: true);
       }
-    } catch (error) {
-      print("Error fetching hadiths: $error");
+    } catch (e) {
+      print("Error fetching hadiths: $e");
     } finally {
-      isLoadingHadithBool = false;
-      update();
+      isLoadingHadith.value = false;
     }
   }
 }
