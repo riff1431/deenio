@@ -1032,43 +1032,59 @@
                 </div>
 
                 <!-- Right Live Prayer Card & Qibla Compass -->
-                <div class="lg:col-span-6 grid sm:grid-cols-2 gap-6 gsap-reveal">
+                <div class="lg:col-span-6 grid sm:grid-cols-2 gap-6 gsap-reveal items-stretch">
                     <!-- Prayer Times Card -->
-                    <div class="glass-card rounded-3xl p-6 border border-black/10 dark:border-white/10 shadow-xl">
-                        <div class="flex items-center justify-between pb-4 mb-4 border-b border-black/5 dark:border-white/5">
-                            <div>
-                                <div class="text-xs font-bold uppercase tracking-wider text-gray-400">Prayer Times</div>
-                                <div id="prayer-city" class="text-base font-bold text-gray-900 dark:text-white">Detecting location...</div>
+                    <div class="glass-card rounded-3xl p-6 border border-black/10 dark:border-white/10 shadow-xl flex flex-col justify-between h-full">
+                        <div>
+                            <div class="flex items-center justify-between pb-4 mb-3 border-b border-black/5 dark:border-white/5">
+                                <div>
+                                    <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Prayer Times</div>
+                                    <div id="prayer-city" class="text-base font-bold text-gray-900 dark:text-white truncate max-w-[190px]">Detecting location...</div>
+                                </div>
+                                <span class="text-2xl">🕌</span>
                             </div>
-                            <span class="text-xl">🕌</span>
-                        </div>
-                        <div id="prayer-list" class="space-y-3">
-                            <!-- Populated by JS -->
+                            <div id="prayer-rows" class="space-y-1.5">
+                                <!-- Populated by JS -->
+                            </div>
                         </div>
                     </div>
 
                     <!-- Qibla Compass Card -->
-                    <div class="glass-card rounded-3xl p-6 border border-black/10 dark:border-white/10 shadow-xl flex flex-col items-center justify-center text-center">
-                        <div class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-6">Qibla Direction</div>
-                        <!-- Compass Dial Mockup -->
-                        <div class="relative w-40 h-40 rounded-full border-4 border-emerald-500/30 flex items-center justify-center shadow-inner">
-                            <div class="absolute top-2 text-[10px] font-bold text-emerald-500">N</div>
-                            <div class="absolute bottom-2 text-[10px] font-bold text-gray-400">S</div>
-                            <div class="absolute right-2 text-[10px] font-bold text-gray-400">E</div>
-                            <div class="absolute left-2 text-[10px] font-bold text-gray-400">W</div>
-                            <!-- Compass Needle -->
-                            <div class="w-1.5 h-24 bg-gradient-to-t from-gray-400 via-amber-400 to-emerald-500 rounded-full transform -rotate-45 shadow-lg"></div>
-                            <div class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md border border-white/20">
-                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <div class="glass-card rounded-3xl p-6 border border-black/10 dark:border-white/10 shadow-xl flex flex-col items-center justify-between text-center h-full">
+                        <div class="w-full">
+                            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3 text-center">Qibla Direction</div>
+                        </div>
+                        
+                        <!-- Compass Dial -->
+                        <div class="relative w-44 h-44 rounded-full border-4 border-emerald-500/30 flex items-center justify-center shadow-inner my-2 bg-black/[0.02] dark:bg-white/[0.02]">
+                            <div class="absolute top-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">N</div>
+                            <div class="absolute bottom-2.5 text-xs font-bold text-gray-400">S</div>
+                            <div class="absolute right-2.5 text-xs font-bold text-gray-400">E</div>
+                            <div class="absolute left-2.5 text-xs font-bold text-gray-400">W</div>
+                            
+                            <!-- Rotating Needle Pivot -->
+                            <div id="qibla-needle-pivot" class="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-out" style="transform: rotate(268deg);">
+                                <div class="relative w-full h-full flex items-center justify-center pointer-events-none">
+                                    <!-- Needle shaft -->
+                                    <div class="w-1.5 h-28 bg-gradient-to-t from-gray-400 via-amber-400 to-emerald-500 rounded-full shadow-lg"></div>
+                                    <!-- Pulse Tip Indicator toward Kaaba -->
+                                    <div class="absolute top-5 w-3 h-3 bg-emerald-500 rounded-full shadow-md animate-ping"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Center Kaaba Icon Hub -->
+                            <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md border-2 border-white dark:border-dark-surface z-10">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 2.5L4 7v10l8 4.5 8-4.5V7L12 2.5z" fill="currentColor" fill-opacity="0.25"></path>
                                     <path d="M12 21.5V11.5"></path>
                                     <path d="M20 7L12 11.5 4 7"></path>
                                 </svg>
                             </div>
                         </div>
-                        <div class="mt-6">
-                            <div class="text-sm font-bold text-gray-900 dark:text-white">Kaaba Angle: 124° SE</div>
-                            <div class="text-xs text-gray-500">Calibrated via device sensors</div>
+
+                        <div class="mt-3 w-full">
+                            <div id="qibla-angle-text" class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Kaaba Angle: 268° W</div>
+                            <div id="qibla-location-text" class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">Accurate from Dhaka, Bangladesh</div>
                         </div>
                     </div>
                 </div>
@@ -2482,16 +2498,52 @@ const TRANSLATIONS = {
             const pn = PRAYER_NAMES[currentLang] || PRAYER_NAMES.en;
             const container = document.getElementById('prayer-rows');
             if (!container) return;
-            container.innerHTML = prayers.map((p, i) => `
-                <div class="flex items-center justify-between py-3 ${i < prayers.length - 1 ? 'border-b border-gray-50' : ''}">
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-2 rounded-full ${p.is_next ? 'bg-green-500 animate-pulse' : 'bg-gray-200'}"></div>
-                        <span class="font-medium text-gray-900 text-sm">${pn[p.name] || p.name}</span>
-                        ${p.is_next ? `<span class="text-xs px-2 py-0.5 rounded-full text-white" style="background:var(--green-mid);">${pn.Next || 'Next'}</span>` : ''}
+            container.innerHTML = prayers.map((p) => `
+                <div class="flex items-center justify-between py-2 px-2.5 rounded-xl transition-all ${p.is_next ? 'bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/30 shadow-sm' : 'hover:bg-black/[0.03] dark:hover:bg-white/[0.03]'}">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-2 h-2 rounded-full ${p.is_next ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.9)]' : 'bg-gray-300 dark:bg-gray-600'}"></div>
+                        <span class="font-bold text-sm ${p.is_next ? 'text-emerald-700 dark:text-emerald-300' : 'text-gray-800 dark:text-gray-200'}">${pn[p.name] || p.name}</span>
+                        ${p.is_next ? `<span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-sm leading-none">${pn.Next || 'Next'}</span>` : ''}
                     </div>
-                    <span class="font-semibold text-sm ${p.is_next ? 'text-emerald-700' : 'text-gray-500'}">${p.time}</span>
+                    <span class="font-bold font-mono text-xs sm:text-sm ${p.is_next ? 'text-emerald-700 dark:text-emerald-300 font-extrabold' : 'text-gray-600 dark:text-gray-400'}">${p.time}</span>
                 </div>
             `).join('');
+        }
+
+        // ── Qibla live calculations ──────────────────────────────
+        function calculateQibla(lat, lng) {
+            const kaabaLat = 21.422487 * Math.PI / 180.0;
+            const kaabaLng = 39.826206 * Math.PI / 180.0;
+            const uLat = lat * Math.PI / 180.0;
+            const uLng = lng * Math.PI / 180.0;
+            const y = Math.sin(kaabaLng - uLng);
+            const x = Math.cos(uLat) * Math.tan(kaabaLat) - Math.sin(uLat) * Math.cos(kaabaLng - uLng);
+            let q = Math.atan2(y, x) * 180.0 / Math.PI;
+            return Math.round((q + 360) % 360);
+        }
+
+        function getCardinalDirection(angle) {
+            const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+            const idx = Math.round(angle / 22.5) % 16;
+            return directions[idx];
+        }
+
+        function updateQiblaCompass(lat, lng, cityName) {
+            const angle = calculateQibla(lat, lng);
+            const dir = getCardinalDirection(angle);
+            const pivot = document.getElementById('qibla-needle-pivot');
+            const angleText = document.getElementById('qibla-angle-text');
+            const locText = document.getElementById('qibla-location-text');
+
+            if (pivot) {
+                pivot.style.transform = `rotate(${angle}deg)`;
+            }
+            if (angleText) {
+                angleText.textContent = `Kaaba Angle: ${angle}° ${dir}`;
+            }
+            if (locText && cityName) {
+                locText.textContent = `Accurate from ${cityName}`;
+            }
         }
 
         function loadPrayerTimes(lat, lng) {
@@ -2500,9 +2552,11 @@ const TRANSLATIONS = {
                 .then(r => r.json())
                 .then(data => {
                     if (data.status) {
-                        document.getElementById('prayer-city').textContent = data.city;
+                        const city = data.city || 'Your Location';
+                        document.getElementById('prayer-city').textContent = city;
                         cachedPrayers = data.prayers;
                         renderPrayerRows(data.prayers);
+                        updateQiblaCompass(lat, lng, city);
                     } else { showFallback(); }
                 })
                 .catch(() => showFallback());
@@ -2510,15 +2564,18 @@ const TRANSLATIONS = {
 
         function showFallback() {
             const pn = PRAYER_NAMES[currentLang] || PRAYER_NAMES.en;
-            document.getElementById('prayer-city').textContent = pn.sample;
+            const defaultCity = currentLang === 'bn' ? 'ঢাকা, বাংলাদেশ' : 'Dhaka, Bangladesh';
+            document.getElementById('prayer-city').textContent = defaultCity;
             cachedPrayers = FALLBACK_PRAYERS;
             renderPrayerRows(FALLBACK_PRAYERS);
+            updateQiblaCompass(23.8103, 90.4125, defaultCity);
         }
 
         if (navigator.geolocation) {
             const pn = PRAYER_NAMES[currentLang] || PRAYER_NAMES.en;
             document.getElementById('prayer-city').textContent = pn.detecting;
             renderPrayerRows(FALLBACK_PRAYERS);
+            updateQiblaCompass(23.8103, 90.4125, 'Dhaka, Bangladesh');
             navigator.geolocation.getCurrentPosition(
                 pos => loadPrayerTimes(pos.coords.latitude, pos.coords.longitude),
                 ()  => showFallback(),
