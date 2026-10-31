@@ -4,7 +4,6 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:zabi/controller/internet_check_controller.dart';
 import 'package:zabi/controller/package_prayer_time_controller.dart';
 import 'package:zabi/controller/quran_settings_controller.dart';
 import 'package:zabi/shimmer/all_shimmer_loder.dart';
@@ -24,7 +23,6 @@ class ModernHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasInternet = Get.find<InternetController>().hasInternet.value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GetBuilder<SettingsController>(
@@ -42,7 +40,7 @@ class ModernHomeScreen extends StatelessWidget {
               backgroundColor: isDark
                   ? const Color(0xFF0F1713)
                   : const Color(0xFFF6F8F6),
-              body: isLoading || (mosqueData == null && !hasInternet)
+              body: isLoading
                   ? const SafeArea(child: DashbordShimmerScreen())
                   : _buildBody(context, mosqueData, prayerTimeController),
               floatingActionButton: _buildAiFab(context),
@@ -59,8 +57,7 @@ class ModernHomeScreen extends StatelessWidget {
     SettingsController settingsController,
     PrayerTimeController prayerTimeController,
   ) {
-    return settingsController.isMosqueSettingsLoading.value ||
-        prayerTimeController.isprayerTimeLoading.value ||
+    return settingsController.isMosqueSettingsLoading.value &&
         settingsController.mosqueSettingsApiData == null;
   }
 

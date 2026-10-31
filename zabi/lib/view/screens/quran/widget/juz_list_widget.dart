@@ -10,25 +10,33 @@ import 'package:zabi/util/dimensions.dart';
 import 'package:zabi/util/images.dart';
 import 'package:zabi/util/styles.dart';
 
-class JuzListWidget extends StatelessWidget {
+class JuzListWidget extends StatefulWidget {
   const JuzListWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<JuzListWidget> createState() => _JuzListWidgetState();
+}
+
+class _JuzListWidgetState extends State<JuzListWidget> {
+  @override
+  void initState() {
+    super.initState();
     Get.find<QuranController>().fetchJuzListData();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: GetBuilder<QuranController>(
         builder: (quranController) {
-          return quranController.isJuzListLoading.value ||
-                  quranController.juzListApiData == null
-              ? const Center(child: QuranListShimmer())
-              : Column(
-                  children: [
-                    for (
-                      var juz = 0;
-                      juz < quranController.juzListApiData!.data!.length;
-                      juz++
-                    )
+          final juzList = quranController.juzListApiData?.data;
+          if (juzList == null || juzList.isEmpty) {
+            return const Center(child: QuranListShimmer());
+          }
+
+          return Column(
+          children: [
+            for (var juz = 0; juz < juzList.length; juz++)
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [

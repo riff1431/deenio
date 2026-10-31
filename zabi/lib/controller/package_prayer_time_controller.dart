@@ -9,13 +9,11 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zabi/data/api/api_client.dart';
 import 'package:zabi/data/model/response/city_model.dart';
 import 'package:zabi/data/model/response/todays_prayer_time_model.dart';
 import 'package:zabi/util/app_constants.dart';
-import 'package:zabi/view/base/custom_snackbar.dart';
 
 class PrayerTimeController extends GetxController implements GetxService {
   final ApiClient apiClient;
@@ -48,102 +46,100 @@ class PrayerTimeController extends GetxController implements GetxService {
   String? saveLocalStoreCity;
 
   Future<void> getLocation() async {
-    bool serviceEnabled = false;
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    LocationPermission permission;
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      saveLocalStoreCity = prefs.getString(AppConstants.saveCityName);
 
-    // Check if location services are enabled
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      // If not enabled, prompt user to enable location services
-      await Geolocator.openLocationSettings();
-      return;
-    }
-
-    // Check location permission status
-    permission = await Geolocator.checkPermission();
-
-    if (permission == LocationPermission.denied) {
-      // If permission is denied, request permission from the user
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) { 
-        //   If permission is still denied, show a message to the user using GetX's Snackbar
-        showCustomSnackBar(
-          "for_getting_Automatic_Prayer_Time_Nearby_Mosque_Qibla_Compass_need_to_enable_location_permission"
-              .tr,
-          isError: true,
-        );
-
-        await prefs.setBool("isLocationDenied", true);
-        bool? storedFontSize = prefs.getBool("isLocationDenied");
-        if (storedFontSize != null) {
-          isLocationDenied.value = storedFontSize;
-        }
-
-        return;
-      }
-    } else if (permission == LocationPermission.deniedForever) {
-      // If permission is permanently denied, show a message to the user using GetX's Snackbar
-      showCustomSnackBar(
-        "for_getting_Automatic_Prayer_Time_Nearby_Mosque_Qibla_Compass_need_to_enable_location_permission"
-            .tr,
-        isError: true,
-        onTap: () => openAppSettings(),
-      );
-
-      await prefs.setBool("isLocationDenied", true);
-      bool? storedFontSize = prefs.getBool("isLocationDenied");
-      if (storedFontSize != null) {
-        isLocationDenied.value = storedFontSize;
-      }
-      return;
-    }
-
-    // If permission is granted, retrieve the current position
-    if (serviceEnabled) {
+      bool serviceEnabled = false;
       try {
-        Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-        );
+        serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      } catch (_) {
+        serviceEnabled = false;
+      }
 
-        List<Placemark> addressList = await placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-        final callAddress = addressList.first;
-        currentAddress.value = GetPlatform.isIOS
-            ? callAddress.administrativeArea!
-            : callAddress.subAdministrativeArea!;
+      if (!serviceEnabled && !kIsWeb) {
+        try {
+          await Geolocator.openLocationSettings();
+        } catch (_) {}
+      }
 
-        final prefs = await SharedPreferences.getInstance();
-        final isPrayerTme = prefs.getBool(AppConstants.isPrayerTme);
-        bool isTimeTrue = prefs.getBool(AppConstants.isPrayerTme) ?? false;
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          await prefs.setBool("isLocationDenied", true);
+          isLocationDenied.value = true;
+          final isPrayerTme = prefs.getBool(AppConstants.isPrayerTme) ?? false;
+          fetchPrayerTime(
+            reload: false,
+            isManualPrayerTme: isPrayerTme,
+            manualCity: saveLocalStoreCity ?? "Makkah",
+          );
+          return;
+        }
+      }
 
-        isPrayerTimes.value = isTimeTrue;
-        debugPrint("isTimeTrue: ${isPrayerTimes.value}");
-
-        final saveCityName = prefs.getString(AppConstants.saveCityName);
-
+      if (permission == LocationPermission.deniedForever) {
+        await prefs.setBool("isLocationDenied", true);
+        isLocationDenied.value = true;
+        final isPrayerTme = prefs.getBool(AppConstants.isPrayerTme) ?? false;
         fetchPrayerTime(
           reload: false,
-          isManualPrayerTme: isPrayerTme ?? false,
-          manualCity: saveCityName ?? currentAddress.toString(),
+          isManualPrayerTme: isPrayerTme,
+          manualCity: saveLocalStoreCity ?? "Makkah",
         );
-
-        update();
-      } catch (e) {
-        await prefs.setBool("isLocationDenied", true);
-        bool? storedFontSize = prefs.getBool("isLocationDenied");
-        if (storedFontSize != null) {
-          isLocationDenied.value = storedFontSize;
-        }
-        showCustomSnackBar(
-          "for_getting_Automatic_Prayer_Time_Nearby_Mosque_Qibla_Compass_need_to_enable_location_permission"
-              .tr,
-          isError: true,
-          onTap: () => openAppSettings(),
-        );
+        return;
       }
+
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 4),
+        );
+      } catch (e) {
+        debugPrint("Location fetch timeout or error: $e");
+        try {
+          position = await Geolocator.getLastKnownPosition();
+        } catch (_) {}
+      }
+
+      if (position != null) {
+        latitude = position.latitude;
+        longitude = position.longitude;
+
+        if (!kIsWeb) {
+          try {
+            List<Placemark> addressList = await placemarkFromCoordinates(
+              position.latitude,
+              position.longitude,
+            );
+            if (addressList.isNotEmpty) {
+              final callAddress = addressList.first;
+              currentAddress.value = GetPlatform.isIOS
+                  ? (callAddress.administrativeArea ?? '')
+                  : (callAddress.subAdministrativeArea ?? callAddress.locality ?? '');
+            }
+          } catch (_) {}
+        }
+      }
+
+      if (currentAddress.value.isEmpty || currentAddress.value == '--') {
+        currentAddress.value = saveLocalStoreCity ?? 'Makkah';
+      }
+
+      final isPrayerTme = prefs.getBool(AppConstants.isPrayerTme) ?? false;
+      isPrayerTimes.value = isPrayerTme;
+
+      fetchPrayerTime(
+        reload: false,
+        isManualPrayerTme: isPrayerTme,
+        manualCity: saveLocalStoreCity ?? currentAddress.value,
+      );
+
+      update();
+    } catch (e) {
+      debugPrint("Error in getLocation: $e");
     }
   }
 
@@ -243,68 +239,98 @@ class PrayerTimeController extends GetxController implements GetxService {
   }
 
   var isManualPrayerTime = false.obs;
-  // get dua list form here
+  // get prayer time from here
   Future<void> fetchPrayerTime({
     bool reload = true,
     bool isManualPrayerTme = false,
     String? manualCity,
   }) async {
     try {
-      loadPrayerTimeSettings();
-      reload ? isprayerTimeLoading(true) : isprayerTimeLoading(false);
+      await loadPrayerTimeSettings();
+      if (reload) {
+        isprayerTimeLoading(true);
+      }
 
-      // Store the prayer time type
       isManualPrayerTime.value = isManualPrayerTme;
 
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
       SharedPreferences prefs = await SharedPreferences.getInstance();
-
-      // Save the prayer time type to SharedPreferences
       await prefs.setBool(
         AppConstants.IS_MANUAL_PRAYER_TIME,
         isManualPrayerTme,
       );
 
       saveLocalStoreCity = prefs.getString(AppConstants.saveCityName);
-      saveAddress.value = prefs.getString(AppConstants.saveCityName) ?? "";
-      List<Placemark> addressList = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      final callAddress = addressList.first;
-      currentAddress.value = GetPlatform.isIOS
-          ? callAddress.administrativeArea!
-          : callAddress.subAdministrativeArea!;
-      if (kDebugMode) {
-        print("Address: ${currentAddress.value}");
+      saveAddress.value = saveLocalStoreCity ?? "";
+
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 4),
+        );
+      } catch (e) {
+        try {
+          position = await Geolocator.getLastKnownPosition();
+        } catch (_) {}
       }
-      // Get the current date and time
+
+      double lat = position?.latitude ?? (latitude ?? 21.4225);
+      double lng = position?.longitude ?? (longitude ?? 39.8262);
+      latitude = lat;
+      longitude = lng;
+
+      if (position != null && !kIsWeb) {
+        try {
+          List<Placemark> addressList = await placemarkFromCoordinates(
+            lat,
+            lng,
+          );
+          if (addressList.isNotEmpty) {
+            final callAddress = addressList.first;
+            currentAddress.value = GetPlatform.isIOS
+                ? (callAddress.administrativeArea ?? '')
+                : (callAddress.subAdministrativeArea ?? callAddress.locality ?? '');
+          }
+        } catch (_) {}
+      }
+
+      if (currentAddress.value.isEmpty || currentAddress.value == '--') {
+        currentAddress.value = saveLocalStoreCity ?? (kIsWeb ? 'Makkah' : 'Makkah');
+      }
+
       DateTime currentDate = DateTime.now();
       String formattedDate = DateFormat('yyyy-MM-dd').format(currentDate);
 
-      var lat = position.latitude;
-      var lng = position.longitude;
-      var prayerMethod = _selectedCalculationMethod;
-      var school = _selectedPrayerMadhab;
-      var timezone = await FlutterTimezone.getLocalTimezone();
+      var prayerMethod = _selectedCalculationMethod ?? '1';
+      var school = _selectedPrayerMadhab ?? 'STANDARD';
 
-      final response = await apiClient
-          .postData(AppConstants.TODAYS_PRAYER_TIME, {
-            "type": isManualPrayerTme ? "manual" : "automatic",
-            "date": formattedDate,
-            "city": isManualPrayerTme ? manualCity ?? "" : currentAddress.value,
-            "lat": "$lat",
-            "lng": "$lng",
-            "prayer_method": "$prayerMethod",
-            "school": "$school",
-            "timezone": timezone,
-          });
-      update();
-      if (response.statusCode == 200) {
+      String timezone = 'UTC';
+      try {
+        timezone = await FlutterTimezone.getLocalTimezone();
+      } catch (_) {
+        timezone = DateTime.now().timeZoneName;
+      }
+
+      final cityParam = isManualPrayerTme
+          ? (manualCity != null && manualCity.isNotEmpty ? manualCity : currentAddress.value)
+          : currentAddress.value;
+
+      final response = await apiClient.postData(
+        AppConstants.TODAYS_PRAYER_TIME,
+        {
+          "type": isManualPrayerTme ? "manual" : "automatic",
+          "date": formattedDate,
+          "city": cityParam,
+          "lat": "$lat",
+          "lng": "$lng",
+          "prayer_method": prayerMethod,
+          "school": school,
+          "timezone": timezone,
+        },
+      );
+
+      if (response.statusCode == 200 && response.body != null) {
         prayerTimeModel = PrayerTimeModel.fromJson(response.body);
-        // current wakt and time show
         prayerNameAndTimes();
       }
     } catch (e) {
@@ -319,50 +345,56 @@ class PrayerTimeController extends GetxController implements GetxService {
 
   // Get Prayer Owakt Function
   prayerNameAndTimes() {
-    // Get Cuttent Time Variable =====>
     String currentTime = DateFormat.Hms().format(DateTime.now());
-    // print("currentTime========> $currentTime");
-    //18:15:56
     var finalCurrentTime = DateTime.parse('2000-01-01 $currentTime');
-    var apiwaktTime = prayerTimeModel!.data!;
-    if (finalCurrentTime.isBefore(
-      DateTime.parse('2000-01-01 ${apiwaktTime.fajrStart}:00'),
-    )) {
-      currentWaqtName.value = "fajr".tr;
-      currentWaktTime.value = apiwaktTime.fajrStart.toString();
-    } else if (finalCurrentTime.isBefore(
-      DateTime.parse('2000-01-01 ${apiwaktTime.sunrise}:00'),
-    )) {
-      currentWaqtName.value = "sunrise".tr;
-      currentWaktTime.value = apiwaktTime.sunrise.toString();
-    } else if (finalCurrentTime.isBefore(
-      DateTime.parse('2000-01-01 ${apiwaktTime.zuhrStart}:00'),
-    )) {
-      currentWaqtName.value = DateTime.now().weekday == DateTime.friday
-          ? "jumuah".tr
-          : "dhuhr".tr;
-      currentWaktTime.value = apiwaktTime.zuhrStart.toString();
-    } else if (finalCurrentTime.isBefore(
-      DateTime.parse('2000-01-01 ${apiwaktTime.asrStart}:00'),
-    )) {
-      currentWaqtName.value = "asr".tr;
-      currentWaktTime.value = apiwaktTime.asrStart.toString();
-    } else if (finalCurrentTime.isBefore(
-      DateTime.parse('2000-01-01 ${apiwaktTime.maghribStart}:00'),
-    )) {
-      currentWaqtName.value = "magrib".tr;
-      currentWaktTime.value = apiwaktTime.maghribStart.toString();
-    } else if (finalCurrentTime.isBefore(
-      DateTime.parse('2000-01-01 ${apiwaktTime.ishaStart}:00'),
-    )) {
-      currentWaqtName.value = "isha".tr;
-      currentWaktTime.value = apiwaktTime.ishaStart.toString();
-    } else if (finalCurrentTime.isAfter(
-      DateTime.parse('2000-01-01 ${apiwaktTime.fajrStart}:00'),
-    )) {
-      currentWaqtName.value = "fajr".tr;
-      currentWaktTime.value = apiwaktTime.fajrStart.toString();
-    }
+    var apiwaktTime = prayerTimeModel?.data;
+    if (apiwaktTime == null) return;
+
+    fajrStart.value = apiwaktTime.fajrStart ?? "--";
+    sunriseStart.value = apiwaktTime.sunrise ?? "--";
+    dhuhrStart.value = apiwaktTime.zuhrStart ?? "--";
+    asrStart.value = apiwaktTime.asrStart ?? "--";
+    magribStart.value = apiwaktTime.maghribStart ?? "--";
+    ishaStart.value = apiwaktTime.ishaStart ?? "--";
+
+    try {
+      if (finalCurrentTime.isBefore(
+        DateTime.parse('2000-01-01 ${apiwaktTime.fajrStart}:00'),
+      )) {
+        currentWaqtName.value = "fajr".tr;
+        currentWaktTime.value = apiwaktTime.fajrStart.toString();
+      } else if (finalCurrentTime.isBefore(
+        DateTime.parse('2000-01-01 ${apiwaktTime.sunrise}:00'),
+      )) {
+        currentWaqtName.value = "sunrise".tr;
+        currentWaktTime.value = apiwaktTime.sunrise.toString();
+      } else if (finalCurrentTime.isBefore(
+        DateTime.parse('2000-01-01 ${apiwaktTime.zuhrStart}:00'),
+      )) {
+        currentWaqtName.value = DateTime.now().weekday == DateTime.friday
+            ? "jumuah".tr
+            : "dhuhr".tr;
+        currentWaktTime.value = apiwaktTime.zuhrStart.toString();
+      } else if (finalCurrentTime.isBefore(
+        DateTime.parse('2000-01-01 ${apiwaktTime.asrStart}:00'),
+      )) {
+        currentWaqtName.value = "asr".tr;
+        currentWaktTime.value = apiwaktTime.asrStart.toString();
+      } else if (finalCurrentTime.isBefore(
+        DateTime.parse('2000-01-01 ${apiwaktTime.maghribStart}:00'),
+      )) {
+        currentWaqtName.value = "magrib".tr;
+        currentWaktTime.value = apiwaktTime.maghribStart.toString();
+      } else if (finalCurrentTime.isBefore(
+        DateTime.parse('2000-01-01 ${apiwaktTime.ishaStart}:00'),
+      )) {
+        currentWaqtName.value = "isha".tr;
+        currentWaktTime.value = apiwaktTime.ishaStart.toString();
+      } else {
+        currentWaqtName.value = "fajr".tr;
+        currentWaktTime.value = apiwaktTime.fajrStart.toString();
+      }
+    } catch (_) {}
   }
 
   RxBool isCityListLoading = false.obs;

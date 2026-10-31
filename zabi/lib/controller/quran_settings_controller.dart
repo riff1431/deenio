@@ -19,6 +19,7 @@ class SettingsController extends GetxController implements GetxService {
   @override
   void onInit() {
     super.onInit();
+    loadCachedMosqueSettings();
     getSuraTranslationApiData();
     loadSavedApiTranslateDropdownValue();
     getArabicFontSizeFromLocalStorage();
@@ -208,18 +209,41 @@ class SettingsController extends GetxController implements GetxService {
   RxBool isMosqueSettingsLoading = false.obs;
   MosqueSettingsModel? mosqueSettingsApiData;
 
+  void loadCachedMosqueSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString('cached_mosque_settings');
+      if (cached != null) {
+        mosqueSettingsApiData = MosqueSettingsModel.fromJson(jsonDecode(cached));
+        Get.find<HomeLayoutController>().applyApiValue(
+          mosqueSettingsApiData?.data?.homeLayout,
+        );
+        update();
+      }
+    } catch (_) {}
+  }
+
   // get juz list form here
   Future<void> fetchMosqueSettingsData({String? translatorId}) async {
     try {
-      isMosqueSettingsLoading(true);
+      if (mosqueSettingsApiData == null) {
+        isMosqueSettingsLoading(true);
+      }
 
       final response = await quranSettingRepo.getMosqueSettingsRepo();
-update();
-      if (response.statusCode == 200) {
+      update();
+      if (response.statusCode == 200 && response.body != null) {
         mosqueSettingsApiData = MosqueSettingsModel.fromJson(response.body);
         Get.find<HomeLayoutController>().applyApiValue(
           mosqueSettingsApiData?.data?.homeLayout,
         );
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+            'cached_mosque_settings',
+            jsonEncode(response.body),
+          );
+        } catch (_) {}
       }
     } catch (e) {
       if (kDebugMode) {

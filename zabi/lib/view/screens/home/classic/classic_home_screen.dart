@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:zabi/controller/internet_check_controller.dart';
 import 'package:zabi/controller/package_prayer_time_controller.dart';
 import 'package:zabi/controller/quran_settings_controller.dart';
 import 'package:zabi/controller/theme_controller.dart';
@@ -31,7 +30,6 @@ class ClassicHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasInternet = Get.find<InternetController>().hasInternet.value;
     return GetBuilder<SettingsController>(
       builder: (settingsController) {
         return GetBuilder<PrayerTimeController>(
@@ -48,7 +46,7 @@ class ClassicHomeScreen extends StatelessWidget {
                   : _buildAppBar(context, mosqueData, prayerTimeController),
               body: SafeArea(
                 top: false,
-                child: isLoading || mosqueData == null && !hasInternet
+                child: isLoading
                     ? const DashbordShimmerScreen()
                     : _buildBody(context, mosqueData, prayerTimeController),
               ),
@@ -137,8 +135,7 @@ class ClassicHomeScreen extends StatelessWidget {
     SettingsController settingsController,
     PrayerTimeController prayerTimeController,
   ) {
-    return settingsController.isMosqueSettingsLoading.value ||
-        prayerTimeController.isprayerTimeLoading.value ||
+    return settingsController.isMosqueSettingsLoading.value &&
         settingsController.mosqueSettingsApiData == null;
   }
 

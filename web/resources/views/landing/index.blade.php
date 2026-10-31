@@ -3371,6 +3371,13 @@ const TRANSLATIONS = {
                         rSel.appendChild(opt);
                     });
                     if (list.length > 0) rSel.value = list[0].id;
+
+                    // Automatically load Surah 1 on initial page load
+                    if (!qa.currentSurah) {
+                        const sSel = document.getElementById('qa-surah-select');
+                        if (sSel) sSel.value = 1;
+                        qaLoadSurah(1);
+                    }
                 })
                 .catch(() => {});
         })();
@@ -3403,6 +3410,7 @@ const TRANSLATIONS = {
             document.getElementById('qa-bismillah').classList.toggle('hidden', ch.id === 9);
 
             qaFetchVerses(ch.id);
+            qaLoadAudio();
         }
 
         function qaFetchVerses(surahId) {
@@ -3512,38 +3520,44 @@ const TRANSLATIONS = {
             }
         }
 
-        function qaLoadAudio() {
-            const reciterSel = document.getElementById('qa-reciter-select');
-            const reciterId = reciterSel.value;
-            if (!reciterId || !qa.currentSurah) {
-                document.getElementById('qa-no-audio').style.display = '';
-                document.getElementById('qa-play-btn').disabled = true;
-                return;
-            }
+        const QA_PLAY_SVG = '<svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+        const QA_PAUSE_SVG = '<svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"></rect><rect x="14" y="4" width="4" height="16" fill="currentColor"></rect></svg>';
+        const QA_LOAD_SVG = '<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle class="opacity-25" cx="12" cy="12" r="10" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
 
-            // Check cache
+        function qaSetPlayIcon(state) {
+            const el = document.getElementById('qa-play-icon');
+            if (!el) return;
+            if (state === 'pause') el.innerHTML = QA_PAUSE_SVG;
+            else if (state === 'loading') el.innerHTML = QA_LOAD_SVG;
+            else el.innerHTML = QA_PLAY_SVG;
+        }
+
+        function qaSetReciter(reciterId) {
+            qaLoadAudio(reciterId);
+        }
+
+        function qaLoadAudio(reciterIdOverride) {
+            const reciterSel = document.getElementById('qa-reciter-select');
+            const reciterId = reciterIdOverride || (reciterSel ? reciterSel.value : null);
+            if (!reciterId || !qa.currentSurah) return;
+
             if (qa.reciterSuras[reciterId]) {
                 qaSetAudio(reciterId);
                 return;
             }
 
-            // Fetch reciter suras
+            qaSetPlayIcon('loading');
             fetch('/api/reciter-sura/' + reciterId)
                 .then(r => r.json())
                 .then(data => {
-                    if (data.data) {
+                    qaSetPlayIcon('play');
+                    if (data && data.data) {
                         qa.reciterSuras[reciterId] = data.data;
-                        // Update avatar
-                        if (data.data.length > 0) {
-                            const avatar = document.getElementById('qa-reciter-avatar');
-                            avatar.src = data.data[0].reciter_avatar || '';
-                            avatar.classList.toggle('hidden', !data.data[0].reciter_avatar);
-                        }
                     }
                     qaSetAudio(reciterId);
                 })
                 .catch(() => {
-                    document.getElementById('qa-no-audio').style.display = '';
+                    qaSetPlayIcon('play');
                 });
         }
 
@@ -3552,293 +3566,167 @@ const TRANSLATIONS = {
             const suras = qa.reciterSuras[reciterId] || [];
             const match = suras.find(s => parseInt(s.number) === parseInt(qa.currentSurah.id));
             const audio = document.getElementById('qa-audio');
-            const noAudio = document.getElementById('qa-no-audio');
             const playBtn = document.getElementById('qa-play-btn');
 
-            // Stop everything and reset UI for the new surah
+            if (!audio) return;
+
             audio.pause();
-            qavStop();
+            qaSetPlayIcon('play');
             qaResetProgressUI();
-            document.getElementById('qa-icon-pause').classList.add('hidden');
-            document.getElementById('qa-icon-loading').classList.add('hidden');
-            document.getElementById('qa-icon-play').classList.remove('hidden');
 
             if (match && match.path) {
                 audio.src = match.path;
-                audio.volume = (document.getElementById('qa-volume').value || 80) / 100;
+                audio.volume = (document.getElementById('qa-volume')?.value || 80) / 100;
                 audio.load();
                 qa.audioLoaded = true;
-                noAudio.style.display = 'none';
-                playBtn.disabled = false;
-                // Set duration from API metadata (corrected by loadedmetadata event later)
+                if (playBtn) playBtn.disabled = false;
+
                 if (match.duration) {
-                    document.getElementById('qa-duration').textContent = qaFmtTime(match.duration / 1000);
+                    const totalEl = document.getElementById('qa-total-time');
+                    if (totalEl) totalEl.textContent = qaFmtTime(match.duration / 1000);
                 }
 
-                // Auto-play if advancing from previous surah ending
                 if (qa.autoPlay) {
                     qa.autoPlay = false;
-                    qavInit();
-                    document.getElementById('qa-icon-play').classList.add('hidden');
-                    document.getElementById('qa-icon-loading').classList.remove('hidden');
-                    audio.play()
-                        .then(() => {
-                            document.getElementById('qa-icon-loading').classList.add('hidden');
-                            document.getElementById('qa-icon-pause').classList.remove('hidden');
-                            qavStart();
-                            qaStartProgress();
-                        })
-                        .catch(() => {
-                            document.getElementById('qa-icon-loading').classList.add('hidden');
-                            document.getElementById('qa-icon-play').classList.remove('hidden');
-                        });
+                    qaSetPlayIcon('loading');
+                    audio.play().catch(e => {
+                        console.warn('Audio auto-play prevented:', e);
+                        qaSetPlayIcon('play');
+                    });
                 }
             } else {
                 audio.src = '';
                 qa.audioLoaded = false;
                 qa.autoPlay = false;
-                noAudio.style.display = '';
-                playBtn.disabled = true;
-                noAudio.textContent = suras.length === 0 ? 'No audio from this reciter' : 'Audio not available for this surah';
+                if (playBtn) playBtn.disabled = true;
+                const totalEl = document.getElementById('qa-total-time');
+                if (totalEl) totalEl.textContent = '0:00';
             }
         }
 
-        // ── Frequency Visualizer ─────────────────────────────────
-        const qav = { ctx: null, analyser: null, source: null, raf: null, peaks: [] };
-
-        function qavInit() {
-            if (qav.ctx) {
-                // AudioContext may be suspended after page inactivity
-                if (qav.ctx.state === 'suspended') qav.ctx.resume();
-                return;
-            }
-            const audio = document.getElementById('qa-audio');
-            try {
-                qav.ctx      = new (window.AudioContext || window.webkitAudioContext)();
-                qav.source   = qav.ctx.createMediaElementSource(audio);
-                qav.analyser = qav.ctx.createAnalyser();
-                qav.analyser.fftSize          = 256;   // 128 frequency bins
-                qav.analyser.smoothingTimeConstant = 0.78;
-                qav.source.connect(qav.analyser);
-                qav.analyser.connect(qav.ctx.destination);
-            } catch(e) { /* Web Audio not supported */ }
+        function qaGetCdnFallback(reciterId, surahNumber) {
+            const padded = String(surahNumber).padStart(3, '0');
+            return parseInt(reciterId) === 2
+                ? 'https://cdn.mp3quran.net/audio/mishary-alafasy/r1/' + padded + '.mp3'
+                : 'https://cdn.mp3quran.net/audio/abdulrahman-sudais/r1/' + padded + '.mp3';
         }
-
-        function qavStart() {
-            if (!qav.analyser) return;
-            const canvas = document.getElementById('qa-canvas');
-            canvas.style.display = 'block';
-
-            const bins = qav.analyser.frequencyBinCount;
-            qav.peaks = new Float32Array(bins).fill(0);
-            const ctx2d = canvas.getContext('2d');
-            const dpr   = window.devicePixelRatio || 1;
-            let lastCssW = 0;
-
-            function syncSize() {
-                // getBoundingClientRect gives the true CSS pixel width
-                const cssW = Math.round(canvas.getBoundingClientRect().width);
-                const cssH = 56;
-                if (cssW === lastCssW) return;
-                lastCssW = cssW;
-                // Set physical buffer size (dpr-aware for crisp rendering)
-                canvas.width  = cssW * dpr;
-                canvas.height = cssH * dpr;
-                ctx2d.scale(dpr, dpr);
-            }
-
-            function draw() {
-                qav.raf = requestAnimationFrame(draw);
-                syncSize();
-
-                const W = lastCssW;
-                const H = 56;
-                if (!W) return;
-
-                const data = new Uint8Array(bins);
-                qav.analyser.getByteFrequencyData(data);
-
-                ctx2d.clearRect(0, 0, W, H);
-
-                // Use lower 65% of bins (bass + mids, skip ultrasonic noise)
-                const useBins = Math.floor(bins * 0.65);
-                const gap     = 2;
-                const barW    = Math.max(2, Math.floor((W - gap * useBins) / useBins));
-                const step    = barW + gap;
-
-                // Shared vertical gradient (created once per frame is fine)
-                const grad = ctx2d.createLinearGradient(0, H, 0, 0);
-                grad.addColorStop(0,    '#1a5c38');
-                grad.addColorStop(0.55, '#2d8a54');
-                grad.addColorStop(1,    '#d4a843');
-
-                for (let i = 0; i < useBins; i++) {
-                    const ratio = data[i] / 255;
-                    const barH  = Math.max(2, ratio * (H - 4));
-                    const x     = i * step;
-                    const y     = H - barH;
-
-                    ctx2d.fillStyle = grad;
-
-                    // Rounded-top bar
-                    const r = Math.min(barW / 2, 2.5);
-                    ctx2d.beginPath();
-                    ctx2d.moveTo(x + r, y);
-                    ctx2d.lineTo(x + barW - r, y);
-                    ctx2d.quadraticCurveTo(x + barW, y, x + barW, y + r);
-                    ctx2d.lineTo(x + barW, H);
-                    ctx2d.lineTo(x, H);
-                    ctx2d.lineTo(x, y + r);
-                    ctx2d.quadraticCurveTo(x, y, x + r, y);
-                    ctx2d.closePath();
-                    ctx2d.fill();
-
-                    // Falling peak line
-                    qav.peaks[i] = ratio > qav.peaks[i]
-                        ? ratio
-                        : Math.max(0, qav.peaks[i] - 0.013);
-                    const peakY = H - qav.peaks[i] * (H - 4) - 3;
-                    ctx2d.fillStyle = 'rgba(212,168,67,0.9)';
-                    ctx2d.fillRect(x, peakY, barW, 2);
-                }
-            }
-            draw();
-        }
-
-        function qavStop() {
-            if (qav.raf) { cancelAnimationFrame(qav.raf); qav.raf = null; }
-            const canvas = document.getElementById('qa-canvas');
-            if (!canvas) return;
-            const ctx2d = canvas.getContext('2d');
-            if (ctx2d) ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-            canvas.style.display = 'none';
-            canvas.width = 0; // reset so next qavStart re-syncs size fresh
-        }
-        // ─────────────────────────────────────────────────────────
 
         function qaTogglePlay() {
             const audio = document.getElementById('qa-audio');
-            if (!qa.audioLoaded || !audio.src) return;
+            if (!audio) return;
+            if (!qa.audioLoaded || !audio.src) {
+                qa.autoPlay = true;
+                qaLoadAudio();
+                return;
+            }
             if (audio.paused) {
-                qavInit();
-                document.getElementById('qa-icon-play').classList.add('hidden');
-                document.getElementById('qa-icon-loading').classList.remove('hidden');
+                qaSetPlayIcon('loading');
                 audio.play()
                     .then(() => {
-                        document.getElementById('qa-icon-loading').classList.add('hidden');
-                        document.getElementById('qa-icon-pause').classList.remove('hidden');
-                        qavStart();
-                        qaStartProgress();
+                        qaSetPlayIcon('pause');
                     })
-                    .catch(() => {
-                        document.getElementById('qa-icon-loading').classList.add('hidden');
-                        document.getElementById('qa-icon-play').classList.remove('hidden');
+                    .catch(e => {
+                        console.warn('Playback error, switching to CDN fallback...', e);
+                        const reciterSel = document.getElementById('qa-reciter-select');
+                        const reciterId = reciterSel ? reciterSel.value : 1;
+                        const surahNum = qa.currentSurah ? qa.currentSurah.id : 1;
+                        const cdnUrl = qaGetCdnFallback(reciterId, surahNum);
+                        if (audio.src !== cdnUrl) {
+                            audio.src = cdnUrl;
+                            audio.load();
+                            audio.play()
+                                .then(() => qaSetPlayIcon('pause'))
+                                .catch(() => qaSetPlayIcon('play'));
+                        } else {
+                            qaSetPlayIcon('play');
+                        }
                     });
             } else {
                 audio.pause();
-                document.getElementById('qa-icon-pause').classList.add('hidden');
-                document.getElementById('qa-icon-play').classList.remove('hidden');
-                qavStop();
-                qaStopProgress();
+                qaSetPlayIcon('play');
             }
         }
 
         function qaOnAudioEnded() {
-            qavStop();
-            qaStopProgress();
+            qaSetPlayIcon('play');
+            qaResetProgressUI();
             const currentId = qa.currentSurah?.id;
             if (currentId && currentId < 114) {
                 qa.autoPlay = true;
-                const nextId = currentId + 1;
-                document.getElementById('qa-surah-select').value = nextId;
+                const nextId = parseInt(currentId) + 1;
+                const sSel = document.getElementById('qa-surah-select');
+                if (sSel) sSel.value = nextId;
                 qaLoadSurah(nextId);
-            } else {
-                document.getElementById('qa-icon-pause').classList.add('hidden');
-                document.getElementById('qa-icon-play').classList.remove('hidden');
-                qaResetProgressUI();
             }
-        }
-
-        // ── Progress polling (replaces unreliable ontimeupdate) ───
-        let qaPollTimer = null;
-
-        function qaStartProgress() {
-            qaStopProgress();
-            qaPollTimer = setInterval(() => {
-                const audio = document.getElementById('qa-audio');
-                const dur = audio.duration;
-                if (!dur || isNaN(dur) || !isFinite(dur)) return;
-                const pct = Math.min(100, (audio.currentTime / dur) * 100);
-                document.getElementById('qa-progress-bar').style.width = pct + '%';
-                document.getElementById('qa-current-time').textContent = qaFmtTime(audio.currentTime);
-            }, 250);
-        }
-
-        function qaStopProgress() {
-            if (qaPollTimer) { clearInterval(qaPollTimer); qaPollTimer = null; }
         }
 
         function qaResetProgressUI() {
-            qaStopProgress();
-            document.getElementById('qa-progress-bar').style.width = '0%';
-            document.getElementById('qa-current-time').textContent = '0:00';
-            document.getElementById('qa-duration').textContent = '0:00';
+            const fill = document.getElementById('qa-progress-fill');
+            const curTime = document.getElementById('qa-cur-time');
+            if (fill) fill.style.width = '0%';
+            if (curTime) curTime.textContent = '0:00';
         }
 
-        function qaOnMetadata() {
+        function qaSeekAudio(event) {
             const audio = document.getElementById('qa-audio');
-            const dur = audio.duration;
-            if (dur && isFinite(dur)) {
-                document.getElementById('qa-duration').textContent = qaFmtTime(dur);
-            }
-        }
-
-        function qaSeek(event, bar) {
-            const audio = document.getElementById('qa-audio');
-            if (!audio.duration) return;
+            if (!audio || !audio.duration || isNaN(audio.duration)) return;
+            const bar = document.getElementById('qa-progress-bar');
+            if (!bar) return;
             const rect = bar.getBoundingClientRect();
             const pct = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
             audio.currentTime = pct * audio.duration;
+            const fill = document.getElementById('qa-progress-fill');
+            const curTime = document.getElementById('qa-cur-time');
+            if (fill) fill.style.width = (pct * 100) + '%';
+            if (curTime) curTime.textContent = qaFmtTime(audio.currentTime);
         }
 
         function qaSkipBackward() {
             const audio = document.getElementById('qa-audio');
-            audio.currentTime = Math.max(0, audio.currentTime - 10);
+            if (!audio) return;
+            audio.currentTime = Math.max(0, (audio.currentTime || 0) - 10);
         }
 
         function qaSkipForward() {
             const audio = document.getElementById('qa-audio');
-            audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 10);
+            if (!audio) return;
+            audio.currentTime = Math.min(audio.duration || 0, (audio.currentTime || 0) + 10);
         }
 
         function qaPrevSurah() {
             const currentId = qa.currentSurah?.id;
             if (!currentId || currentId <= 1) return;
-            const prevId = currentId - 1;
-            document.getElementById('qa-surah-select').value = prevId;
+            const prevId = parseInt(currentId) - 1;
+            const sSel = document.getElementById('qa-surah-select');
+            if (sSel) sSel.value = prevId;
             qaLoadSurah(prevId);
         }
 
         function qaNextSurah() {
             const currentId = qa.currentSurah?.id;
             if (!currentId || currentId >= 114) return;
-            const nextId = currentId + 1;
-            document.getElementById('qa-surah-select').value = nextId;
+            const nextId = parseInt(currentId) + 1;
+            const sSel = document.getElementById('qa-surah-select');
+            if (sSel) sSel.value = nextId;
             qaLoadSurah(nextId);
         }
 
         function qaSetVolume(val) {
-            document.getElementById('qa-audio').volume = val / 100;
+            const audio = document.getElementById('qa-audio');
+            if (audio) audio.volume = val / 100;
         }
 
         function qaToggleIndex() {
             const container = document.getElementById('qa-index-container');
             const btn = document.getElementById('qa-idx-toggle');
+            if (!container) return;
             const isHidden = container.classList.contains('hidden');
             container.classList.toggle('hidden', !isHidden);
-            btn.style.background = isHidden ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.1)';
-            btn.style.color      = isHidden ? '#d4a843' : 'rgba(255,255,255,0.8)';
-            btn.style.borderColor= isHidden ? 'rgba(212,168,67,0.3)' : 'rgba(255,255,255,0.2)';
+            if (btn) {
+                btn.style.background = isHidden ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.1)';
+                btn.style.color      = isHidden ? '#d4a843' : 'rgba(255,255,255,0.8)';
+                btn.style.borderColor= isHidden ? 'rgba(212,168,67,0.3)' : 'rgba(255,255,255,0.2)';
+            }
         }
 
         function qaToggleTranslation() {
@@ -3847,17 +3735,58 @@ const TRANSLATIONS = {
                 el.classList.toggle('hidden', !qa.showTranslation);
             });
             const btn = document.getElementById('qa-trans-toggle');
-            btn.style.background = qa.showTranslation ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.08)';
-            btn.style.color = qa.showTranslation ? '#d4a843' : 'rgba(255,255,255,0.5)';
-            btn.style.borderColor = qa.showTranslation ? 'rgba(212,168,67,0.3)' : 'rgba(255,255,255,0.15)';
+            if (btn) {
+                btn.style.background = qa.showTranslation ? 'rgba(212,168,67,0.2)' : 'rgba(255,255,255,0.08)';
+                btn.style.color = qa.showTranslation ? '#d4a843' : 'rgba(255,255,255,0.5)';
+                btn.style.borderColor = qa.showTranslation ? 'rgba(212,168,67,0.3)' : 'rgba(255,255,255,0.15)';
+            }
         }
 
         function qaFmtTime(seconds) {
-            if (!seconds || isNaN(seconds)) return '0:00';
+            if (!seconds || isNaN(seconds) || !isFinite(seconds)) return '0:00';
             const m = Math.floor(seconds / 60);
             const s = Math.floor(seconds % 60);
             return m + ':' + String(s).padStart(2, '0');
         }
+
+        // Attach native audio events
+        (function qaBindAudioListeners() {
+            const audio = document.getElementById('qa-audio');
+            if (!audio) return;
+
+            audio.addEventListener('play', () => qaSetPlayIcon('pause'));
+            audio.addEventListener('pause', () => qaSetPlayIcon('play'));
+            audio.addEventListener('playing', () => qaSetPlayIcon('pause'));
+            audio.addEventListener('waiting', () => qaSetPlayIcon('loading'));
+            audio.addEventListener('error', () => {
+                const reciterSel = document.getElementById('qa-reciter-select');
+                const reciterId = reciterSel ? reciterSel.value : 1;
+                const surahNum = qa.currentSurah ? qa.currentSurah.id : 1;
+                const cdnUrl = qaGetCdnFallback(reciterId, surahNum);
+                if (audio.src !== cdnUrl) {
+                    console.warn('Audio failed, falling back to CDN:', cdnUrl);
+                    audio.src = cdnUrl;
+                    audio.load();
+                } else {
+                    qaSetPlayIcon('play');
+                }
+            });
+            audio.addEventListener('ended', qaOnAudioEnded);
+            audio.addEventListener('timeupdate', () => {
+                if (!audio.duration || isNaN(audio.duration) || !isFinite(audio.duration)) return;
+                const pct = Math.min(100, (audio.currentTime / audio.duration) * 100);
+                const fill = document.getElementById('qa-progress-fill');
+                const cur = document.getElementById('qa-cur-time');
+                if (fill) fill.style.width = pct + '%';
+                if (cur) cur.textContent = qaFmtTime(audio.currentTime);
+            });
+            audio.addEventListener('loadedmetadata', () => {
+                if (audio.duration && isFinite(audio.duration)) {
+                    const total = document.getElementById('qa-total-time');
+                    if (total) total.textContent = qaFmtTime(audio.duration);
+                }
+            });
+        })();
     
 </script>
 </body>

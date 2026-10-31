@@ -26,26 +26,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _loadInitialData() {
-    Get.find<InternetController>().checkConnection();
-    Get.find<SettingsController>().fetchMosqueSettingsData();
+    try {
+      Get.find<InternetController>().checkConnection();
+    } catch (_) {}
+    try {
+      Get.find<SettingsController>().fetchMosqueSettingsData();
+    } catch (_) {}
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final prayerTimeController = Get.find<PrayerTimeController>();
 
-      // 1. Get location first
-      await prayerTimeController.getLocation();
+      try {
+        prayerTimeController.loadSwitchValue();
+        prayerTimeController.loadPrayerTimeSettings();
+      } catch (_) {}
 
-      // 2. Load settings
-      prayerTimeController.loadSwitchValue();
-      prayerTimeController.loadPrayerTimeSettings();
-      Get.find<SettingsController>().fetchMosqueSettingsData();
+      try {
+        Get.find<SettingsController>().fetchMosqueSettingsData();
+      } catch (_) {}
 
-      // 3. Fetch prayer time
-      await _fetchPrayerTimes(prayerTimeController);
+      try {
+        await prayerTimeController.getLocation();
+      } catch (e) {
+        debugPrint('Error getting location: $e');
+      }
 
-      // 4. Init adjustment
-      Get.find<PrayerTimeAdjustmentController>().init();
-      SalatWaqtService.initializeSalatWaqt();
+      try {
+        await _fetchPrayerTimes(prayerTimeController);
+      } catch (e) {
+        debugPrint('Error fetching prayer times: $e');
+      }
+
+      try {
+        Get.find<PrayerTimeAdjustmentController>().init();
+        SalatWaqtService.initializeSalatWaqt();
+      } catch (e) {
+        debugPrint('Error initializing salat adjustment: $e');
+      }
     });
   }
 

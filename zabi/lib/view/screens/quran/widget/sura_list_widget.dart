@@ -11,26 +11,36 @@ import 'package:zabi/util/dimensions.dart';
 import 'package:zabi/util/images.dart';
 import 'package:zabi/util/styles.dart';
 
-class SuraListWidget extends StatelessWidget {
+class SuraListWidget extends StatefulWidget {
   const SuraListWidget({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<SuraListWidget> createState() => _SuraListWidgetState();
+}
+
+class _SuraListWidgetState extends State<SuraListWidget> {
+  @override
+  void initState() {
+    super.initState();
     Get.find<QuranController>().fetchSuraListData();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return GetBuilder<QuranController>(
       builder: (quranController) {
-        return quranController.isSuraListLoading.value ||
-                quranController.suraListApiData == null
-            ? const Center(child: QuranListShimmer())
-            : ListView.builder(
-                primary: false,
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: Dimensions.PADDING_SIZE_SMALL,
-                ),
-                itemCount: quranController.suraListApiData!.data!.length,
-                itemBuilder: (context, index) {
-                  var apiData = quranController.suraListApiData!.data![index];
+        final suraList = quranController.suraListApiData?.data;
+        if (suraList == null || suraList.isEmpty) {
+          return const Center(child: QuranListShimmer());
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Dimensions.PADDING_SIZE_SMALL,
+          ),
+          itemCount: suraList.length,
+          itemBuilder: (context, index) {
+            var apiData = suraList[index];
                   return GestureDetector(
                     onTap: () {
                       Get.find<QuranController>().suraNumber = apiData.id;

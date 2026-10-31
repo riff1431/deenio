@@ -28,10 +28,14 @@ class ChapterCollection extends JsonResource
 
     private function getTranslator()
     {
-        return Translator::query()
-            ->where('id', \request()->get('translator_id'))
+        $translatorId = \request()->get('translator_id');
+        if (!$translatorId) {
+            return 'en';
+        }
+        $translator = Translator::query()
+            ->where('id', $translatorId)
             ->select('language_code')
-            ->first()
-            ->language_code;
+            ->first();
+        return $translator?->language_code ?? 'en';
     }
 }
