@@ -47,8 +47,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache rewrite module
-RUN a2enmod rewrite
+# Enable Apache rewrite & headers modules
+RUN a2enmod rewrite headers
 
 # Configure Apache virtual host pointing to public/
 COPY web/apache.conf /etc/apache2/sites-available/000-default.conf
