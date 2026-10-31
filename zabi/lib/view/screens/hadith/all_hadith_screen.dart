@@ -21,31 +21,33 @@ class AllHadithScreen extends StatefulWidget {
 }
 
 class _AllHadithScreenState extends State<AllHadithScreen> {
-  final HadithController hadithController = Get.put(HadithController());
+  late final HadithController hadithController;
 
   @override
   void initState() {
-    hadithController.hadithModel = null;
-    hadithController.getAllHadithData(Get.arguments[1], Get.arguments[2]);
     super.initState();
+    hadithController = Get.find<HadithController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      hadithController.getAllHadithData(Get.arguments[1], Get.arguments[2]);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Appbar start ===>
       appBar: CustomAppBar(
         title: "${Get.arguments[0]} ${"hadith".tr}",
-        isBackButtonExist: widget.appBackButton == true ? true : false,
+        isBackButtonExist: widget.appBackButton,
       ),
-
-      // body start ===>
       body: GetBuilder<HadithController>(
-        builder: (_) {
-          if (hadithController.isLoadingHadith.value) {
+        builder: (ctrl) {
+          // ── Loading ──
+          if (ctrl.isLoadingHadithBool) {
             return const Center(child: HadisChapterShimmer());
           }
-          final hadiths = hadithController.hadithModel?.hadiths?.data;
+
+          // ── Empty / error ──
+          final hadiths = ctrl.hadithModel?.hadiths?.data;
           if (hadiths == null || hadiths.isEmpty) {
             return Center(
               child: Padding(
@@ -66,63 +68,60 @@ class _AllHadithScreenState extends State<AllHadithScreen> {
               ),
             );
           }
-          return SingleChildScrollView(
-            child: ListView.builder(
-              shrinkWrap: true,
-              primary: false,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: Dimensions.PADDING_SIZE_SMALL),
-              itemCount: hadiths.length,
-              itemBuilder: (context, index) {
-                final hadith = hadiths[index];
-                return GestureDetector(
-                  onTap: () {
-                    Get.toNamed(RouteHelper.hadithDetails, arguments: hadith);
-                  },
-                  child: Card(
-                    clipBehavior: Clip.antiAlias,
-                    color: Theme.of(context).cardColor,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL),
-                      horizontalTitleGap: 5,
-                      leading: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          SvgPicture.asset(
-                            Images.Icon_Star,
-                            height: 50,
-                            fit: BoxFit.fill,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                          Text(
-                            (index + 1).toString(),
-                            style: robotoMedium.copyWith(
-                              fontSize: Dimensions.FONT_SIZE_DEFAULT,
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium!
-                                  .color,
-                            ),
-                          ),
-                        ],
-                      ),
-                      title: Text(
-                        hadith.hadithEnglish ?? "",
-                        style: robotoMedium.copyWith(
+
+          // ── Data ──
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(
+                horizontal: Dimensions.PADDING_SIZE_SMALL),
+            itemCount: hadiths.length,
+            itemBuilder: (context, index) {
+              final hadith = hadiths[index];
+              return GestureDetector(
+                onTap: () {
+                  Get.toNamed(RouteHelper.hadithDetails, arguments: hadith);
+                },
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  color: Theme.of(context).cardColor,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL),
+                    horizontalTitleGap: 5,
+                    leading: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SvgPicture.asset(
+                          Images.Icon_Star,
+                          height: 50,
+                          fit: BoxFit.fill,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        Text(
+                          (index + 1).toString(),
+                          style: robotoMedium.copyWith(
                             fontSize: Dimensions.FONT_SIZE_DEFAULT,
-                            overflow: TextOverflow.ellipsis),
-                      ),
-                      subtitle: Text(
-                        "${"writer:".tr} ${hadith.book?.writerName ?? ""}".tr,
-                        style: robotoMedium.copyWith(
-                            fontSize: Dimensions.FONT_SIZE_DEFAULT),
-                      ),
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color,
+                          ),
+                        ),
+                      ],
+                    ),
+                    title: Text(
+                      hadith.hadithEnglish ?? "",
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: robotoMedium.copyWith(
+                          fontSize: Dimensions.FONT_SIZE_DEFAULT),
+                    ),
+                    subtitle: Text(
+                      "${"writer:".tr} ${hadith.book?.writerName ?? ""}",
+                      style: robotoMedium.copyWith(
+                          fontSize: Dimensions.FONT_SIZE_DEFAULT),
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           );
         },
       ),

@@ -117,7 +117,7 @@ Future<Map<String, Map<String, String>>> init() async {
   // old controller
   Get.lazyPut(() => ThemeController(sharedPreferences: Get.find()));
   Get.lazyPut(() => SplashController(splashRepo: Get.find()));
-  Get.lazyPut(() => HadithController());
+  Get.lazyPut(() => HadithController(), fenix: true);
   Get.lazyPut(() => NearbyMosqueController());
   Get.lazyPut(
     () => SettingsController(quranSettingRepo: Get.find()),

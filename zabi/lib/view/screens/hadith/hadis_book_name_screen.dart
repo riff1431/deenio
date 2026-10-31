@@ -13,94 +13,88 @@ import '../../../util/styles.dart';
 
 class HadisBookNameScreen extends StatelessWidget {
   final bool appBackButton;
-  HadisBookNameScreen({super.key, required this.appBackButton});
-  HadithController hadithController = Get.put(HadithController());
+  const HadisBookNameScreen({super.key, required this.appBackButton});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Appbar start ===>
       appBar: CustomAppBar(
         title: "hadith_books".tr,
-        isBackButtonExist: appBackButton == true ? true : false,
+        isBackButtonExist: appBackButton,
       ),
-
-      // body start ===>
       body: GetBuilder<HadithController>(
-        init: HadithController(),
-        builder: (_) {
-          return hadithController.isLoadingHadithChapter.value
-              ? const Center(child: HadisBookShimmer())
-              : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      // list viwe start ===>
-                      ListView.builder(
-                        primary: false,
-                        shrinkWrap: true,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: Dimensions.PADDING_SIZE_SMALL),
-                        itemCount: 6,
-                        itemBuilder: (context, index) {
-                          return GestureDetector(
-                            onTap: () {
-                              Get.toNamed(RouteHelper.hadithChapters,
-                                  arguments: [
-                                    hadithController
-                                        .hadisBookModel!.books![index].bookSlug,
-                                    hadithController
-                                        .hadisBookModel!.books![index].bookName
-                                  ]);
-                            },
-                            child: Card(
-                              clipBehavior: Clip.antiAlias,
-                              color: Theme.of(context).cardColor,
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal:
-                                        Dimensions.PADDING_SIZE_EXTRA_SMALL + 2,
-                                    vertical:
-                                        Dimensions.PADDING_SIZE_EXTRA_SMALL),
-                                horizontalTitleGap: 0,
-                                leading: SvgPicture.asset(
-                                  Images.Icon_Hadith,
-                                  color: Theme.of(context).primaryColor,
-                                  height: 50,
-                                ),
-                                title: Text(
-                                  hadithController
-                                      .hadisBookModel!.books![index].bookName!,
-                                  style: robotoMedium.copyWith(
-                                      fontSize: Dimensions.FONT_SIZE_LARGE),
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      hadithController.hadisBookModel!
-                                          .books![index].writerName!,
-                                      textAlign: TextAlign.left,
-                                      style: robotoMedium.copyWith(
-                                          fontSize:
-                                              Dimensions.FONT_SIZE_DEFAULT),
-                                    ),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      "${"hadiths".tr}: ${hadithController.hadisBookModel!.books![index].hadithsCount!}",
-                                      style: robotoMedium.copyWith(
-                                          fontSize: Dimensions.FONT_SIZE_SMALL),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
+        builder: (ctrl) {
+          // ── Loading ──
+          if (ctrl.isLoadingHadithChapterBool) {
+            return const Center(child: HadisBookShimmer());
+          }
+
+          // ── Empty / error ──
+          final books = ctrl.hadisBookModel?.books;
+          if (books == null || books.isEmpty) {
+            return Center(
+              child: Text(
+                "no_data_found".tr,
+                style: robotoMedium.copyWith(fontSize: 16),
+              ),
+            );
+          }
+
+          // ── Data ──
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(
+                horizontal: Dimensions.PADDING_SIZE_SMALL),
+            itemCount: books.length,
+            itemBuilder: (context, index) {
+              final book = books[index];
+              return GestureDetector(
+                onTap: () {
+                  Get.toNamed(
+                    RouteHelper.hadithChapters,
+                    arguments: [book.bookSlug, book.bookName],
+                  );
+                },
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  color: Theme.of(context).cardColor,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL + 2,
+                        vertical: Dimensions.PADDING_SIZE_EXTRA_SMALL),
+                    horizontalTitleGap: 0,
+                    leading: SvgPicture.asset(
+                      Images.Icon_Hadith,
+                      color: Theme.of(context).primaryColor,
+                      height: 50,
+                    ),
+                    title: Text(
+                      book.bookName ?? "",
+                      style: robotoMedium.copyWith(
+                          fontSize: Dimensions.FONT_SIZE_LARGE),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 5),
+                        Text(
+                          book.writerName ?? "",
+                          textAlign: TextAlign.left,
+                          style: robotoMedium.copyWith(
+                              fontSize: Dimensions.FONT_SIZE_DEFAULT),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          "${"hadiths".tr}: ${book.hadithsCount ?? ""}",
+                          style: robotoMedium.copyWith(
+                              fontSize: Dimensions.FONT_SIZE_SMALL),
+                        ),
+                      ],
+                    ),
                   ),
-                );
+                ),
+              );
+            },
+          );
         },
       ),
     );

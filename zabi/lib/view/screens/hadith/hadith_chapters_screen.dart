@@ -16,31 +16,34 @@ class HadithChaptersScreen extends StatefulWidget {
 }
 
 class _HadithChaptersScreenState extends State<HadithChaptersScreen> {
-  final HadithController hadithController = Get.put(HadithController());
+  late final HadithController hadithController;
 
   @override
   void initState() {
-    hadithController.hadithChapterModel = null;
-    hadithController.getHadithBookChaptersData(Get.arguments[0]);
     super.initState();
+    hadithController = Get.find<HadithController>();
+    // Delay so the widget tree is mounted before we call update()
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      hadithController.getHadithBookChaptersData(Get.arguments[0]);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Appbar start ===>
       appBar: CustomAppBar(
         title: "${Get.arguments[1]} ${"chapters".tr}",
-        isBackButtonExist: widget.appBackButton == true ? true : false,
+        isBackButtonExist: widget.appBackButton,
       ),
-
-      // start body ===>
       body: GetBuilder<HadithController>(
-        builder: (_) {
-          if (hadithController.isLoadingHadithChapter.value) {
+        builder: (ctrl) {
+          // ── Loading ──
+          if (ctrl.isLoadingHadithChapterBool) {
             return const Center(child: HadisChapterShimmer());
           }
-          final chapters = hadithController.hadithChapterModel?.chapters;
+
+          // ── Empty / error ──
+          final chapters = ctrl.hadithChapterModel?.chapters;
           if (chapters == null || chapters.isEmpty) {
             return Center(
               child: Padding(
@@ -61,56 +64,58 @@ class _HadithChaptersScreenState extends State<HadithChaptersScreen> {
               ),
             );
           }
-          return SingleChildScrollView(
-            child: ListView.builder(
-              shrinkWrap: true,
-              primary: false,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: Dimensions.PADDING_SIZE_SMALL),
-              itemCount: chapters.length,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    Get.toNamed(RouteHelper.allHadith, arguments: [
-                      Get.arguments[1],
-                      chapters[index].bookSlug,
-                      chapters[index].chapterNumber,
-                    ]);
-                  },
-                  child: Card(
-                    clipBehavior: Clip.antiAlias,
-                    color: Theme.of(context).cardColor,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: Dimensions.PADDING_SIZE_DEFAULT,
-                        vertical: Dimensions.PADDING_SIZE_EXTRA_SMALL,
-                      ),
-                      leading: Text(
+
+          // ── Data ──
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(
+                horizontal: Dimensions.PADDING_SIZE_SMALL),
+            itemCount: chapters.length,
+            itemBuilder: (context, index) {
+              final chapter = chapters[index];
+              return GestureDetector(
+                onTap: () {
+                  Get.toNamed(RouteHelper.allHadith, arguments: [
+                    Get.arguments[1],
+                    chapter.bookSlug,
+                    chapter.chapterNumber,
+                  ]);
+                },
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  color: Theme.of(context).cardColor,
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: Dimensions.PADDING_SIZE_DEFAULT,
+                      vertical: Dimensions.PADDING_SIZE_EXTRA_SMALL,
+                    ),
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      child: Text(
                         "${index + 1}",
                         style: robotoMedium.copyWith(
-                          fontSize: Dimensions.PADDING_SIZE_LARGE,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      title: Text(
-                        chapters[index].chapterEnglish ?? "",
-                        style: robotoMedium.copyWith(
                           fontSize: Dimensions.FONT_SIZE_DEFAULT,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      trailing: Text(
-                        chapters[index].chapterArabic ?? "",
-                        style: robotoRegular.copyWith(
-                          fontSize: Dimensions.FONT_SIZE_DEFAULT,
-                          color: Theme.of(context).primaryColor,
+                          color: Colors.white,
                         ),
                       ),
                     ),
+                    title: Text(
+                      chapter.chapterEnglish ?? "",
+                      style: robotoMedium.copyWith(
+                        fontSize: Dimensions.FONT_SIZE_DEFAULT,
+                      ),
+                    ),
+                    subtitle: Text(
+                      chapter.chapterArabic ?? "",
+                      textAlign: TextAlign.right,
+                      style: robotoRegular.copyWith(
+                        fontSize: Dimensions.FONT_SIZE_DEFAULT,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           );
         },
       ),

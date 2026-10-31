@@ -12,9 +12,13 @@ import 'package:zabi/util/app_constants.dart';
 import 'package:zabi/view/base/custom_snackbar.dart';
 
 class HadithController extends GetxController {
-  // local variable
-  RxBool isLoadingHadithChapter = false.obs;
-  RxBool isLoadingHadith = false.obs;
+  // loading flags – plain bool, toggled via update()
+  bool isLoadingHadithChapterBool = false;
+  bool isLoadingHadithBool = false;
+
+  // keep RxBool aliases so existing code that reads .value keeps compiling
+  bool get isLoadingHadithChapterVal => isLoadingHadithChapterBool;
+  bool get isLoadingHadithVal => isLoadingHadithBool;
 
   // hadith api key
   String get hadithApiKey => AppConstants.HADITH_API_KEY;
@@ -29,78 +33,85 @@ class HadithController extends GetxController {
   HadithChapterModel? hadithChapterModel;
   HadithModel? hadithModel;
 
-  // get hadith book list api call here
-  getHadishBookNameData() async {
-    isLoadingHadithChapter(true);
+  // ──────────────────────────────────────────────
+  //  BOOKS
+  // ──────────────────────────────────────────────
+  Future<void> getHadishBookNameData() async {
+    isLoadingHadithChapterBool = true;
     update();
     try {
       final response = await http.get(
         Uri.parse(
-          "${AppConstants.HADITH_BASE_URL}/api/books?apiKey=$hadithApiKey",
-        ),
+            "${AppConstants.HADITH_BASE_URL}/api/books?apiKey=$hadithApiKey"),
       );
-
-      var data = jsonDecode(response.body);
+      final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         hadisBookModel = HadisBookModel.fromJson(data);
       } else {
-        showCustomSnackBar(data['message'] ?? "Failed to load hadith books",
+        showCustomSnackBar(
+            data['message'] ?? "Failed to load hadith books",
             isError: true);
       }
     } catch (error) {
-      print("Error fetching data: $error");
+      print("Error fetching hadith books: $error");
     } finally {
-      isLoadingHadithChapter(false);
+      isLoadingHadithChapterBool = false;
       update();
     }
   }
 
-  // get hadith chaptar here
-  getHadithBookChaptersData(arguments) async {
-    isLoadingHadithChapter(true);
+  // ──────────────────────────────────────────────
+  //  CHAPTERS
+  // ──────────────────────────────────────────────
+  Future<void> getHadithBookChaptersData(dynamic bookSlug) async {
+    hadithChapterModel = null;
+    isLoadingHadithChapterBool = true;
     update();
     try {
       final response = await http.get(
         Uri.parse(
-          "${AppConstants.HADITH_BASE_URL}/api/$arguments/chapters?apiKey=$hadithApiKey",
-        ),
+            "${AppConstants.HADITH_BASE_URL}/api/$bookSlug/chapters?apiKey=$hadithApiKey"),
       );
       if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
+        final data = jsonDecode(response.body);
         hadithChapterModel = HadithChapterModel.fromJson(data);
       } else {
-        var data = jsonDecode(response.body);
-        showCustomSnackBar(data['message'] ?? "Failed to load chapters",
+        final data = jsonDecode(response.body);
+        showCustomSnackBar(
+            data['message'] ?? "Failed to load chapters",
             isError: true);
       }
     } catch (error) {
-      print("Error fetching data: $error");
+      print("Error fetching hadith chapters: $error");
     } finally {
-      isLoadingHadithChapter(false);
+      isLoadingHadithChapterBool = false;
       update();
     }
   }
 
-  // get hadith data here
-  getAllHadithData(bookName, chapter) async {
-    isLoadingHadith(true);
+  // ──────────────────────────────────────────────
+  //  HADITHS
+  // ──────────────────────────────────────────────
+  Future<void> getAllHadithData(dynamic bookName, dynamic chapter) async {
+    hadithModel = null;
+    isLoadingHadithBool = true;
     update();
     try {
       final response = await http.get(
         Uri.parse(
-          "${AppConstants.HADITH_BASE_URL}/api/hadiths/?apiKey=$hadithApiKey&book=$bookName&chapter=$chapter&paginate=500",
-        ),
+            "${AppConstants.HADITH_BASE_URL}/api/hadiths/?apiKey=$hadithApiKey&book=$bookName&chapter=$chapter&paginate=500"),
       );
       if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
+        final data = jsonDecode(response.body);
         hadithModel = HadithModel.fromJson(data);
       } else {
-        showCustomSnackBar("no_hadith_found_in_this_chapter".tr, isError: true);
+        showCustomSnackBar("no_hadith_found_in_this_chapter".tr,
+            isError: true);
       }
     } catch (error) {
-      print("Error fetching data: $error");
+      print("Error fetching hadiths: $error");
     } finally {
-      isLoadingHadith(false);
+      isLoadingHadithBool = false;
       update();
     }
   }
