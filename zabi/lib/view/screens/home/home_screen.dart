@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,8 +59,8 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       try {
-        Get.find<PrayerTimeAdjustmentController>().init();
-        SalatWaqtService.initializeSalatWaqt();
+        if (!kIsWeb) Get.find<PrayerTimeAdjustmentController>().init();
+        if (!kIsWeb) SalatWaqtService.initializeSalatWaqt();
       } catch (e) {
         debugPrint('Error initializing salat adjustment: $e');
       }
