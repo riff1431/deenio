@@ -48,12 +48,7 @@ class CachedNetworkImageWidget extends StatelessWidget {
           ),
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
-            return Image.asset(
-              Images.placeholderImage,
-              height: height,
-              width: width,
-              fit: fit,
-            );
+            return Container(height: height, width: width, color: Theme.of(context).cardColor, alignment: Alignment.center, child: const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)));
           },
         ),
       );

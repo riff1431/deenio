@@ -18,7 +18,7 @@ class WallpaperResourceCollection extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'category' => $this->category->name,
-            'wallpaper' => asset($this->image)
+            'wallpaper' => asset($this->image) . '?v=2'
         ];
     }
 }
