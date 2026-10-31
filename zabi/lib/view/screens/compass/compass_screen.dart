@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_qiblah/flutter_qiblah.dart';
 import 'package:get/get.dart';
@@ -14,7 +15,8 @@ class CompassScreen extends StatefulWidget {
 }
 
 class _CompassScreenState extends State<CompassScreen> {
-  final _deviceSupport = FlutterQiblah.androidDeviceSensorSupport();
+  final Future<bool?>? _deviceSupport =
+      kIsWeb ? null : FlutterQiblah.androidDeviceSensorSupport();
 
   @override
   Widget build(BuildContext context) {
@@ -25,30 +27,50 @@ class _CompassScreenState extends State<CompassScreen> {
         isBackButtonExist: widget.appBackButton == true ? true : false,
       ),
 
-      // body start---> 21.44136615878186, 91.98412914734926
-      body: FutureBuilder(
-        future: _deviceSupport,
-        builder: (_, AsyncSnapshot<bool?> snapshot) {
-          // Loading section---->
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const QuiblaeShimmerScreen();
-          }
-          // Error message show here--.
-          if (snapshot.hasError) {
-            return Center(
-              child: Text("error: ${snapshot.error.toString()}".tr),
-            );
-          }
+      body: kIsWeb
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.explore_outlined,
+                        size: 72, color: Theme.of(context).primaryColor),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Qibla Compass requires magnetic hardware sensors, available on mobile devices (Android / iOS).'
+                          .tr,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : FutureBuilder(
+              future: _deviceSupport,
+              builder: (_, AsyncSnapshot<bool?> snapshot) {
+                // Loading section---->
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const QuiblaeShimmerScreen();
+                }
+                // Error message show here--.
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text("error: ${snapshot.error.toString()}".tr),
+                  );
+                }
 
-          if (snapshot.data!) {
-            // QiblahCompass page return here-->
-            return const QiblahCompassWidget();
-          }
-          // error message---.
-          return Center(
-              child: Text('our_compass_not_support_in_your_device'.tr));
-        },
-      ),
+                if (snapshot.data == true) {
+                  // QiblahCompass page return here-->
+                  return const QiblahCompassWidget();
+                }
+                // error message---.
+                return Center(
+                    child: Text('our_compass_not_support_in_your_device'.tr));
+              },
+            ),
     );
   }
 }

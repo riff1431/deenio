@@ -169,9 +169,7 @@ class CategoryScreen extends StatelessWidget {
 
                               // donated  item ===>
                               if (Get.find<SettingsController>()
-                                      .mosqueSettingsApiData!
-                                      .data!
-                                      .showDonationBanner ==
+                                      .mosqueSettingsApiData?.data?.showDonationBanner ==
                                   true)
                                 ListViewItemWidget(
                                   onPressed: () {
@@ -323,14 +321,10 @@ class CategoryScreen extends StatelessWidget {
                             ),
 
                             if (Get.find<SettingsController>()
-                                        .mosqueSettingsApiData!
-                                        .data!
-                                        .showBannerIcon ==
+                                        .mosqueSettingsApiData?.data?.showBannerIcon ==
                                     true ||
                                 Get.find<SettingsController>()
-                                        .mosqueSettingsApiData!
-                                        .data!
-                                        .showDonationBanner ==
+                                        .mosqueSettingsApiData?.data?.showDonationBanner ==
                                     true)
                               GridViewItemWidget(
                                 onPressed: () {
