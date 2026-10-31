@@ -43,8 +43,7 @@ class AppConstants {
   static const String WALLPAPER_LIST = "/api/wallpapers";
 
   //others key
-  static const String HADITH_API_KEY =
-      "\$2y\$10\$IpN2jMeSLbrGxZ6zwEu3KAEr1ZmUjwQCYhRbiReqscXswndm";
+  static const String HADITH_API_KEY = r'$2y$10$3OKfClIP6Gc7sRhztDpbeeV8XjM0liVXcOCuboX7bVRu8MXYwfki';
   static const String MAPS_API_KEY = 'AIzaSyCQc4sar_LVjT8M_vC_ubqCoGwGlR-TU3Q';
 
   // Shared Key
