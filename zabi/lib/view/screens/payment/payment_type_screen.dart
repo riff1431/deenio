@@ -51,16 +51,16 @@ class PaymentTypeScreen extends StatelessWidget {
                     var apiData =
                         donationController.paymentListData?.data![index];
                     return GestureDetector(
-                      onTap: () async {
-                        if (apiData?.type == 'buymeacoffee' || apiData?.type == 'supportkori') {
-                          final link = apiData?.apiKey ?? '';
+                      onTap: () {
+                        if (apiData.type == 'buymeacoffee' || apiData.type == 'supportkori') {
+                          final link = apiData.apiKey ?? '';
                           if (link.isNotEmpty) {
                             final uri = Uri.tryParse(link);
-                            if (uri != null && await canLaunchUrl(uri)) {
-                              await launchUrl(uri, mode: LaunchMode.externalApplication);
-                              return;
+                            if (uri != null) {
+                              launchUrl(uri, mode: LaunchMode.externalApplication);
                             }
                           }
+                          return;
                         }
                         donationController.setPaymentGatewayValue(
                           apiData.type,

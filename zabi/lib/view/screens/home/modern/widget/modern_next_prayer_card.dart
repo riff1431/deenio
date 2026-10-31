@@ -26,7 +26,6 @@ class ModernNextPrayerCard extends StatefulWidget {
 class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
   Timer? _ticker;
   Duration _remaining = Duration.zero;
-  int? _lastActiveIndex;
 
   @override
   void initState() {
