@@ -108,3 +108,5 @@ app.*.map.json
 # -------------------------------
 .fvm/
 .fvmrc
+# Widget Preview related
+.widget_preview/
