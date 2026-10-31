@@ -1,17 +1,16 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zabi/controller/quran_settings_controller.dart';
 import 'package:zabi/util/app_constants.dart';
-import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
 import 'package:zabi/view/base/custom_snackbar.dart';
 
 class NearbyMosqueController extends GetxController {
@@ -38,7 +37,6 @@ class NearbyMosqueController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // getLocation();
     loadKmDropdownValue(km.value);
   }
 
@@ -50,7 +48,6 @@ class NearbyMosqueController extends GetxController {
     // Check if location services are enabled
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // If not enabled, prompt user to enable location services
       await Geolocator.openLocationSettings();
       return;
     }
@@ -59,10 +56,8 @@ class NearbyMosqueController extends GetxController {
     permission = await Geolocator.checkPermission();
 
     if (permission == LocationPermission.denied) {
-      // If permission is denied, request permission from the user
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        //   If permission is still denied, show a message to the user using GetX's Snackbar
         showCustomSnackBar(
           "for_getting_Automatic_Prayer_Time_Nearby_Mosque_Qibla_Compass_need_to_enable_location_permission"
               .tr,
@@ -78,7 +73,6 @@ class NearbyMosqueController extends GetxController {
         return;
       }
     } else if (permission == LocationPermission.deniedForever) {
-      // If permission is permanently denied, show a message to the user using GetX's Snackbar
       showCustomSnackBar(
         "for_getting_Automatic_Prayer_Time_Nearby_Mosque_Qibla_Compass_need_to_enable_location_permission"
             .tr,
@@ -93,8 +87,6 @@ class NearbyMosqueController extends GetxController {
       }
       return;
     }
-
-    // If permission is granted, retrieve the current position
 
     if (serviceEnabled) {
       try {
@@ -120,40 +112,196 @@ class NearbyMosqueController extends GetxController {
     }
   }
 
+  // ── Multi-tier search: Backend Proxy -> OSM Overpass -> OSM Nominatim ──
   void searchNearbyPlaces() async {
-    // print("Call searchNearbyPlaces function");
-    // print(AppConstants.MAPS_API_KEY);
-
-    // map api key
-    final String apiKey =
-        Get.find<SettingsController>()
-            .mosqueSettingsApiData!
-            .data!
-            .googleMapKey ??
-        'no api key found';
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool("isLocationDenied", false);
     bool? storedFontSize = prefs.getBool("isLocationDenied");
     if (storedFontSize != null) {
       isLocationDenied.value = storedFontSize;
     }
+
     try {
       isLoading(true);
 
-      debugPrint("Map api key: $apiKey");
-      var url =
-          '${AppConstants.NEARBY_MOSQUE_URL}/json?location=${userLocation.value}&radius=${1000 * kmToRadious}&type=mosque&key=$apiKey';
-      var response = await http.get(Uri.parse(url));
-      var decoded = json.decode(response.body);
-      places.value = decoded['results'];
+      // Parse user's coordinates
+      final parts = userLocation.value.split(',');
+      if (parts.length < 2) {
+        isLoading(false);
+        return;
+      }
+      final double userLat = double.tryParse(parts[0].trim()) ?? 23.8103;
+      final double userLng = double.tryParse(parts[1].trim()) ?? 90.4125;
+
+      // ── Tier 1: Try Deenio Backend Proxy API (handles caching & server-side OSM) ──
+      bool loadedFromBackend = false;
+      try {
+        final backendUrl =
+            '${AppConstants.BASE_URL}${AppConstants.NEARBY_MOSQUES_BACKEND_URL}?lat=$userLat&lng=$userLng&radius=$kmToRadious';
+        final response = await http
+            .get(Uri.parse(backendUrl))
+            .timeout(const Duration(seconds: 8));
+
+        if (response.statusCode == 200) {
+          final decoded = json.decode(response.body);
+          if (decoded['status'] == true &&
+              decoded['results'] != null &&
+              (decoded['results'] as List).isNotEmpty) {
+            places.value = decoded['results'];
+            loadedFromBackend = true;
+          }
+        }
+      } catch (backendError) {
+        if (kDebugMode) {
+          print("Backend Nearby Mosques Error: $backendError");
+        }
+      }
+
+      if (loadedFromBackend) {
+        isLoading(false);
+        return;
+      }
+
+      // ── Tier 2: Direct Client-Side OpenStreetMap Overpass Fallback ──
+      bool loadedFromOverpass = false;
+      try {
+        final int radiusMeters = kmToRadious * 1000;
+        final query =
+            '[out:json][timeout:8];(node["amenity"="place_of_worship"]["religion"="muslim"](around:$radiusMeters,$userLat,$userLng);way["amenity"="place_of_worship"]["religion"="muslim"](around:$radiusMeters,$userLat,$userLng););out center 35;';
+
+        final osmResponse = await http.post(
+          Uri.parse('https://overpass-api.de/api/interpreter'),
+          headers: {'User-Agent': 'DeenioApp/1.0 (https://deenio.huipper.com)'},
+          body: {'data': query},
+        ).timeout(const Duration(seconds: 8));
+
+        if (osmResponse.statusCode == 200) {
+          final osmDecoded = json.decode(osmResponse.body);
+          final elements = osmDecoded['elements'] as List?;
+          if (elements != null && elements.isNotEmpty) {
+            List<Map<String, dynamic>> parsedList = [];
+            for (var el in elements) {
+              final tags = el['tags'] ?? {};
+              final double lat = (el['lat'] ?? (el['center']?['lat'] ?? 0.0))
+                  .toDouble();
+              final double lng = (el['lon'] ?? (el['center']?['lon'] ?? 0.0))
+                  .toDouble();
+              if (lat == 0.0 || lng == 0.0) continue;
+
+              final double distanceMeters =
+                  Geolocator.distanceBetween(userLat, userLng, lat, lng);
+              final String name = tags['name'] ??
+                  tags['name:bn'] ??
+                  tags['name:en'] ??
+                  'Jame Masjid';
+              final String vicinity = tags['addr:street'] ??
+                  tags['addr:suburb'] ??
+                  tags['addr:city'] ??
+                  tags['name:en'] ??
+                  'Nearby Mosque';
+
+              parsedList.add({
+                'name': name,
+                'vicinity': vicinity,
+                'lat': lat,
+                'lng': lng,
+                'distance_meters': distanceMeters.round(),
+                'distance_text': formatDistance(distanceMeters),
+                'geometry': {
+                  'location': {'lat': lat, 'lng': lng}
+                }
+              });
+            }
+
+            parsedList.sort((a, b) => (a['distance_meters'] as int)
+                .compareTo(b['distance_meters'] as int));
+            places.value = parsedList;
+            loadedFromOverpass = true;
+          }
+        }
+      } catch (overpassError) {
+        if (kDebugMode) {
+          print("Client Overpass Error: $overpassError");
+        }
+      }
+
+      if (loadedFromOverpass) {
+        isLoading(false);
+        return;
+      }
+
+      // ── Tier 3: Direct Client-Side OpenStreetMap Nominatim Fallback ──
+      try {
+        final double dLat = kmToRadious / 111.0;
+        final double cosLat = max(0.1, cos(userLat * pi / 180.0));
+        final double dLng = kmToRadious / (111.0 * cosLat);
+        final double left = userLng - dLng;
+        final double right = userLng + dLng;
+        final double top = userLat + dLat;
+        final double bottom = userLat - dLat;
+
+        final nomUrl =
+            'https://nominatim.openstreetmap.org/search?q=mosque&format=json&bounded=1&viewbox=$left,$top,$right,$bottom&limit=25';
+        final nomResponse = await http.get(
+          Uri.parse(nomUrl),
+          headers: {'User-Agent': 'DeenioApp/1.0 (support@deenio.com)'},
+        ).timeout(const Duration(seconds: 6));
+
+        if (nomResponse.statusCode == 200) {
+          final nomDecoded = json.decode(nomResponse.body) as List?;
+          if (nomDecoded != null && nomDecoded.isNotEmpty) {
+            List<Map<String, dynamic>> parsedList = [];
+            for (var item in nomDecoded) {
+              final double lat = double.tryParse('${item['lat']}') ?? 0.0;
+              final double lng = double.tryParse('${item['lon']}') ?? 0.0;
+              if (lat == 0.0 || lng == 0.0) continue;
+
+              final double distanceMeters =
+                  Geolocator.distanceBetween(userLat, userLng, lat, lng);
+              String name = item['name'] ?? '';
+              if (name.isEmpty && item['display_name'] != null) {
+                name = item['display_name'].toString().split(',')[0].trim();
+              }
+              if (name.isEmpty) name = 'Mosque';
+
+              parsedList.add({
+                'name': name,
+                'vicinity': item['display_name'] ?? 'Nearby Mosque',
+                'lat': lat,
+                'lng': lng,
+                'distance_meters': distanceMeters.round(),
+                'distance_text': formatDistance(distanceMeters),
+                'geometry': {
+                  'location': {'lat': lat, 'lng': lng}
+                }
+              });
+            }
+
+            parsedList.sort((a, b) => (a['distance_meters'] as int)
+                .compareTo(b['distance_meters'] as int));
+            places.value = parsedList;
+          }
+        }
+      } catch (nominatimError) {
+        if (kDebugMode) {
+          print("Client Nominatim Error: $nominatimError");
+        }
+      }
     } catch (e) {
-      // rethrow;
       if (kDebugMode) {
-        print("Near By Mosque api Error: $e");
+        print("Near By Mosque General Error: $e");
       }
     } finally {
       isLoading(false);
+      update();
     }
+  }
+
+  String formatDistance(double meters) {
+    if (meters < 1000) {
+      return "${meters.round()} m away";
+    }
+    return "${(meters / 1000).toStringAsFixed(1)} km away";
   }
 
   // search by distance function

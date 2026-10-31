@@ -15,6 +15,7 @@ class AppConstants {
 
   // API's and API Kay's
   static const String HADITH_BASE_URL = BASE_URL;
+  static const String NEARBY_MOSQUES_BACKEND_URL = "/api/nearby-mosques";
   static const String NEARBY_MOSQUE_URL =
       'https://maps.googleapis.com/maps/api/place/nearbysearch';
 
