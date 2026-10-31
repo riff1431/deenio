@@ -14,7 +14,7 @@ class PaymentMethodController extends Controller
         $search = request('search');
         $paymentMethods = PaymentMethod::query()
             ->with('settings')
-            ->whereIn('type', ['paypal', 'stripe', 'razorpay', 'paystack', 'sslcommerz'])
+            ->whereIn('type', ['paypal', 'stripe', 'razorpay', 'paystack', 'sslcommerz', 'buymeacoffee', 'supportkori'])
             ->select(['id', 'name', 'type'])
             ->when($search, function ($query) use ($search) {
                 $query->where('name', 'like', '%' . $search . '%');

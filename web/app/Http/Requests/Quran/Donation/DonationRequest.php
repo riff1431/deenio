@@ -24,7 +24,7 @@ class DonationRequest extends FormRequest
         return [
             'category_id'      => 'required|exists:categories,id',
             'payment_method_id' => 'nullable|exists:payment_methods,id',
-            'payment_gateway'  => 'required_without:payment_method_id|nullable|string|in:razorpay,paystack,stripe,paypal,sslcommerz',
+            'payment_gateway'  => 'required_without:payment_method_id|nullable|string|in:razorpay,paystack,stripe,paypal,sslcommerz,buymeacoffee,supportkori',
             'email'            => 'required|email|max:100',
             'name'             => 'nullable|string|max:100',
             'amount'           => 'required|numeric|min:1',

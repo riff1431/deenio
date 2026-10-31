@@ -253,11 +253,14 @@ const gwDropOpen    = ref(false)
 const perPage      = ref('10')
 
 const GATEWAY_LABELS = {
+    buymeacoffee: 'Buy Me a Coffee', supportkori: 'Support Kori',
     stripe: 'Stripe', paypal: 'PayPal', razorpay: 'Razorpay',
     paystack: 'Paystack', sslcommerz: 'SSLCommerz',
 }
 
 const gatewayOptions = [
+    { value: 'buymeacoffee', label: 'Buy Me a Coffee' },
+    { value: 'supportkori',  label: 'Support Kori' },
     { value: 'stripe',     label: 'Stripe' },
     { value: 'paypal',     label: 'PayPal' },
     { value: 'razorpay',   label: 'Razorpay' },
@@ -481,8 +484,10 @@ onUnmounted(() => {
     font-size: 12px;
     font-weight: 600;
 }
-.gw-stripe     { background: #ede9ff; color: #5b4ccc; }
-.gw-paypal     { background: #e3f0ff; color: #003087; }
+.gw-stripe       { background: #ede9ff; color: #5b4ccc; }
+.gw-buymeacoffee { background: #fef3c7; color: #92400e; }
+.gw-supportkori  { background: #ffe4e6; color: #be123c; }
+.gw-paypal       { background: #e3f0ff; color: #003087; }
 .gw-razorpay   { background: #e8eaf6; color: #1a237e; }
 .gw-paystack   { background: #e0f2f1; color: #00695c; }
 .gw-sslcommerz { background: #fce4ec; color: #b71c1c; }

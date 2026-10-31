@@ -207,7 +207,7 @@ class ViewController extends Controller
             'donation_verse_arabic'      => 'مَّثَلُ الَّذِينَ يُنفِقُونَ أَمْوَالَهُمْ فِي سَبِيلِ اللَّهِ كَمَثَلِ حَبَّةٍ أَنبَتَتْ سَبْعَ سَنَابِلَ',
             'donation_verse_translation' => '"The example of those who spend in the way of Allah is like a grain that sprouts seven ears" — Al-Baqarah 2:261',
             'donation_accepted_label'    => 'Accepted via',
-            'donation_gateways'          => "Razorpay\nPaystack\nStripe\nPayPal\nSslCommerz",
+            'donation_gateways'          => "Buy Me a Coffee\nSupport Kori",
             'ai_chat_badge'            => 'Live Demo • Powered by Groq',
             'ai_chat_title_line1'      => 'Ask Any',
             'ai_chat_title_line2'      => 'Islamic Question',

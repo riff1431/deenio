@@ -8,8 +8,10 @@
         <template v-slot:body>
             <div class="mb-4">
                 <label for="type">{{ $t('payment_method.form.payment_method_label') }} <span class="text-danger">*</span></label>
-                <select class="form-control" id="type" v-model="formData.type">
+                <select class="form-control" id="type" v-model="formData.type" @change="onTypeChange">
                     <option value="" selected>{{ $t('payment_method.form.choose_one') }}</option>
+                    <option value="buymeacoffee">Buy Me a Coffee</option>
+                    <option value="supportkori">Support Kori</option>
                     <option value="paypal">Paypal</option>
                     <option value="stripe">Stripe</option>
                     <option value="paystack">Paystack</option>
@@ -19,6 +21,36 @@
                 <small class="text-danger" v-if="errors.type">{{ errors.type[0] }}</small>
 
             </div>
+
+            <template v-if="formData.type === 'buymeacoffee' || formData.type === 'supportkori'">
+                <div class="mb-4">
+                    <label for="name">{{ $t('common.name') }} <span class="text-danger">*</span></label>
+                    <input type="text"
+                           id="name"
+                           class="form-control"
+                           :placeholder="$t('payment_method.form.name_placeholder')"
+                           v-model="formData.name"
+                    />
+                    <small class="text-danger" v-if="errors.name">{{ errors.name[0] }}</small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="api_key">
+                        {{ formData.type === 'buymeacoffee' ? 'Buy Me a Coffee URL' : 'Support Kori URL' }}
+                        <span class="text-danger">*</span>
+                    </label>
+                    <input type="url"
+                           id="api_key"
+                           class="form-control"
+                           :placeholder="formData.type === 'buymeacoffee' ? 'https://buymeacoffee.com/riff1431' : 'https://www.supportkori.com/arifurfullstack'"
+                           v-model="formData.api_key"
+                    />
+                    <small class="text-danger" v-if="errors.api_key">{{ errors.api_key[0] }}</small>
+                    <small class="form-text text-muted">
+                        Donors will be directed to this link to complete their donation.
+                    </small>
+                </div>
+            </template>
 
             <div class="mb-4" v-if="formData.type === 'paypal' || formData.type === 'sslcommerz'">
                 <label for="payment_mode">{{ $t('payment_method.form.payment_mode_label') }} <span class="text-danger">*</span></label>
@@ -95,6 +127,24 @@ const formData = ref({
     type: '',
     payment_mode: ''
 })
+
+const onTypeChange = () => {
+    if (formData.value.type === 'buymeacoffee') {
+        if (!formData.value.name || formData.value.name === 'Support Kori') {
+            formData.value.name = 'Buy Me a Coffee'
+        }
+        if (!formData.value.api_key) {
+            formData.value.api_key = 'https://buymeacoffee.com/riff1431'
+        }
+    } else if (formData.value.type === 'supportkori') {
+        if (!formData.value.name || formData.value.name === 'Buy Me a Coffee') {
+            formData.value.name = 'Support Kori'
+        }
+        if (!formData.value.api_key) {
+            formData.value.api_key = 'https://www.supportkori.com/arifurfullstack'
+        }
+    }
+}
 const {preloader, errors, save, closeModal} = useSubmitForm(props, emit)
 const submit = () => {
     save(props.selectedUrl ? props.selectedUrl : 'payment-method', formData.value)

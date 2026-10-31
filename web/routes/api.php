@@ -66,6 +66,7 @@ Route::get('theme', [ThemeController::class, 'index']);
 Route::get('home-layout', [HomeLayoutController::class, 'index']);
 Route::get('donation-categories', [CategoryController::class, 'index']);
 Route::post('donation-store', [DonationController::class, 'store']);
+Route::post('donation/manual', [DonationController::class, 'store']);
 Route::get('donation-list', [DonationController::class, 'index']);
 // Stripe
 Route::post('donation/stripe/checkout', [StripeDonationController::class, 'createCheckout']);

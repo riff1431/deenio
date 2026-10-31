@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:zabi/shimmer/all_shimmer_loder.dart';
 import 'package:zabi/view/screens/payment/widget/payment_bottom_sheet.dart';
 
@@ -50,7 +51,17 @@ class PaymentTypeScreen extends StatelessWidget {
                     var apiData =
                         donationController.paymentListData?.data![index];
                     return GestureDetector(
-                      onTap: () {
+                      onTap: () async {
+                        if (apiData?.type == 'buymeacoffee' || apiData?.type == 'supportkori') {
+                          final link = apiData?.apiKey ?? '';
+                          if (link.isNotEmpty) {
+                            final uri = Uri.tryParse(link);
+                            if (uri != null && await canLaunchUrl(uri)) {
+                              await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              return;
+                            }
+                          }
+                        }
                         donationController.setPaymentGatewayValue(
                           apiData.type,
                           apiData.apiKey,

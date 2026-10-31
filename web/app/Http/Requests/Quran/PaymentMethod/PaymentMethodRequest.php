@@ -25,11 +25,11 @@ class PaymentMethodRequest extends FormRequest
 
         return [
             'name' => ['required', 'string'],
-            'type' => ['required', 'in:paystack,paypal,stripe,razorpay,sslcommerz',
-                Rule::when(in_array(request('type'), ['stripe', 'paypal', 'razorpay', 'paystack', 'sslcommerz']),
+            'type' => ['required', 'in:paystack,paypal,stripe,razorpay,sslcommerz,buymeacoffee,supportkori',
+                Rule::when(in_array(request('type'), ['stripe', 'paypal', 'razorpay', 'paystack', 'sslcommerz', 'buymeacoffee', 'supportkori']),
                     Rule::unique('payment_methods')->ignore($this->payment_method))
             ],
-            'api_key'    => [Rule::when(in_array(request('type'), ['stripe', 'paypal', 'razorpay', 'paystack', 'sslcommerz']), ['required'])],
+            'api_key'    => [Rule::when(in_array(request('type'), ['stripe', 'paypal', 'razorpay', 'paystack', 'sslcommerz', 'buymeacoffee', 'supportkori']), ['required'])],
             'api_secret' => [Rule::when(in_array(request('type'), ['stripe', 'paypal', 'razorpay', 'paystack', 'sslcommerz']), ['required'])],
         ];
     }
@@ -37,7 +37,7 @@ class PaymentMethodRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.in' => 'The selected type must be one of: paypal, stripe, razorpay, paystack, sslcommerz.',
+            'type.in' => 'The selected type must be one of: paypal, stripe, razorpay, paystack, sslcommerz, buymeacoffee, supportkori.',
         ];
     }
 }

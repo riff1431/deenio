@@ -29,6 +29,14 @@ class PaymentMethodSeeder extends Seeder
                 'name' => 'Razorpay',
                 'type' => 'razorpay'
             ],
+            [
+                'name' => 'Buy Me a Coffee',
+                'type' => 'buymeacoffee'
+            ],
+            [
+                'name' => 'Support Kori',
+                'type' => 'supportkori'
+            ],
         ];
 
         PaymentMethod::query()->insert($paymentMethods);

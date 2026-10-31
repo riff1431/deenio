@@ -21,6 +21,7 @@ class CustomerPaymentMethodResource extends JsonResource
             'api_key' => $this->settings ? $this->settingsManipulation($this->settings, 'api_key') : null,
             'payment_mode' => $this->settings ? $this->settingsManipulation($this->settings, 'payment_mode') : null,
             'api_secret' => $this->settings ? $this->settingsManipulation($this->settings, 'api_secret') : null,
+            'url' => $this->settings ? $this->settingsManipulation($this->settings, 'api_key') : null,
         ];
     }
 

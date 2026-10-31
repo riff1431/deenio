@@ -32,14 +32,15 @@ class PaymentMethodController extends Controller
 
 
         foreach ($request->only('payment_mode', 'api_key', 'api_secret') as $key => $value) {
-
-            $this->service->setDefaultSettings(
-                $key,
-                $value,
-                $request->type,
-                get_class($paymentMethod),
-                $paymentMethod->id
-            );
+            if ($value !== null) {
+                $this->service->setDefaultSettings(
+                    $key,
+                    $value,
+                    $request->type,
+                    get_class($paymentMethod),
+                    $paymentMethod->id
+                );
+            }
         }
 
         return response()->json([
@@ -61,14 +62,15 @@ class PaymentMethodController extends Controller
         $payment_method->update($request->only('name', 'type'));
 
         foreach ($request->only('payment_mode', 'api_key', 'api_secret') as $key => $value) {
-
-            $this->service->setDefaultSettings(
-                $key,
-                $value,
-                $request->type,
-                get_class($payment_method),
-                $payment_method->id
-            );
+            if ($value !== null) {
+                $this->service->setDefaultSettings(
+                    $key,
+                    $value,
+                    $request->type,
+                    get_class($payment_method),
+                    $payment_method->id
+                );
+            }
         }
         return response()->json([
             'status' => true,

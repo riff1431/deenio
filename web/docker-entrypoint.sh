@@ -14,6 +14,9 @@ chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 # Ensure storage link exists
 php artisan storage:link --force || true
 
+# Run database migrations
+php artisan migrate --force || true
+
 # Cache configs and routes in production
 if [ -n "$APP_KEY" ]; then
     php artisan config:cache || true
