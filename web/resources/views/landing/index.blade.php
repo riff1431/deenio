@@ -1050,30 +1050,61 @@
                     </div>
 
                     <!-- Qibla Compass Card -->
-                    <div class="glass-card rounded-3xl p-6 border border-black/10 dark:border-white/10 shadow-xl flex flex-col items-center justify-between text-center h-full">
-                        <div class="w-full">
-                            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-3 text-center">Qibla Direction</div>
+                    <div class="glass-card rounded-3xl p-6 border border-black/10 dark:border-white/10 shadow-xl flex flex-col items-center justify-between text-center h-full select-none">
+                        <!-- Top Header & Mode Pill -->
+                        <div class="w-full flex items-center justify-between mb-2">
+                            <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Qibla Direction</div>
+                            <span id="qibla-mode-pill" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                                🖱️ Drag to test
+                            </span>
                         </div>
                         
-                        <!-- Compass Dial -->
-                        <div class="relative w-44 h-44 rounded-full border-4 border-emerald-500/30 flex items-center justify-center shadow-inner my-2 bg-black/[0.02] dark:bg-white/[0.02]">
-                            <div class="absolute top-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">N</div>
-                            <div class="absolute bottom-2.5 text-xs font-bold text-gray-400">S</div>
-                            <div class="absolute right-2.5 text-xs font-bold text-gray-400">E</div>
-                            <div class="absolute left-2.5 text-xs font-bold text-gray-400">W</div>
-                            
-                            <!-- Rotating Needle Pivot -->
-                            <div id="qibla-needle-pivot" class="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-out" style="transform: rotate(278deg);">
-                                <div class="relative w-full h-full flex items-center justify-center pointer-events-none">
-                                    <!-- Needle shaft -->
-                                    <div class="w-1.5 h-28 bg-gradient-to-t from-gray-400 via-amber-400 to-emerald-500 rounded-full shadow-lg"></div>
-                                    <!-- Pulse Tip Indicator toward Kaaba -->
-                                    <div class="absolute top-5 w-3 h-3 bg-emerald-500 rounded-full shadow-md animate-ping"></div>
+                        <!-- 360° Compass Interactive Housing -->
+                        <div class="relative w-48 h-48 sm:w-52 sm:h-52 my-1 flex items-center justify-center">
+                            <!-- Outer Bezel Ring & Glow Halo -->
+                            <div id="qibla-align-halo" class="absolute inset-0 rounded-full border-4 border-emerald-500/20 shadow-inner bg-gradient-to-b from-black/[0.02] to-black/[0.05] dark:from-white/[0.02] dark:to-white/[0.05] transition-all duration-300"></div>
+
+                            <!-- Degree ticks SVG Ring -->
+                            <svg class="absolute inset-2 w-[calc(100%-16px)] h-[calc(100%-16px)] text-gray-400/40 dark:text-white/20 pointer-events-none" viewBox="0 0 200 200">
+                                <circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2, 6"/>
+                                <circle cx="100" cy="100" r="82" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="1, 8"/>
+                            </svg>
+
+                            <!-- Rotating Dial Ring (turns as device rotates or on drag) -->
+                            <div id="qibla-dial-ring" class="absolute inset-0 rounded-full transition-transform duration-100 ease-out cursor-grab active:cursor-grabbing touch-none select-none flex items-center justify-center" style="transform: rotate(-278deg);">
+                                <!-- Cardinal Labels on Dial -->
+                                <div class="absolute top-2.5 text-xs font-black text-emerald-600 dark:text-emerald-400">N</div>
+                                <div class="absolute bottom-2.5 text-xs font-bold text-gray-400">S</div>
+                                <div class="absolute right-2.5 text-xs font-bold text-gray-400">E</div>
+                                <div class="absolute left-2.5 text-xs font-bold text-gray-400">W</div>
+
+                                <!-- Sub-cardinals -->
+                                <div class="absolute top-8 right-8 text-[9px] font-semibold text-gray-400/80 dark:text-gray-500">NE</div>
+                                <div class="absolute bottom-8 right-8 text-[9px] font-semibold text-gray-400/80 dark:text-gray-500">SE</div>
+                                <div class="absolute bottom-8 left-8 text-[9px] font-semibold text-gray-400/80 dark:text-gray-500">SW</div>
+                                <div class="absolute top-8 left-8 text-[9px] font-semibold text-gray-400/80 dark:text-gray-500">NW</div>
+
+                                <!-- Kaaba Marker Beacon pinned at Qibla angle on dial -->
+                                <div id="qibla-kaaba-marker" class="absolute inset-0 flex items-center justify-center pointer-events-none" style="transform: rotate(278deg);">
+                                    <div class="absolute top-1.5 flex flex-col items-center">
+                                        <div class="w-4 h-4 rounded-md bg-amber-500 text-white flex items-center justify-center shadow-md shadow-amber-500/40 text-[9px] font-bold">🕋</div>
+                                        <div class="w-1 h-3 bg-amber-500 rounded-full"></div>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <!-- Center Kaaba Icon Hub -->
-                            <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md border-2 border-white dark:border-dark-surface z-10">
+
+                            <!-- Central Precision Needle -->
+                            <div id="qibla-needle-pivot" class="absolute inset-0 flex items-center justify-center pointer-events-none transition-transform duration-150 ease-out" style="transform: rotate(0deg);">
+                                <div class="relative w-full h-full flex items-center justify-center">
+                                    <!-- Needle shaft -->
+                                    <div class="w-1.5 h-32 bg-gradient-to-t from-rose-500 via-amber-400 to-emerald-500 rounded-full shadow-lg"></div>
+                                    <!-- Pulsing Tip toward Kaaba -->
+                                    <div id="qibla-pulse-tip" class="absolute top-4 w-3.5 h-3.5 bg-emerald-500 rounded-full shadow-md animate-ping"></div>
+                                </div>
+                            </div>
+
+                            <!-- Center Hub with Kaaba Icon -->
+                            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex items-center justify-center shadow-lg border-2 border-white dark:border-[#0d1611] z-10 pointer-events-none">
                                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 2.5L4 7v10l8 4.5 8-4.5V7L12 2.5z" fill="currentColor" fill-opacity="0.25"></path>
                                     <path d="M12 21.5V11.5"></path>
@@ -1082,9 +1113,29 @@
                             </div>
                         </div>
 
-                        <div class="mt-3 w-full">
-                            <div id="qibla-angle-text" class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Kaaba Angle: 278° W</div>
-                            <div id="qibla-location-text" class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">Accurate from Dhaka, Bangladesh</div>
+                        <!-- Readout, Guidance Banner & Actions -->
+                        <div class="mt-2 w-full flex flex-col items-center">
+                            <!-- Digital Degree & Direction -->
+                            <div class="flex items-baseline gap-2">
+                                <span id="qibla-heading-deg" class="text-2xl font-black font-mono text-gray-900 dark:text-white">278°</span>
+                                <span id="qibla-cardinal-dir" class="text-sm font-bold text-emerald-600 dark:text-emerald-400">WNW</span>
+                            </div>
+
+                            <!-- Live Guidance Status Banner -->
+                            <div id="qibla-guide-banner" class="mt-1 px-3.5 py-1 rounded-full text-xs font-bold transition-all bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+                                ✓ Facing the Kaaba (মক্কা অভিমুখী)
+                            </div>
+
+                            <!-- Location & Calibrate Button -->
+                            <div class="mt-2.5 w-full flex flex-col gap-1.5">
+                                <button type="button" id="qibla-action-btn" onclick="activateQiblaSensors()" class="w-full py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                                    <span>🧭</span>
+                                    <span id="qibla-action-text">Start Phone Sensor</span>
+                                </button>
+                                <div id="qibla-location-text" class="text-[11px] text-gray-400 truncate text-center">
+                                    📍 Accurate from Dhaka, Bangladesh (Qibla: 278°)
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2510,7 +2561,7 @@ const TRANSLATIONS = {
             `).join('');
         }
 
-        // ── Qibla live calculations ──────────────────────────────
+        // ── Qibla live calculations & Senior-Dev Interactive Compass Engine ──
         function calculateQibla(lat, lng) {
             const kaabaLat = 21.422487 * Math.PI / 180.0;
             const kaabaLng = 39.826206 * Math.PI / 180.0;
@@ -2528,82 +2579,270 @@ const TRANSLATIONS = {
             return directions[idx];
         }
 
+        // Compass Engine State
         let currentQiblaAngle = 278; // Dhaka default 278° WNW
+        let currentHeading = 278;    // Start facing Kaaba for immediate visual satisfaction
+        let continuousDialAngle = -278;
+        let continuousNeedleAngle = 0;
+        let sensorActive = false;
+        let sensorListening = false;
+        let hasVibrated = false;
+        let filteredHeading = null;
+        const FILTER_FACTOR = 0.22;
+
+        function getUnwrappedAngle(currentContinuous, targetNormalized) {
+            let currentNorm = ((currentContinuous % 360) + 360) % 360;
+            let diff = ((targetNormalized - currentNorm + 540) % 360) - 180;
+            return currentContinuous + diff;
+        }
+
+        function applyLowPassFilter(targetHeading) {
+            if (filteredHeading === null) {
+                filteredHeading = targetHeading;
+                return targetHeading;
+            }
+            let diff = ((targetHeading - filteredHeading + 540) % 360) - 180;
+            filteredHeading = (filteredHeading + diff * FILTER_FACTOR + 360) % 360;
+            return filteredHeading;
+        }
+
+        function updateModePill(isLiveSensor, isDragging) {
+            const pill = document.getElementById('qibla-mode-pill');
+            if (!pill) return;
+            if (isLiveSensor) {
+                pill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30';
+                pill.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Sensor Active';
+            } else if (isDragging) {
+                pill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30';
+                pill.innerHTML = '🖱️ Rotating Dial';
+            } else {
+                pill.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-gray-500/10 text-gray-600 dark:text-gray-300 border border-gray-500/20';
+                pill.innerHTML = '🖱️ Drag dial to test';
+            }
+        }
+
+        function updateCompassUI(heading) {
+            currentHeading = heading;
+            const normHeading = Math.round((heading % 360 + 360) % 360);
+
+            // 1. Target angles (Dial rotates counter to heading, needle points to Kaaba)
+            const targetDial = (-heading % 360 + 360) % 360;
+            const targetNeedle = ((currentQiblaAngle - heading) % 360 + 360) % 360;
+
+            continuousDialAngle = getUnwrappedAngle(continuousDialAngle, targetDial);
+            continuousNeedleAngle = getUnwrappedAngle(continuousNeedleAngle, targetNeedle);
+
+            // 2. Rotate DOM elements smoothly along shortest arc
+            const dialRing = document.getElementById('qibla-dial-ring');
+            const needlePivot = document.getElementById('qibla-needle-pivot');
+            if (dialRing) dialRing.style.transform = `rotate(${continuousDialAngle}deg)`;
+            if (needlePivot) needlePivot.style.transform = `rotate(${continuousNeedleAngle}deg)`;
+
+            // 3. Digital Readout
+            const degText = document.getElementById('qibla-heading-deg');
+            const cardText = document.getElementById('qibla-cardinal-dir');
+            if (degText) degText.textContent = `${normHeading}°`;
+            if (cardText) cardText.textContent = getCardinalDirection(normHeading);
+
+            // 4. Kaaba alignment detection
+            let diffToQibla = ((currentQiblaAngle - heading + 540) % 360) - 180;
+            const absDiff = Math.abs(diffToQibla);
+            const isAligned = absDiff <= 5;
+
+            const halo = document.getElementById('qibla-align-halo');
+            const banner = document.getElementById('qibla-guide-banner');
+
+            if (isAligned) {
+                if (halo) {
+                    halo.classList.add('border-emerald-400', 'bg-emerald-500/15', 'ring-4', 'ring-emerald-500/40', 'shadow-[0_0_30px_rgba(16,185,129,0.45)]');
+                }
+                if (banner) {
+                    banner.className = 'mt-1 px-3.5 py-1 rounded-full text-xs font-bold transition-all bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 shadow-sm shadow-emerald-500/20 animate-pulse';
+                    banner.innerHTML = '✓ Facing the Kaaba (মক্কা অভিমুখী)';
+                }
+                if (!hasVibrated && navigator.vibrate) {
+                    try { navigator.vibrate([35, 45, 35]); } catch (e) {}
+                    hasVibrated = true;
+                }
+            } else {
+                hasVibrated = false;
+                if (halo) {
+                    halo.classList.remove('border-emerald-400', 'bg-emerald-500/15', 'ring-4', 'ring-emerald-500/40', 'shadow-[0_0_30px_rgba(16,185,129,0.45)]');
+                }
+                if (banner) {
+                    const turnDeg = Math.round(absDiff);
+                    banner.className = 'mt-1 px-3.5 py-1 rounded-full text-xs font-bold transition-all bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20';
+                    if (diffToQibla > 0) {
+                        banner.innerHTML = `Turn ${turnDeg}° Right (ডানে ঘুরুন) ➔`;
+                    } else {
+                        banner.innerHTML = `⬅ Turn ${turnDeg}° Left (বামে ঘুরুন)`;
+                    }
+                }
+            }
+        }
 
         function updateQiblaCompass(lat, lng, cityName) {
             const angle = calculateQibla(lat, lng);
             currentQiblaAngle = angle;
-            const dir = getCardinalDirection(angle);
-            const pivot = document.getElementById('qibla-needle-pivot');
-            const angleText = document.getElementById('qibla-angle-text');
-            const locText = document.getElementById('qibla-location-text');
+            
+            const marker = document.getElementById('qibla-kaaba-marker');
+            if (marker) marker.style.transform = `rotate(${angle}deg)`;
 
-            if (pivot) {
-                pivot.style.transform = `rotate(${angle}deg)`;
-            }
-            if (angleText) {
-                angleText.textContent = `Kaaba Angle: ${angle}° ${dir}`;
-            }
+            const locText = document.getElementById('qibla-location-text');
             if (locText && cityName) {
-                locText.textContent = `Accurate from ${cityName}`;
+                locText.textContent = `📍 Accurate from ${cityName} (Qibla: ${angle}°)`;
             }
+
+            updateCompassUI(currentHeading);
         }
 
-        // ── Real-time Mobile Sensor (Electronic Compass) ─────────
-        function initMobileCompass() {
-            if (!window.DeviceOrientationEvent) return;
+        // ── Senior-Dev 360° Drag Simulator (Touch & Pointer for Desktop) ─
+        function initInteractiveDrag() {
+            const dialRing = document.getElementById('qibla-dial-ring');
+            if (!dialRing) return;
+            const container = dialRing.parentElement;
+            if (!container) return;
+
+            let isDragging = false;
+            let startPointerAngle = 0;
+            let startHeading = 0;
+
+            function getPointerAngle(clientX, clientY) {
+                const rect = container.getBoundingClientRect();
+                const cx = rect.left + rect.width / 2;
+                const cy = rect.top + rect.height / 2;
+                const dx = clientX - cx;
+                const dy = clientY - cy;
+                const rad = Math.atan2(dx, -dy);
+                return (rad * (180 / Math.PI) + 360) % 360;
+            }
+
+            function handleStart(e) {
+                isDragging = true;
+                dialRing.style.transition = 'none';
+                const needle = document.getElementById('qibla-needle-pivot');
+                if (needle) needle.style.transition = 'none';
+
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                startPointerAngle = getPointerAngle(clientX, clientY);
+                startHeading = currentHeading;
+                updateModePill(false, true);
+            }
+
+            function handleMove(e) {
+                if (!isDragging) return;
+                if (e.cancelable) e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const currentAngle = getPointerAngle(clientX, clientY);
+                const delta = currentAngle - startPointerAngle;
+                const newHeading = (startHeading - delta + 720) % 360;
+                updateCompassUI(newHeading);
+            }
+
+            function handleEnd() {
+                if (isDragging) {
+                    isDragging = false;
+                    dialRing.style.transition = '';
+                    const needle = document.getElementById('qibla-needle-pivot');
+                    if (needle) needle.style.transition = '';
+                    updateModePill(sensorActive, false);
+                }
+            }
+
+            container.addEventListener('mousedown', handleStart);
+            window.addEventListener('mousemove', handleMove);
+            window.addEventListener('mouseup', handleEnd);
+
+            container.addEventListener('touchstart', handleStart, { passive: false });
+            window.addEventListener('touchmove', handleMove, { passive: false });
+            window.addEventListener('touchend', handleEnd);
+            window.addEventListener('touchcancel', handleEnd);
+        }
+
+        // ── Real-Time Mobile Sensor Connection (iOS + Android) ───
+        function startSensorListeners() {
+            if (sensorListening) return;
+            sensorListening = true;
 
             const handleOrientation = (e) => {
                 let compassHeading = null;
-                // iOS Safari
-                if (e.webkitCompassHeading !== undefined) {
+                // iOS Safari (Compass Heading from True North)
+                if (typeof e.webkitCompassHeading !== 'undefined' && e.webkitCompassHeading !== null) {
                     compassHeading = e.webkitCompassHeading;
                 }
-                // Android Chrome / Standard
-                else if (e.alpha !== null) {
+                // Android Chrome / Standard DeviceOrientationAbsolute
+                else if (e.absolute === true && typeof e.alpha === 'number') {
+                    compassHeading = (360 - e.alpha) % 360;
+                }
+                // Fallback alpha
+                else if (typeof e.alpha === 'number') {
                     compassHeading = (360 - e.alpha) % 360;
                 }
 
-                if (compassHeading !== null && currentQiblaAngle !== null) {
-                    const relativeAngle = (currentQiblaAngle - compassHeading + 360) % 360;
-                    const pivot = document.getElementById('qibla-needle-pivot');
-                    if (pivot) {
-                        pivot.style.transform = `rotate(${relativeAngle}deg)`;
-                    }
-
-                    const isAligned = Math.abs(relativeAngle) < 10 || Math.abs(relativeAngle - 360) < 10;
-                    const locText = document.getElementById('qibla-location-text');
-                    if (locText) {
-                        if (isAligned) {
-                            locText.innerHTML = '<span class="text-emerald-500 font-extrabold animate-pulse">✓ Facing the Kaaba!</span>';
-                        } else {
-                            const turnDeg = Math.round(relativeAngle > 180 ? relativeAngle - 360 : relativeAngle);
-                            locText.textContent = `Turn ${Math.abs(turnDeg)}° ${turnDeg > 0 ? 'right' : 'left'} to align`;
-                        }
-                    }
+                if (compassHeading !== null && !isNaN(compassHeading)) {
+                    sensorActive = true;
+                    updateModePill(true, false);
+                    const smoothed = applyLowPassFilter(compassHeading);
+                    updateCompassUI(smoothed);
                 }
             };
 
-            // Support iOS 13+ permission dialog
-            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                const card = document.getElementById('qibla-needle-pivot')?.closest('.glass-card');
-                if (card) {
-                    card.addEventListener('click', () => {
-                        DeviceOrientationEvent.requestPermission()
-                            .then(state => {
-                                if (state === 'granted') {
-                                    window.addEventListener('deviceorientation', handleOrientation, true);
-                                }
-                            })
-                            .catch(console.error);
-                    }, { once: true });
-                }
-            } else {
+            if ('ondeviceorientationabsolute' in window) {
                 window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+            } else if (window.DeviceOrientationEvent) {
                 window.addEventListener('deviceorientation', handleOrientation, true);
             }
         }
-        initMobileCompass();
+
+        async function activateQiblaSensors() {
+            const btn = document.getElementById('qibla-action-btn');
+            const btnText = document.getElementById('qibla-action-text');
+
+            // 1. iOS 13+ permission request
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        startSensorListeners();
+                        updateModePill(true, false);
+                        if (btnText) btnText.textContent = '🟢 Sensor Active';
+                    } else {
+                        if (btnText) btnText.textContent = 'Permission Denied';
+                    }
+                } catch (err) {
+                    console.error('iOS DeviceOrientation error:', err);
+                }
+                return;
+            }
+
+            // 2. Android or standard browser
+            if (window.DeviceOrientationEvent) {
+                startSensorListeners();
+                setTimeout(() => {
+                    if (sensorActive) {
+                        updateModePill(true, false);
+                        if (btnText) btnText.textContent = '🟢 Sensor Active';
+                    } else {
+                        // Desktop PC without magnetometer
+                        if (btnText) btnText.textContent = '🖱️ Rotate Dial to Test';
+                        updateModePill(false, false);
+                    }
+                }, 1000);
+            } else {
+                if (btnText) btnText.textContent = 'Sensor Unsupported (Use Drag)';
+            }
+        }
+
+        window.activateQiblaSensors = activateQiblaSensors;
+
+        // Initialize drag & attempt passive sensor listen on mobile
+        initInteractiveDrag();
+        if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission !== 'function') {
+            startSensorListeners();
+        }
+        updateCompassUI(currentHeading);
 
         function loadPrayerTimes(lat, lng) {
             const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
