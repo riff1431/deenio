@@ -24,6 +24,7 @@ use App\Http\Controllers\Quran\API\Translator\TranslatorController;
 use App\Http\Controllers\Quran\API\Verse\VerseController;
 use App\Http\Controllers\Quran\API\WallPaper\WallpaperController;
 use App\Http\Controllers\Quran\AI\AIChatController;
+use App\Http\Controllers\Quran\API\Hadith\HadithProxyController;
 use App\Http\Controllers\Quran\WallPaper\WallpaperCategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -96,3 +97,10 @@ Route::post('ai/chat', [AIChatController::class, 'chat']);
 Route::post('ai/generate-names', [AIChatController::class, 'generateNames']);
 Route::post('ai/test-connection', [AIChatController::class, 'testConnection']);
 Route::get('ai/providers', [AIChatController::class, 'providers']);
+
+// Hadith Proxy Routes (avoids browser CORS on Flutter Web)
+Route::prefix('hadith')->group(function () {
+    Route::get('books', [HadithProxyController::class, 'books']);
+    Route::get('hadiths', [HadithProxyController::class, 'hadiths']);
+    Route::get('{bookSlug}/chapters', [HadithProxyController::class, 'chapters']);
+});

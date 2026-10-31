@@ -39,7 +39,7 @@ class SuraDetaileScreen extends StatelessWidget {
           appBar: CustomAppBar(
             title: isLoading || sura == null
                 ? "--"
-                : "${sura?.translatedName}\n${sura?.versesTranslateName}: ${sura?.versesCount}",
+                : (sura.translatedName != null && sura.translatedName!.isNotEmpty ? "${sura.translatedName}\n${sura.versesTranslateName ?? 'Verses'}: ${sura.versesCount ?? ''}" : (sura.arabicName ?? "--")),
             isBackButtonExist: appBackButton,
             actions: [
               if (!isLoading)

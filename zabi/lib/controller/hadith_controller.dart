@@ -45,7 +45,7 @@ class HadithController extends GetxController {
     isLoadingBooks.value = true;
     try {
       final response = await http.get(Uri.parse(
-          "${AppConstants.HADITH_BASE_URL}/api/books?apiKey=$hadithApiKey"));
+          "${AppConstants.HADITH_BASE_URL}/api/hadith/books"));
       final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         booksRx.value = HadisBookModel.fromJson(data);
@@ -68,7 +68,7 @@ class HadithController extends GetxController {
     isLoadingChapters.value = true;
     try {
       final response = await http.get(Uri.parse(
-          "${AppConstants.HADITH_BASE_URL}/api/$bookSlug/chapters?apiKey=$hadithApiKey"));
+          "${AppConstants.HADITH_BASE_URL}/api/hadith/$bookSlug/chapters"));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         chaptersRx.value = HadithChapterModel.fromJson(data);
@@ -92,7 +92,7 @@ class HadithController extends GetxController {
     isLoadingHadith.value = true;
     try {
       final url =
-          "${AppConstants.HADITH_BASE_URL}/api/hadiths/?apiKey=$hadithApiKey&book=$bookName&chapter=$chapter&paginate=500";
+          "${AppConstants.HADITH_BASE_URL}/api/hadith/hadiths?book=$bookName&chapter=$chapter&paginate=500";
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
