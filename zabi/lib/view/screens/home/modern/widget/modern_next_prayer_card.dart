@@ -26,6 +26,7 @@ class ModernNextPrayerCard extends StatefulWidget {
 class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
   Timer? _ticker;
   Duration _remaining = Duration.zero;
+  int? _lastActiveIndex;
 
   @override
   void initState() {
@@ -41,7 +42,7 @@ class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
   }
 
   void _recompute() {
-    widget.prayerTimeController.prayerNameAndTimes();
+
     final prayerData = widget.prayerTimeController.prayerTimeModel?.data;
     final times = [
       prayerData?.fajrStart,
@@ -51,6 +52,11 @@ class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
       prayerData?.ishaStart,
     ];
     final activeIndex = _activePrayerIndex(times);
+    if (_lastActiveIndex != activeIndex) {
+      _lastActiveIndex = activeIndex;
+      widget.prayerTimeController.prayerNameAndTimes();
+    }
+
     final timeStr = (times.isNotEmpty && times[activeIndex] != null)
         ? times[activeIndex]!
         : widget.prayerTimeController.currentWaktTime.value;
@@ -124,6 +130,11 @@ class _ModernNextPrayerCardState extends State<ModernNextPrayerCard> {
       prayerData?.ishaStart,
     ];
     final activeIndex = _activePrayerIndex(times);
+    if (_lastActiveIndex != activeIndex) {
+      _lastActiveIndex = activeIndex;
+      widget.prayerTimeController.prayerNameAndTimes();
+    }
+
 
     final prayerNames = [
       'fajr'.tr,

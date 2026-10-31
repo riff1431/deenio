@@ -22,10 +22,14 @@ class SuraList extends StatefulWidget {
   State<SuraList> createState() => _SuraListState();
 }
 
-class _SuraListState extends State<SuraList> {
+class _SuraListState extends State<SuraList>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 3, vsync: this);
     if (Get.isRegistered<QuranController>()) {
       Get.find<QuranController>().fetchSuraListData();
     } else {
@@ -35,10 +39,17 @@ class _SuraListState extends State<SuraList> {
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bookMarkController = Get.isRegistered<BookMarkController>()
-        ? Get.find<BookMarkController>()
-        : Get.put(BookMarkController());
+    if (!Get.isRegistered<BookMarkController>()) {
+      Get.put(BookMarkController());
+    }
+
     return Scaffold(
       // Appbar start ===>
       appBar: CustomAppBar(
@@ -61,45 +72,43 @@ class _SuraListState extends State<SuraList> {
       ),
 
       // body start==>
-      body: DefaultTabController(
-        initialIndex: bookMarkController.bookMarks.isEmpty ? 0 : 2,
-        length: 3,
-        child: Column(
-          children: [
-            // tab bar start
-            TabBar(
-              dividerColor: Theme.of(context).scaffoldBackgroundColor,
-              padding: const EdgeInsets.symmetric(
-                horizontal: Dimensions.PADDING_SIZE_DEFAULT,
-                vertical: Dimensions.PADDING_SIZE_EXTRA_SMALL,
-              ),
-              labelPadding: const EdgeInsets.symmetric(
-                  horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL),
-              isScrollable: false,
-              indicator: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-                borderRadius:
-                    BorderRadius.circular(Dimensions.RADIUS_SMALL),
-              ),
-              // all tabs name
-              tabs: [
-                tabBarButton('surah_list'.tr, context),
-                tabBarButton('juz_list'.tr, context),
-                tabBarButton('bookmark'.tr, context),
+      body: Column(
+        children: [
+          // tab bar start
+          TabBar(
+            controller: _tabController,
+            dividerColor: Theme.of(context).scaffoldBackgroundColor,
+            padding: const EdgeInsets.symmetric(
+              horizontal: Dimensions.PADDING_SIZE_DEFAULT,
+              vertical: Dimensions.PADDING_SIZE_EXTRA_SMALL,
+            ),
+            labelPadding: const EdgeInsets.symmetric(
+                horizontal: Dimensions.PADDING_SIZE_EXTRA_SMALL),
+            isScrollable: false,
+            indicator: BoxDecoration(
+              color: Theme.of(context).primaryColor,
+              borderRadius:
+                  BorderRadius.circular(Dimensions.RADIUS_SMALL),
+            ),
+            // all tabs name
+            tabs: [
+              tabBarButton('surah_list'.tr, context),
+              tabBarButton('juz_list'.tr, context),
+              tabBarButton('bookmark'.tr, context),
+            ],
+          ),
+          // tabbar view==>
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                const SuraListWidget(),
+                const JuzListWidget(),
+                BookmarkTab()
               ],
             ),
-            // tabbar view==>
-            Expanded(
-              child: TabBarView(
-                children: [
-                  const SuraListWidget(),
-                  const JuzListWidget(),
-                  BookmarkTab()
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
