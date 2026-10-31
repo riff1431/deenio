@@ -32,6 +32,7 @@ class HadithController extends GetxController {
   // get hadith book list api call here
   getHadishBookNameData() async {
     isLoadingHadithChapter(true);
+    update();
     try {
       final response = await http.get(
         Uri.parse(
@@ -42,7 +43,6 @@ class HadithController extends GetxController {
       var data = jsonDecode(response.body);
       if (response.statusCode == 200) {
         hadisBookModel = HadisBookModel.fromJson(data);
-        update();
       } else {
         showCustomSnackBar(data['message'] ?? "Failed to load hadith books",
             isError: true);
@@ -51,14 +51,14 @@ class HadithController extends GetxController {
       print("Error fetching data: $error");
     } finally {
       isLoadingHadithChapter(false);
+      update();
     }
-
-    update();
   }
 
   // get hadith chaptar here
   getHadithBookChaptersData(arguments) async {
     isLoadingHadithChapter(true);
+    update();
     try {
       final response = await http.get(
         Uri.parse(
@@ -67,9 +67,7 @@ class HadithController extends GetxController {
       );
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
-
         hadithChapterModel = HadithChapterModel.fromJson(data);
-        update();
       } else {
         var data = jsonDecode(response.body);
         showCustomSnackBar(data['message'] ?? "Failed to load chapters",
@@ -79,12 +77,14 @@ class HadithController extends GetxController {
       print("Error fetching data: $error");
     } finally {
       isLoadingHadithChapter(false);
+      update();
     }
   }
 
   // get hadith data here
   getAllHadithData(bookName, chapter) async {
     isLoadingHadith(true);
+    update();
     try {
       final response = await http.get(
         Uri.parse(
@@ -94,7 +94,6 @@ class HadithController extends GetxController {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
         hadithModel = HadithModel.fromJson(data);
-        update();
       } else {
         showCustomSnackBar("no_hadith_found_in_this_chapter".tr, isError: true);
       }
@@ -102,6 +101,7 @@ class HadithController extends GetxController {
       print("Error fetching data: $error");
     } finally {
       isLoadingHadith(false);
+      update();
     }
   }
 }

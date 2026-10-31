@@ -20,6 +20,7 @@ class _HadithChaptersScreenState extends State<HadithChaptersScreen> {
 
   @override
   void initState() {
+    hadithController.hadithChapterModel = null;
     hadithController.getHadithBookChaptersData(Get.arguments[0]);
     super.initState();
   }
@@ -88,18 +89,21 @@ class _HadithChaptersScreenState extends State<HadithChaptersScreen> {
                         "${index + 1}",
                         style: robotoMedium.copyWith(
                           fontSize: Dimensions.PADDING_SIZE_LARGE,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                       title: Text(
-                        chapters[index].chapterEnglish.toString(),
+                        chapters[index].chapterEnglish ?? "",
                         style: robotoMedium.copyWith(
-                          fontSize: Dimensions.PADDING_SIZE_DEFAULT,
+                          fontSize: Dimensions.FONT_SIZE_DEFAULT,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
-                      subtitle: Text(
-                        chapters[index].chapterArabic.toString(),
-                        style: robotoMedium.copyWith(
-                          fontSize: Dimensions.PADDING_SIZE_DEFAULT,
+                      trailing: Text(
+                        chapters[index].chapterArabic ?? "",
+                        style: robotoRegular.copyWith(
+                          fontSize: Dimensions.FONT_SIZE_DEFAULT,
+                          color: Theme.of(context).primaryColor,
                         ),
                       ),
                     ),
