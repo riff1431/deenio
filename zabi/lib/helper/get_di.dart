@@ -92,7 +92,7 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => DhikrController(dhikrRepo: Get.find()));
   Get.lazyPut(() => DuaController(duaRepo: Get.find()));
   Get.lazyPut(() => DonationController(donationRepo: Get.find()));
-  Get.lazyPut(() => QuranController(quranRepo: Get.find()));
+  Get.lazyPut(() => QuranController(quranRepo: Get.find()), fenix: true);
   Get.lazyPut(() => PrayerTimeController(apiClient: Get.find()), fenix: true);
   Get.lazyPut(() => NotiSoundController());
   Get.lazyPut(() => AudioPlayerController(apiClient: Get.find()));
@@ -123,7 +123,7 @@ Future<Map<String, Map<String, String>>> init() async {
     () => SettingsController(quranSettingRepo: Get.find()),
     fenix: true,
   );
-  Get.lazyPut(() => BookMarkController());
+  Get.lazyPut(() => BookMarkController(), fenix: true);
   Get.lazyPut(() => CategoryListController());
   Get.lazyPut(() => ZakatCalculatorController());
 

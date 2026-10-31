@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:zabi/data/model/response/bookmark_model.dart';
 import 'package:zabi/view/base/custom_snackbar.dart';
@@ -11,18 +13,43 @@ class BookMarkController extends GetxController {
   // Local variable
   RxBool isLoading = true.obs;
 
+  static const String _webStorageKey = 'web_quran_bookmarks';
+
   @override
   void onInit() {
     super.onInit();
     loadBookMarks();
   }
 
-  // data lode store function
+  // data load store function
   Future<void> loadBookMarks() async {
     isLoading.value = true;
-    final Database db = await _initDatabase();
-    final List<Map<String, dynamic>> bookMarkMaps = await db.query('bookMarks');
-    bookMarks = bookMarkMaps.map((map) => BookMark.fromMap(map)).toList();
+    try {
+      if (kIsWeb) {
+        final prefs = Get.isRegistered<SharedPreferences>()
+            ? Get.find<SharedPreferences>()
+            : await SharedPreferences.getInstance();
+        final String? raw = prefs.getString(_webStorageKey);
+        if (raw != null && raw.isNotEmpty) {
+          final List decoded = jsonDecode(raw);
+          bookMarks = decoded
+              .map((map) => BookMark.fromMap(Map<String, dynamic>.from(map)))
+              .toList();
+        } else {
+          bookMarks = [];
+        }
+      } else {
+        final Database db = await _initDatabase();
+        final List<Map<String, dynamic>> bookMarkMaps =
+            await db.query('bookMarks');
+        bookMarks = bookMarkMaps.map((map) => BookMark.fromMap(map)).toList();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("bookmark load error: $e");
+      }
+      bookMarks = [];
+    }
 
     if (kDebugMode) {
       print("bookmark Data ==> ${bookMarks.length}");
@@ -31,7 +58,7 @@ class BookMarkController extends GetxController {
     update();
   }
 
-  // data stroge function
+  // data storage function for native mobile platforms
   Future<Database> _initDatabase() async {
     final String dbPath = await getDatabasesPath();
     final String path = join(dbPath, 'bookMarks.db');
@@ -58,39 +85,85 @@ class BookMarkController extends GetxController {
   // data insert function
   Future<void> insertBookMark(BookMark bookMark) async {
     update();
-    final Database db = await _initDatabase();
-
-    // Delete any existing bookmark
-    // await db.delete('bookMarks');
-
-    await db.insert(
-      'bookMarks',
-      bookMark.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    loadBookMarks();
-    showCustomSnackBar("book_mark_successfully_added".tr, isError: false);
-
+    try {
+      if (kIsWeb) {
+        final prefs = Get.isRegistered<SharedPreferences>()
+            ? Get.find<SharedPreferences>()
+            : await SharedPreferences.getInstance();
+        bookMarks.removeWhere((b) => b.id == bookMark.id);
+        bookMarks.add(bookMark);
+        final listMaps = bookMarks.map((b) => b.toMap()).toList();
+        await prefs.setString(_webStorageKey, jsonEncode(listMaps));
+      } else {
+        final Database db = await _initDatabase();
+        await db.insert(
+          'bookMarks',
+          bookMark.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await loadBookMarks();
+      showCustomSnackBar("book_mark_successfully_added".tr, isError: false);
+    } catch (e) {
+      if (kDebugMode) {
+        print("bookmark insert error: $e");
+      }
+    }
     update();
   }
 
   // update function
   Future<void> updateBookMark(BookMark bookMark) async {
-    final Database db = await _initDatabase();
-    await db.update(
-      'bookMarks',
-      bookMark.toMap(),
-      where: 'id = ?',
-      whereArgs: [bookMark.id],
-    );
-    loadBookMarks();
+    try {
+      if (kIsWeb) {
+        final prefs = Get.isRegistered<SharedPreferences>()
+            ? Get.find<SharedPreferences>()
+            : await SharedPreferences.getInstance();
+        final index = bookMarks.indexWhere((b) => b.id == bookMark.id);
+        if (index != -1) {
+          bookMarks[index] = bookMark;
+        } else {
+          bookMarks.add(bookMark);
+        }
+        final listMaps = bookMarks.map((b) => b.toMap()).toList();
+        await prefs.setString(_webStorageKey, jsonEncode(listMaps));
+      } else {
+        final Database db = await _initDatabase();
+        await db.update(
+          'bookMarks',
+          bookMark.toMap(),
+          where: 'id = ?',
+          whereArgs: [bookMark.id],
+        );
+      }
+      await loadBookMarks();
+    } catch (e) {
+      if (kDebugMode) {
+        print("bookmark update error: $e");
+      }
+    }
   }
 
   // delete function
   Future<void> deleteBookMark(int id) async {
-    final Database db = await _initDatabase();
-    await db.delete('bookMarks', where: 'id = ?', whereArgs: [id]);
-    loadBookMarks();
-    showCustomSnackBar("book_mark_successfully_deleted".tr, isError: false);
+    try {
+      if (kIsWeb) {
+        final prefs = Get.isRegistered<SharedPreferences>()
+            ? Get.find<SharedPreferences>()
+            : await SharedPreferences.getInstance();
+        bookMarks.removeWhere((b) => b.id == id);
+        final listMaps = bookMarks.map((b) => b.toMap()).toList();
+        await prefs.setString(_webStorageKey, jsonEncode(listMaps));
+      } else {
+        final Database db = await _initDatabase();
+        await db.delete('bookMarks', where: 'id = ?', whereArgs: [id]);
+      }
+      await loadBookMarks();
+      showCustomSnackBar("book_mark_successfully_deleted".tr, isError: false);
+    } catch (e) {
+      if (kDebugMode) {
+        print("bookmark delete error: $e");
+      }
+    }
   }
 }

@@ -26,12 +26,19 @@ class _SuraListState extends State<SuraList> {
   @override
   void initState() {
     super.initState();
-    Get.find<QuranController>().fetchSuraListData();
+    if (Get.isRegistered<QuranController>()) {
+      Get.find<QuranController>().fetchSuraListData();
+    } else {
+      Get.put(QuranController(quranRepo: Get.find()), permanent: true)
+          .fetchSuraListData();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bookMarkController = Get.find<BookMarkController>();
+    final bookMarkController = Get.isRegistered<BookMarkController>()
+        ? Get.find<BookMarkController>()
+        : Get.put(BookMarkController());
     return Scaffold(
       // Appbar start ===>
       appBar: CustomAppBar(

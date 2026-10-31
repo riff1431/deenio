@@ -17,8 +17,14 @@ import '../../offline_quran/offline_surah_detail_screen.dart';
 class BookmarkTab extends StatelessWidget {
   BookmarkTab({super.key});
 
-  final BookMarkController bookMarkController = Get.put(BookMarkController());
-  final internetController = Get.put(InternetController());
+  BookMarkController get bookMarkController =>
+      Get.isRegistered<BookMarkController>()
+          ? Get.find<BookMarkController>()
+          : Get.put(BookMarkController());
+  InternetController get internetController =>
+      Get.isRegistered<InternetController>()
+          ? Get.find<InternetController>()
+          : Get.put(InternetController());
   @override
   Widget build(BuildContext context) {
     return Obx(() {
