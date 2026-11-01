@@ -52,6 +52,9 @@ build/
 /android/.gradle/
 /android/.idea/
 /android/local.properties
+/android/key.properties
+*.jks
+*.keystore
 /android/.kotlin/
 /android/app/.cxx/
 /android/app/debug/
