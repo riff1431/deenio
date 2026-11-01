@@ -5,10 +5,7 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
-*.jks
-*.keystore
-key.properties
-*CREDENTIALS*
-*BACKUP*
-*.aab
 
+
+
+*.aab
