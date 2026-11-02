@@ -12,69 +12,19 @@ class AudioPlayerController extends GetxController {
 
   AudioPlayerController({required this.apiClient});
 
+  // Lazy getter: ensures audioHandler is only accessed after AudioService.init() and typed as AudioPlayerHandler
+  AudioPlayerHandler get _audioHandler =>
+      AudioServiceHelper.audioHandler as AudioPlayerHandler;
+
   // Reciter API call
   RxBool isRecitersLoading = false.obs;
   RecitersModel? recitersListApiData;
-
-  // Get dua list from here
-  Future<void> fetchReciterData() async {
-    try {
-      isRecitersLoading(true);
-      final response = await apiClient.getData(AppConstants.RECITERS);
-
-      if (response.statusCode == 200) {
-        recitersListApiData = RecitersModel.fromJson(response.body);
-        if (kDebugMode) {
-          print("Reciters List: ${recitersListApiData!.data!.length}");
-        }
-      } else {
-        if (kDebugMode) {
-          print("Error fetching data 2222: ${response.statusCode}");
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error fetching data 111: $e");
-      }
-    } finally {
-      isRecitersLoading(false);
-      update();
-    }
-  }
 
   // Reciter audio list
   RxBool isAudioLoading = false.obs;
   List<dynamic> audioData = [];
 
-  Future<void> fetchAudio(String id) async {
-    try {
-      audioData.clear();
-      isAudioLoading(true);
-      final response = await apiClient.getData(AppConstants.AUDIO_LIST + id);
-
-      if (response.statusCode == 200) {
-        audioData = response.body["data"];
-        if (kDebugMode) {
-          print("Audio List: ${audioData[0]["reciter_name"]}");
-        }
-      } else {
-        if (kDebugMode) {
-          print("Error fetching data qfqwf: ${response.statusCode}");
-        }
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print("Error fetching data 4444: $e");
-      }
-    } finally {
-      isAudioLoading(false);
-      update();
-    }
-  }
-
-  // Audio player controller starts
-  // Lazy getter: ensures audioHandler is only accessed after AudioService.init() and typed as AudioPlayerHandler
-  AudioPlayerHandler get _audioHandler => AudioServiceHelper.audioHandler as AudioPlayerHandler;
+  // Reactive audio list & player state
   final RxList<MediaItem> audioList = <MediaItem>[].obs;
   final Rx<MediaItem?> currentMediaItem = Rx<MediaItem?>(null);
   final RxBool isLoading = false.obs;
@@ -91,10 +41,155 @@ class AudioPlayerController extends GetxController {
       currentRoute.value == '/home' ||
       currentRoute.value.isEmpty;
 
+  @override
+  void onInit() {
+    super.onInit();
+    _listenToAudioService();
+  }
+
+  void _listenToAudioService() {
+    // Listen to media item updates from AudioHandler
+    _audioHandler.mediaItem.listen((item) {
+      if (item != null) {
+        currentMediaItem.value = item;
+        duration.value = item.duration ?? Duration.zero;
+        update();
+      }
+    });
+
+    // Listen to playback state (playing, buffering, position)
+    _audioHandler.playbackState.listen((state) {
+      isPlaying.value = state.playing;
+      position.value = state.updatePosition;
+      update();
+    });
+  }
+
   void updateRoute(String? route) {
     if (route != null && route.isNotEmpty) {
       currentRoute.value = route;
       update();
+    }
+  }
+
+  Future<void> fetchReciterData() async {
+    try {
+      isRecitersLoading(true);
+      final response = await apiClient.getData(AppConstants.RECITERS);
+
+      if (response.statusCode == 200) {
+        recitersListApiData = RecitersModel.fromJson(response.body);
+        if (kDebugMode) {
+          print("Reciters List: ${recitersListApiData!.data!.length}");
+        }
+      } else {
+        if (kDebugMode) {
+          print("Error fetching reciters: ${response.statusCode}");
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching reciter data: $e");
+      }
+    } finally {
+      isRecitersLoading(false);
+      update();
+    }
+  }
+
+  Future<void> fetchAudio(String id) async {
+    try {
+      audioData.clear();
+      isAudioLoading(true);
+      final response = await apiClient.getData(AppConstants.AUDIO_LIST + id);
+
+      if (response.statusCode == 200) {
+        audioData = response.body["data"];
+        if (kDebugMode) {
+          print("Audio List fetched: ${audioData.length} items");
+        }
+      } else {
+        if (kDebugMode) {
+          print("Error fetching audio list: ${response.statusCode}");
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print("Error fetching audio: $e");
+      }
+    } finally {
+      isAudioLoading(false);
+      update();
+    }
+  }
+
+  Future<void> loadAudioList(String id) async {
+    try {
+      isLoading(true);
+      update();
+
+      await fetchAudio(id);
+
+      audioList.clear();
+
+      for (var audio in audioData) {
+        final int? audioDuration = audio['duration'] != null
+            ? audio['duration'] is int
+                ? audio['duration']
+                : int.tryParse(audio['duration'].toString())
+            : 0;
+
+        final mediaItem = MediaItem(
+          id: audio['path']?.toString() ?? '',
+          album: audio['sura_name']?.toString() ?? 'Quran',
+          title: audio['sura_name']?.toString() ?? 'Unknown Surah',
+          artist: audio['reciter_name']?.toString() ?? 'Unknown Reciter',
+          duration: Duration(milliseconds: audioDuration ?? 0),
+          artUri: audio['reciter_avatar'] != null
+              ? Uri.tryParse(audio['reciter_avatar'].toString())
+              : null,
+        );
+        audioList.add(mediaItem);
+      }
+
+      await _audioHandler.loadAudioFromApi(audioData);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading audio list: $e');
+      }
+    } finally {
+      isLoading(false);
+      update();
+    }
+  }
+
+  Future<void> playMediaItem(MediaItem mediaItem) async {
+    currentMediaItem.value = mediaItem;
+    isPlaying.value = true;
+    update();
+    await _audioHandler.playMediaItem(mediaItem);
+    update();
+  }
+
+  void togglePlayPause() async {
+    if (isPlaying.value) {
+      await _audioHandler.pause();
+    } else {
+      if (currentMediaItem.value != null) {
+        await _audioHandler.play();
+      } else if (audioList.isNotEmpty) {
+        await playMediaItem(audioList[0]);
+      }
+    }
+  }
+
+  Future<void> skipToNext() async => await _audioHandler.skipToNext();
+
+  Future<void> skipToPrevious() async => await _audioHandler.skipToPrevious();
+
+  Future<void> seekToPosition(double value) async {
+    if (value >= 0 && value <= duration.value.inMilliseconds) {
+      await _audioHandler.seek(Duration(milliseconds: value.toInt()));
     }
   }
 
@@ -108,132 +203,5 @@ class AudioPlayerController extends GetxController {
     isPlaying.value = false;
     position.value = Duration.zero;
     update();
-  }
-
-  // Future<void> ensureAudioHandlerRunning() async {
-  //   if (!_audioHandler.playbackState.value.playing &&
-  //       _audioHandler.queue.value.isEmpty) {
-  //     // Reinitialize the AudioHandler
-  //     AudioService.init(
-  //       builder: () => AudioPlayerHandler(),
-  //       config: const AudioServiceConfig(
-  //         androidNotificationChannelId: 'com.muslimPath.muslimPath ',
-  //         androidNotificationChannelName: 'Audio playback',
-  //         androidNotificationIcon: 'mipmap/launcher_icon',
-  //         androidNotificationOngoing: true,
-  //       ),
-  //     );
-  //   }
-  // }
-
-  Future<void> loadAudioList(String id) async {
-    await fetchAudio(id);
-
-    await _audioHandler.loadAudioFromApi(audioData);
-
-    try {
-      isLoading(true);
-      update();
-      audioList.clear();
-
-      // Loop through the fetched API audio data
-      for (var audio in audioData) {
-        // Handle duration safely
-        final int? audioDuration = audio['duration'] != null
-            ? audio['duration'] is int
-                ? audio['duration']
-                : int.tryParse(audio['duration'].toString())
-            : 0;
-
-        final mediaItem = MediaItem(
-          id: audio['path'],
-          album: audio['sura_name'] ?? 'Unknown Album',
-          title: audio['sura_name'] ?? 'Unknown Title',
-          artist: audio['reciter_name'] ?? 'Unknown Artist',
-          duration: Duration(
-              milliseconds: audioDuration ?? 0), // Ensure this is a Duration
-          artUri: Uri.tryParse(audio['reciter_avatar'] ?? ''),
-        );
-        audioList.add(mediaItem);
-      }
-
-      // Inside the loadAudioList method, after setting currentMediaItem
-      if (audioList.isNotEmpty) {
-        currentMediaItem.value = audioList[0];
-        await _audioHandler.updateQueue(audioList.toList());
-
-        // Listen to media item changes
-        _audioHandler.mediaItem.listen((item) {
-          currentMediaItem.value = item;
-          duration.value = item?.duration ?? Duration.zero;
-          // Refresh the UI
-          update();
-        });
-
-        // Listen to playback state changes
-        _audioHandler.playbackState.listen((state) async {
-          isPlaying.value = state.playing;
-
-          // Update position and handle buffering or paused states
-          position.value = state.updatePosition;
-          update();
-
-          if (state.processingState == AudioProcessingState.ready) {
-            duration.value = currentMediaItem.value?.duration ?? Duration.zero;
-          }
-
-          // Automatically play the first audio if the last one is finished
-          if (state.processingState == AudioProcessingState.completed) {
-            if (currentMediaItem.value == audioList.last) {
-              await _audioHandler.pause();
-              Get.back();
-            } else {
-              // Skip to next if not the last audio
-              await _audioHandler.skipToNext();
-            }
-          }
-          // if (state.processingState == AudioProcessingState.completed ||
-          //     state.processingState == AudioProcessingState.ready) {
-          //   AudioServiceHelper.init();
-          // }
-
-          update();
-        });
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Error loading audio list: $e');
-      }
-    } finally {
-      isLoading(false);
-      update();
-    }
-  }
-
-  Future<void> playMediaItem(MediaItem mediaItem) async {
-    // if (_audioHandler.playbackState.value.processingState ==
-    //     AudioProcessingState.idle) {
-    //   await ensureAudioHandlerRunning();
-    // }
-    await _audioHandler.playMediaItem(mediaItem);
-    update();
-  }
-
-  void togglePlayPause() async {
-    if (isPlaying.value) {
-      await _audioHandler.pause();
-    } else {
-      await _audioHandler.play();
-    }
-  }
-
-  Future<void> skipToNext() async => await _audioHandler.skipToNext();
-
-  Future<void> skipToPrevious() async => await _audioHandler.skipToPrevious();
-
-  Future<void> seekToPosition(double value) async {
-    if (value >= 0 && value <= duration.value.inMilliseconds) {
-      await _audioHandler.seek(Duration(milliseconds: value.toInt()));
-    }
   }
 }

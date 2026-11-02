@@ -1,22 +1,19 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:audio_service/audio_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:zabi/controller/audio_player_controller.dart';
-import 'package:zabi/helper/audio_service_helper.dart';
 import 'package:zabi/shimmer/all_shimmer_loder.dart';
 import 'package:zabi/util/styles.dart';
 import 'package:zabi/view/base/custom_app_bar.dart';
-
 import '../../../util/dimensions.dart';
 
 class AudioPlayerView extends StatefulWidget {
+  final int? reciterId;
   final bool? appBackButton;
-  final reciterId = Get.arguments as int;
 
-  AudioPlayerView({super.key, this.appBackButton});
+  const AudioPlayerView({super.key, this.reciterId, this.appBackButton});
 
   @override
   State<AudioPlayerView> createState() => _AudioPlayerViewState();
@@ -28,22 +25,13 @@ class _AudioPlayerViewState extends State<AudioPlayerView> {
   @override
   void initState() {
     super.initState();
-    initializeAudioService();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _controller.loadAudioList(widget.reciterId.toString());
+      final int effectiveId = widget.reciterId ??
+          (Get.arguments is int
+              ? Get.arguments as int
+              : int.tryParse(Get.arguments?.toString() ?? '1') ?? 1);
+      await _controller.loadAudioList(effectiveId.toString());
     });
-  }
-
-  Future<void> initializeAudioService() async {
-    try {
-      _controller.isLoading.value = true;
-      _controller.audioList.clear();
-      await AudioServiceHelper.init();
-    } catch (error) {
-      if (kDebugMode) {
-        print('Error initializing AudioService: $error');
-      }
-    }
   }
 
   @override
@@ -85,30 +73,69 @@ class _AudioPlayerViewState extends State<AudioPlayerView> {
   }
 
   Widget _buildAudioListItem(MediaItem mediaItem) {
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: Dimensions.PADDING_SIZE_SMALL),
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        color: Theme.of(context).cardColor,
-        child: ListTile(
-          leading: CircleAvatar(
-            backgroundImage: mediaItem.artUri != null
-                ? NetworkImage(mediaItem.artUri.toString())
-                : null,
-          ),
-          title: Text(
-            mediaItem.title,
-            style: robotoMedium.copyWith(color: Theme.of(context).primaryColor),
-          ),
-          subtitle: Text(
-            mediaItem.artist ?? 'unknown_artist_key'.tr,
-            style:
-                robotoMedium.copyWith(color: Theme.of(context).disabledColor),
-          ),
-          onTap: () => _controller.playMediaItem(mediaItem),
+    return Obx(() {
+      final isCurrent = _controller.currentMediaItem.value?.id == mediaItem.id;
+      final isPlaying = isCurrent && _controller.isPlaying.value;
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: Dimensions.PADDING_SIZE_SMALL,
+          vertical: 3,
         ),
-      ),
-    );
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          color: isCurrent
+              ? Theme.of(context).primaryColor.withOpacity(0.08)
+              : Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(
+              color: isCurrent
+                  ? Theme.of(context).primaryColor.withOpacity(0.5)
+                  : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundImage: mediaItem.artUri != null
+                  ? NetworkImage(mediaItem.artUri.toString())
+                  : null,
+              child: mediaItem.artUri == null
+                  ? const Icon(Icons.music_note)
+                  : null,
+            ),
+            title: Text(
+              mediaItem.title,
+              style: robotoMedium.copyWith(
+                color: isCurrent
+                    ? Theme.of(context).primaryColor
+                    : (Get.isDarkMode ? Colors.white : Colors.black87),
+                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+            subtitle: Text(
+              mediaItem.artist ?? 'unknown_artist_key'.tr,
+              style: robotoMedium.copyWith(
+                color: Theme.of(context).disabledColor,
+              ),
+            ),
+            trailing: isCurrent
+                ? Icon(
+                    isPlaying
+                        ? Icons.graphic_eq_rounded
+                        : Icons.pause_circle_filled_rounded,
+                    color: Theme.of(context).primaryColor,
+                    size: 26,
+                  )
+                : const Icon(
+                    Icons.play_arrow_rounded,
+                    color: Colors.grey,
+                  ),
+            onTap: () => _controller.playMediaItem(mediaItem),
+          ),
+        ),
+      );
+    });
   }
 }
