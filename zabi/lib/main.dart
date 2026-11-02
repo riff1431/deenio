@@ -79,7 +79,12 @@ class MyApp extends StatelessWidget {
                             bottom: GetPlatform.isAndroid,
                             child: child!,
                           ),
-                          const GlobalMiniPlayer(),
+                          const Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: GlobalMiniPlayer(),
+                          ),
 
 
 

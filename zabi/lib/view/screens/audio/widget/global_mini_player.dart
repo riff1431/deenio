@@ -24,29 +24,28 @@ class GlobalMiniPlayer extends StatelessWidget {
     return Obx(() {
       final mediaItem = controller.currentMediaItem.value;
 
-      // Hide if no audio is loaded, or if splash screen, or if full screen sheet is open
-      if (mediaItem == null ||
-          controller.isFullScreenPlayerOpen.value ||
-          controller.currentRoute.value == '/' ||
-          controller.currentRoute.value == '/splash') {
+      // Hide if no audio is selected or full screen player sheet is open
+      if (mediaItem == null || controller.isFullScreenPlayerOpen.value) {
         return const SizedBox.shrink();
       }
 
-      // Calculate dynamic bottom position based on active screen
-      // If bottom navigation bar is visible, float directly above it; otherwise sit at the bottom.
-      final double bottomOffset = controller.isBottomNavActive
-          ? 84.0
+      // If user is on bottomNavbar or home, float directly above the bottom bar (~82px).
+      // On subpages (such as audioList, suraDetaile, dua, settings), sit comfortably at the bottom (~12px).
+      final String currentRoute = Get.currentRoute;
+      final bool hasBottomNav = currentRoute.contains('bottomNavbar') ||
+          currentRoute.contains('home');
+
+      final double bottomPadding = hasBottomNav
+          ? 82.0
           : (GetPlatform.isIOS ? 24.0 : 12.0);
 
       final isDark = Theme.of(context).brightness == Brightness.dark;
       final primaryColor = Theme.of(context).primaryColor;
 
-      return AnimatedPositioned(
+      return AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
-        left: 12,
-        right: 12,
-        bottom: bottomOffset,
+        padding: EdgeInsets.fromLTRB(12, 0, 12, bottomPadding),
         child: Material(
           type: MaterialType.transparency,
           child: Dismissible(
@@ -58,9 +57,7 @@ class GlobalMiniPlayer extends StatelessWidget {
               child: Container(
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color(0xFF1E232A)
-                      : Colors.white,
+                  color: isDark ? const Color(0xFF1E232A) : Colors.white,
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
                     color: isDark
