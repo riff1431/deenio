@@ -73,7 +73,8 @@ class AudioPlayerController extends GetxController {
   }
 
   // Audio player controller starts
-  final AudioHandler _audioHandler = AudioServiceHelper.audioHandler;
+  // Lazy getter: ensures audioHandler is only accessed after AudioService.init() and typed as AudioPlayerHandler
+  AudioPlayerHandler get _audioHandler => AudioServiceHelper.audioHandler as AudioPlayerHandler;
   final RxList<MediaItem> audioList = <MediaItem>[].obs;
   final Rx<MediaItem?> currentMediaItem = Rx<MediaItem?>(null);
   final RxBool isLoading = false.obs;
@@ -128,12 +129,7 @@ class AudioPlayerController extends GetxController {
   Future<void> loadAudioList(String id) async {
     await fetchAudio(id);
 
-    // Cast the AudioHandler to AudioPlayerHandler to access loadAudioFromApi
-    if (_audioHandler is AudioPlayerHandler) {
-      await (_audioHandler).loadAudioFromApi(audioData);
-    } else {
-      throw Exception('AudioHandler is not an instance of AudioPlayerHandler');
-    }
+    await _audioHandler.loadAudioFromApi(audioData);
 
     try {
       isLoading(true);

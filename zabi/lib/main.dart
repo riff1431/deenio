@@ -18,8 +18,7 @@ import 'util/messages.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await di.init();
-  // Initialize the AudioHandler
+  // AudioService must be initialized BEFORE DI so AudioPlayerController can access audioHandler
   await AudioServiceHelper.init();
   Map<String, Map<String, String>> languages = await di.init();
   runApp(MyApp(languages: languages));
@@ -65,34 +64,31 @@ class MyApp extends StatelessWidget {
                   ],
                   builder: (context, child) {
                     Theme.of(context);
-
                     return AnnotatedRegion<SystemUiOverlayStyle>(
-                      value: SystemUiOverlayStyle(
+                      value: const SystemUiOverlayStyle(
                         statusBarColor: Colors.transparent,
                         statusBarIconBrightness: Brightness.light,
                         systemNavigationBarIconBrightness: Brightness.light,
                       ),
-                      child: Stack(
-                        children: [
-                          SafeArea(
-                            top: false,
-                            bottom: GetPlatform.isAndroid,
-                            child: child!,
-                          ),
-                          const Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: GlobalMiniPlayer(),
-                          ),
-
-
-
-
-
-
-
-                        ],
+                      child: Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: SafeArea(
+                                top: false,
+                                bottom: GetPlatform.isAndroid,
+                                child: child!,
+                              ),
+                            ),
+                            const Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              child: GlobalMiniPlayer(),
+                            ),
+                          ],
+                        ),
                       ),
                     );
                   },

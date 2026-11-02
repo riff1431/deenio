@@ -31,9 +31,9 @@ class GlobalMiniPlayer extends StatelessWidget {
 
       // If user is on bottomNavbar or home, float directly above the bottom bar (~82px).
       // On subpages (such as audioList, suraDetaile, dua, settings), sit comfortably at the bottom (~12px).
-      final String currentRoute = Get.currentRoute;
-      final bool hasBottomNav = currentRoute.contains('bottomNavbar') ||
-          currentRoute.contains('home');
+      final bool hasBottomNav = controller.isBottomNavActive ||
+          Get.currentRoute.contains('bottomNavbar') ||
+          Get.currentRoute.contains('home');
 
       final double bottomPadding = hasBottomNav
           ? 82.0
