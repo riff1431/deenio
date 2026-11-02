@@ -180,9 +180,15 @@
                         <span class="label-dot ai-dot"></span>
                         AI & Intelligence Engine (Deenio AI)
                     </div>
-                    <div class="ai-status-pill" :class="formData.ai_enabled ? 'status-active' : 'status-inactive'">
-                        <span class="status-indicator-dot"></span>
-                        {{ formData.ai_enabled ? 'AI Enabled' : 'AI Disabled' }}
+                    <div class="header-actions-flex">
+                        <button type="button" class="btn-save-ai-quick" @click="saveAiSettingsDirectly" :disabled="aiSaving" title="Save AI configuration immediately">
+                            <span v-if="aiSaving" class="spinner-sm"></span>
+                            <span v-else>💾 Save AI Settings</span>
+                        </button>
+                        <div class="ai-status-pill" :class="formData.ai_enabled ? 'status-active' : 'status-inactive'">
+                            <span class="status-indicator-dot"></span>
+                            {{ formData.ai_enabled ? 'AI Enabled' : 'AI Disabled' }}
+                        </div>
                     </div>
                 </div>
                 <p class="section-desc">
@@ -248,6 +254,7 @@
                     <div class="field-group">
                         <label class="field-label" for="islamic_name_api_key">
                             {{ aiProviderName }} API Key
+                            <span v-if="detectedKeyProvider" class="badge-auto-detect">✓ Auto-detected: {{ detectedKeyProvider }}</span>
                             <a :href="aiKeyUrl" target="_blank" class="ai-key-link">
                                 Get key from {{ aiKeyLabel }} ↗
                             </a>
@@ -318,6 +325,9 @@
                             <span class="status-icon">{{ aiTestResult.success ? '✅' : '❌' }}</span>
                             <strong>{{ aiTestResult.provider }} — {{ aiTestResult.model }}</strong>
                             <span v-if="aiTestResult.latency_ms" class="latency-badge">{{ aiTestResult.latency_ms }}ms</span>
+                            <button v-if="aiTestResult.success" type="button" class="btn-activate-badge" @click="saveAiSettingsDirectly" :disabled="aiSaving">
+                                {{ aiSaving ? 'Saving...' : '✓ Save & Activate' }}
+                            </button>
                         </div>
                         <div class="banner-msg">{{ aiTestResult.message }}</div>
                     </div>
@@ -349,6 +359,17 @@
                             <div class="bubble-content">{{ playgroundResponse }}</div>
                         </div>
                     </div>
+                </div>
+
+                <!-- AI Dedicated Save Bar -->
+                <div class="ai-card-footer mt-4">
+                    <div class="ai-footer-info">
+                        <span>Save & activate this AI configuration immediately without needing to submit the full page.</span>
+                    </div>
+                    <button type="button" class="btn-save-ai-main" @click="saveAiSettingsDirectly" :disabled="aiSaving">
+                        <span v-if="aiSaving" class="spinner-sm"></span>
+                        <span v-else>💾 Save AI Settings & Activate</span>
+                    </button>
                 </div>
             </div>
 
@@ -592,6 +613,8 @@ const showAiKey = ref(false);
 const showAdvancedAi = ref(false);
 const aiTestLoading = ref(false);
 const aiTestResult = ref(null);
+const aiSaving = ref(false);
+const detectedKeyProvider = ref('');
 
 const playgroundQuery = ref('What are the five pillars of Islam?');
 const playgroundResponse = ref('');
@@ -712,6 +735,39 @@ const runPlaygroundPrompt = (query) => {
         });
 };
 
+const saveAiSettingsDirectly = () => {
+    aiSaving.value = true;
+    const payload = {
+        ai_provider: formData.value.ai_provider || 'groq',
+        ai_model: formData.value.ai_model || '',
+        ai_api_key: formData.value.islamic_name_api_key || '',
+        is_key_encrypted: !formData.value.is_typed_islamic_name,
+        ai_enabled: formData.value.ai_enabled ? 1 : 0,
+        ai_system_prompt: formData.value.ai_system_prompt || '',
+        ai_temperature: formData.value.ai_temperature || 0.7,
+        ai_max_tokens: formData.value.ai_max_tokens || 600,
+    };
+
+    Axios.post('ai/save-settings', payload)
+        .then(({ data }) => {
+            if (data.success) {
+                toast.success(data.message || 'AI Settings saved & activated successfully!');
+                originalIslamicNameApiKey.value = formData.value.islamic_name_api_key;
+                delete formData.value.is_typed_islamic_name;
+                if (data.provider) formData.value.ai_provider = data.provider;
+                if (data.model) formData.value.ai_model = data.model;
+            } else {
+                toast.error(data.message || 'Failed to save AI configuration.');
+            }
+        })
+        .catch(({ response }) => {
+            toast.error(response?.data?.message || 'Failed to save AI configuration. Please check your network.');
+        })
+        .finally(() => {
+            aiSaving.value = false;
+        });
+};
+
 const submit = () => {
     preloader.value = true;
     errors.value = {};
@@ -794,6 +850,39 @@ watch(() => formData.value.islamic_name_api_key, (newVal) => {
     if (!isInitialLoadComplete.value) return;
     if (newVal !== originalIslamicNameApiKey.value) formData.value.is_typed_islamic_name = true;
     else delete formData.value.is_typed_islamic_name;
+
+    if (!newVal) {
+        detectedKeyProvider.value = '';
+        return;
+    }
+    const trimmed = String(newVal).trim();
+    if (trimmed.startsWith('sk-proj-') || trimmed.startsWith('sk-admin-') || (trimmed.startsWith('sk-') && !trimmed.startsWith('sk-or-'))) {
+        detectedKeyProvider.value = 'OpenAI';
+        if (formData.value.ai_provider !== 'openai') {
+            setAiProvider('openai');
+            toast.info('API key recognized as OpenAI — Provider auto-switched to OpenAI');
+        }
+    } else if (trimmed.startsWith('gsk_')) {
+        detectedKeyProvider.value = 'Groq';
+        if (formData.value.ai_provider !== 'groq') {
+            setAiProvider('groq');
+            toast.info('API key recognized as Groq — Provider auto-switched to Groq');
+        }
+    } else if (trimmed.startsWith('AIzaSy') || trimmed.startsWith('AIza')) {
+        detectedKeyProvider.value = 'Google Gemini';
+        if (formData.value.ai_provider !== 'gemini') {
+            setAiProvider('gemini');
+            toast.info('API key recognized as Google Gemini — Provider auto-switched to Google Gemini');
+        }
+    } else if (trimmed.startsWith('sk-or-')) {
+        detectedKeyProvider.value = 'OpenRouter';
+        if (formData.value.ai_provider !== 'openrouter') {
+            setAiProvider('openrouter');
+            toast.info('API key recognized as OpenRouter — Provider auto-switched to OpenRouter');
+        }
+    } else {
+        detectedKeyProvider.value = '';
+    }
 });
 
 const getThemePresets = () => {
@@ -1148,6 +1237,103 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.header-actions-flex {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.btn-save-ai-quick {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #10B981;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+.btn-save-ai-quick:hover:not(:disabled) {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.28);
+}
+.btn-save-ai-quick:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.btn-activate-badge {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: #059669;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+.btn-activate-badge:hover:not(:disabled) {
+    background: #047857;
+}
+.badge-auto-detect {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #059669;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+}
+.ai-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--theme-muted-bg);
+    border: 1px solid var(--theme-border);
+    border-radius: 10px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.ai-footer-info {
+    font-size: 12px;
+    color: var(--theme-text-muted);
+}
+.btn-save-ai-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    background: #10B981;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+.btn-save-ai-main:hover:not(:disabled) {
+    background: #059669;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+.btn-save-ai-main:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 .ai-dot {
     background: linear-gradient(135deg, #10B981, #6366F1) !important;

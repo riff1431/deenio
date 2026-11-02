@@ -115,6 +115,17 @@ class AIChatController extends Controller
             $providerKey = $request->input('ai_provider', 'groq');
             $model       = trim($request->input('ai_model', ''));
 
+            // Auto-detect provider if key uniquely identifies one (e.g. sk- key with gemini provider)
+            $detected = AIProviderService::detectProviderFromKey($apiKey);
+            if ($detected && $detected !== $providerKey) {
+                $providerKey = $detected;
+                $defaultForDetected = AIProviderService::PROVIDERS[$providerKey]['default_model'] ?? 'gpt-4o-mini';
+                $validModels = array_column(AIProviderService::PROVIDERS[$providerKey]['models'] ?? [], 'id');
+                if (!in_array($model, $validModels, true)) {
+                    $model = $defaultForDetected;
+                }
+            }
+
             if (empty($model) || ($providerKey === 'gemini' && (str_contains($model, 'gemini-2.0') || $model === 'gemini-2.5-flash' || str_contains($model, 'gemini-1.5')))) {
                 $model = AIProviderService::PROVIDERS[$providerKey]['default_model'] ?? 'gemini-3.6-flash';
             }
@@ -130,6 +141,89 @@ class AIChatController extends Controller
         $result = $this->aiProvider->testConnection($overrideConfig, $testPrompt);
 
         return response()->json($result);
+    }
+
+    /**
+     * Dedicated 1-click endpoint to save & persist AI provider settings directly from the AI card.
+     */
+    public function saveSettings(Request $request)
+    {
+        $request->validate([
+            'ai_provider'      => 'nullable|string|in:groq,openai,openrouter,gemini',
+            'ai_model'         => 'nullable|string|max:150',
+            'ai_api_key'       => 'nullable|string',
+            'is_key_encrypted' => 'nullable|boolean',
+            'ai_enabled'       => 'nullable',
+            'ai_system_prompt' => 'nullable|string|max:2500',
+            'ai_temperature'   => 'nullable|numeric|min:0|max:2',
+            'ai_max_tokens'    => 'nullable|integer|min:50|max:4000',
+        ]);
+
+        $apiKey = $request->input('ai_api_key');
+        if ($apiKey !== null && $request->boolean('is_key_encrypted')) {
+            $apiKey = $this->aiProvider->safeDecrypt($apiKey);
+        }
+
+        $provider = $request->input('ai_provider');
+        // Auto-detect provider if key signature uniquely belongs to one
+        if (!empty($apiKey)) {
+            $detected = AIProviderService::detectProviderFromKey($apiKey);
+            if ($detected) {
+                $provider = $detected;
+            }
+        }
+        if (!$provider || !isset(AIProviderService::PROVIDERS[$provider])) {
+            $provider = 'groq';
+        }
+
+        $defaultModel = AIProviderService::PROVIDERS[$provider]['default_model'] ?? 'llama-3.3-70b-versatile';
+        $model = trim($request->input('ai_model', '')) ?: $defaultModel;
+
+        $settingRepo = resolve(\App\Repositories\Setting\SettingRepository::class);
+
+        // 1. Save provider
+        $sp = $settingRepo->createSettingInstance('ai_provider', 'app');
+        $sp->fill(['name' => 'ai_provider', 'value' => $provider, 'context' => 'app'])->save();
+
+        // 2. Save model
+        $sm = $settingRepo->createSettingInstance('ai_model', 'app');
+        $sm->fill(['name' => 'ai_model', 'value' => $model, 'context' => 'app'])->save();
+
+        // 3. Save API key (encrypted) if new value provided
+        if (!empty($apiKey)) {
+            $sk = $settingRepo->createSettingInstance('islamic_name_api_key', 'app');
+            $sk->fill(['name' => 'islamic_name_api_key', 'value' => encrypt($apiKey), 'context' => 'app'])->save();
+        }
+
+        // 4. Save ai_enabled if provided
+        if ($request->has('ai_enabled')) {
+            $enabled = in_array($request->input('ai_enabled'), [1, '1', true, 'true'], true) ? '1' : '0';
+            $se = $settingRepo->createSettingInstance('ai_enabled', 'app');
+            $se->fill(['name' => 'ai_enabled', 'value' => $enabled, 'context' => 'app'])->save();
+        }
+
+        // 5. Save prompt / temp / max_tokens if provided
+        if ($request->filled('ai_system_prompt')) {
+            $ss = $settingRepo->createSettingInstance('ai_system_prompt', 'app');
+            $ss->fill(['name' => 'ai_system_prompt', 'value' => $request->input('ai_system_prompt'), 'context' => 'app'])->save();
+        }
+        if ($request->filled('ai_temperature')) {
+            $st = $settingRepo->createSettingInstance('ai_temperature', 'app');
+            $st->fill(['name' => 'ai_temperature', 'value' => (string) $request->input('ai_temperature'), 'context' => 'app'])->save();
+        }
+        if ($request->filled('ai_max_tokens')) {
+            $smt = $settingRepo->createSettingInstance('ai_max_tokens', 'app');
+            $smt->fill(['name' => 'ai_max_tokens', 'value' => (string) $request->input('ai_max_tokens'), 'context' => 'app'])->save();
+        }
+
+        $providerName = AIProviderService::PROVIDERS[$provider]['name'] ?? $provider;
+
+        return response()->json([
+            'success'  => true,
+            'message'  => "AI Settings saved & activated successfully! Active provider: {$providerName} ({$model}).",
+            'provider' => $provider,
+            'model'    => $model,
+        ]);
     }
 
     /**

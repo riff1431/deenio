@@ -143,7 +143,7 @@ class AIProviderService
     }
 
     /**
-     * Get the current AI provider configuration from settings with robust defaults.
+     * Get the current AI provider configuration from settings with robust defaults and dynamic key inference.
      */
     public function getProviderConfig(): array
     {
@@ -159,6 +159,25 @@ class AIProviderService
         $model = !empty($rawModel) ? $rawModel : $defaultModel;
 
         $apiKey = $this->safeDecrypt($settings['islamic_name_api_key'] ?? '');
+
+        // 🧠 Dynamic Auto-Detection:
+        // If the key signature uniquely belongs to another provider (e.g. OpenAI key sk-... but setting says gemini),
+        // automatically route to the matching provider so requests never fail due to provider-key mismatches!
+        $detectedProvider = self::detectProviderFromKey($apiKey);
+        if ($detectedProvider && $detectedProvider !== $provider) {
+            $provider = $detectedProvider;
+            $defaultModel = self::PROVIDERS[$provider]['default_model'] ?? 'gpt-4o-mini';
+            $validModelIds = array_column(self::PROVIDERS[$provider]['models'] ?? [], 'id');
+            if (!in_array($model, $validModelIds, true)) {
+                $model = $defaultModel;
+            }
+        }
+
+        // Auto-upgrade any retired/deprecated Gemini models
+        if ($provider === 'gemini' && (empty($model) || str_contains($model, 'gemini-2.0') || str_contains($model, 'gemini-1.5') || $model === 'gemini-2.5-flash')) {
+            $model = 'gemini-3.6-flash';
+        }
+
         $enabled = ($settings['ai_enabled'] ?? '1') !== '0';
         $systemPrompt = $settings['ai_system_prompt'] ?? '';
         $temperature = floatval($settings['ai_temperature'] ?? 0.7);
@@ -381,5 +400,38 @@ class AIProviderService
         } catch (\Throwable $e) {
             return (string) $value;
         }
+    }
+
+    /**
+     * Intelligently detect the AI provider from the format / prefix of an API key.
+     */
+    public static function detectProviderFromKey(?string $apiKey): ?string
+    {
+        if (empty($apiKey)) {
+            return null;
+        }
+        $key = trim($apiKey);
+
+        // Groq: starts with gsk_
+        if (str_starts_with($key, 'gsk_')) {
+            return 'groq';
+        }
+
+        // OpenRouter: starts with sk-or-
+        if (str_starts_with($key, 'sk-or-')) {
+            return 'openrouter';
+        }
+
+        // OpenAI: standard keys start with sk-proj-, sk-admin-, or sk-
+        if (str_starts_with($key, 'sk-proj-') || str_starts_with($key, 'sk-admin-') || str_starts_with($key, 'sk-')) {
+            return 'openai';
+        }
+
+        // Google Gemini: standard AI Studio keys start with AIzaSy or AIza
+        if (str_starts_with($key, 'AIzaSy') || str_starts_with($key, 'AIza')) {
+            return 'gemini';
+        }
+
+        return null;
     }
 }

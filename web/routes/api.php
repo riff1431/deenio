@@ -99,6 +99,7 @@ Route::get('wallpaper-category', [WallpaperCategoryController::class, 'wallpaper
 Route::post('ai/chat', [AIChatController::class, 'chat']);
 Route::post('ai/generate-names', [AIChatController::class, 'generateNames']);
 Route::post('ai/test-connection', [AIChatController::class, 'testConnection']);
+Route::post('ai/save-settings', [AIChatController::class, 'saveSettings']);
 Route::get('ai/providers', [AIChatController::class, 'providers']);
 
 // Hadith Proxy Routes (avoids browser CORS on Flutter Web)
