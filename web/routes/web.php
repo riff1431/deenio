@@ -208,6 +208,7 @@ Route::middleware(['admin','install'])->group(callback: function () {
     Route::get('home-layout-presets', [SettingsController::class, 'homeLayoutPresets'])->name('setting.home-layout.presets');
     Route::post('privacy-support', [SettingsController::class, 'privacySupportUpdate'])->name('setting.update');
     Route::post('ai/test-connection', [\App\Http\Controllers\Quran\AI\AIChatController::class, 'testConnection'])->name('ai.test-connection');
+    Route::post('ai/save-settings', [\App\Http\Controllers\Quran\AI\AIChatController::class, 'saveSettings'])->name('ai.save-settings');
     Route::get('ai/providers', [\App\Http\Controllers\Quran\AI\AIChatController::class, 'providers'])->name('ai.providers');
     Route::get('landing-settings', [LandingSettingController::class, 'index'])->name('landing-setting.index');
     Route::post('landing-settings', [LandingSettingController::class, 'update'])->name('landing-setting.update');
