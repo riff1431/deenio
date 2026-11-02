@@ -1,3 +1,4 @@
+import 'package:zabi/controller/audio_player_controller.dart';
 import 'package:zabi/view/screens/audio/widget/global_mini_player.dart';
 // ignore_for_file: deprecated_member_use
 
@@ -50,6 +51,13 @@ class _BottomNavbarScreenState extends State<BottomNavbarScreen> {
       return;
     }
     setState(() => _selectedPageIndex = index);
+  }
+
+  bool get _isPlayerActive {
+    if (!Get.isRegistered<AudioPlayerController>()) return false;
+    final controller = Get.find<AudioPlayerController>();
+    return controller.currentMediaItem.value != null &&
+        !controller.isFullScreenPlayerOpen.value;
   }
 
   /// Scales [baseSize] according to the current device width relative to
@@ -160,6 +168,7 @@ class _BottomNavbarScreenState extends State<BottomNavbarScreen> {
             bubbleColor: darkMode
                 ? Theme.of(context).cardColor.withOpacity(0.8)
                 : Theme.of(context).primaryColor,
+            bottom: _isPlayerActive ? 10 : 38,
           ),
         ],
       ),
@@ -224,12 +233,13 @@ class _BottomNavbarScreenState extends State<BottomNavbarScreen> {
             ],
           ),
           Positioned(
-            bottom: 34,
+            bottom: _isPlayerActive ? 8 : 34,
             child: GestureDetector(
               onTap: () => _selectPage(2),
-              child: SizedBox(
-                width: 60,
-                height: 60,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: _isPlayerActive ? 52 : 60,
+                height: _isPlayerActive ? 52 : 60,
                 child: SvgPicture.asset(Images.ModernIcon_NavCenterRehal),
               ),
             ),

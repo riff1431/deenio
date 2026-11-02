@@ -247,7 +247,7 @@ class ClassicHomeScreen extends StatelessWidget {
           if (mosqueData.showDonationBanner == true)
             _buildDonationBanner(context, mosqueData),
           _buildFeaturesGrid(context),
-          const SizedBox(height: Dimensions.PADDING_SIZE_DEFAULT * 3),
+          const SizedBox(height: 100),
         ],
       ),
     );

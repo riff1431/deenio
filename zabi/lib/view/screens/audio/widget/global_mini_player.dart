@@ -33,27 +33,27 @@ class GlobalMiniPlayer extends StatelessWidget {
       final primaryColor = Theme.of(context).primaryColor;
 
       return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 8),
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1E232A) : Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isDark
                 ? Colors.white.withOpacity(0.08)
-                : primaryColor.withOpacity(0.15),
+                : primaryColor.withOpacity(0.16),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
-              blurRadius: 12,
+              blurRadius: 14,
               spreadRadius: 1,
               offset: const Offset(0, 3),
             ),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
