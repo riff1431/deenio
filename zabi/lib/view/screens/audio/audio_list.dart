@@ -26,10 +26,16 @@ class _AudioPlayerViewState extends State<AudioPlayerView> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final int effectiveId = widget.reciterId ??
-          (Get.arguments is int
-              ? Get.arguments as int
-              : int.tryParse(Get.arguments?.toString() ?? '1') ?? 1);
+      int effectiveId = 1;
+      if (widget.reciterId != null) {
+        effectiveId = widget.reciterId!;
+      } else if (Get.arguments != null) {
+        if (Get.arguments is int) {
+          effectiveId = Get.arguments as int;
+        } else {
+          effectiveId = int.tryParse(Get.arguments.toString()) ?? 1;
+        }
+      }
       await _controller.loadAudioList(effectiveId.toString());
     });
   }
@@ -73,69 +79,33 @@ class _AudioPlayerViewState extends State<AudioPlayerView> {
   }
 
   Widget _buildAudioListItem(MediaItem mediaItem) {
-    return Obx(() {
-      final isCurrent = _controller.currentMediaItem.value?.id == mediaItem.id;
-      final isPlaying = isCurrent && _controller.isPlaying.value;
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: Dimensions.PADDING_SIZE_SMALL,
-          vertical: 3,
-        ),
-        child: Card(
-          clipBehavior: Clip.antiAlias,
-          color: isCurrent
-              ? Theme.of(context).primaryColor.withOpacity(0.08)
-              : Theme.of(context).cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isCurrent
-                  ? Theme.of(context).primaryColor.withOpacity(0.5)
-                  : Colors.transparent,
-              width: 1.5,
-            ),
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(horizontal: Dimensions.PADDING_SIZE_SMALL),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        color: Theme.of(context).cardColor,
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundImage: mediaItem.artUri != null
+                ? NetworkImage(mediaItem.artUri.toString())
+                : null,
+            child: mediaItem.artUri == null
+                ? const Icon(Icons.music_note)
+                : null,
           ),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundImage: mediaItem.artUri != null
-                  ? NetworkImage(mediaItem.artUri.toString())
-                  : null,
-              child: mediaItem.artUri == null
-                  ? const Icon(Icons.music_note)
-                  : null,
-            ),
-            title: Text(
-              mediaItem.title,
-              style: robotoMedium.copyWith(
-                color: isCurrent
-                    ? Theme.of(context).primaryColor
-                    : (Get.isDarkMode ? Colors.white : Colors.black87),
-                fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-              ),
-            ),
-            subtitle: Text(
-              mediaItem.artist ?? 'unknown_artist_key'.tr,
-              style: robotoMedium.copyWith(
-                color: Theme.of(context).disabledColor,
-              ),
-            ),
-            trailing: isCurrent
-                ? Icon(
-                    isPlaying
-                        ? Icons.graphic_eq_rounded
-                        : Icons.pause_circle_filled_rounded,
-                    color: Theme.of(context).primaryColor,
-                    size: 26,
-                  )
-                : const Icon(
-                    Icons.play_arrow_rounded,
-                    color: Colors.grey,
-                  ),
-            onTap: () => _controller.playMediaItem(mediaItem),
+          title: Text(
+            mediaItem.title,
+            style: robotoMedium.copyWith(color: Theme.of(context).primaryColor),
           ),
+          subtitle: Text(
+            mediaItem.artist ?? 'unknown_artist_key'.tr,
+            style:
+                robotoMedium.copyWith(color: Theme.of(context).disabledColor),
+          ),
+          onTap: () => _controller.playMediaItem(mediaItem),
         ),
-      );
-    });
+      ),
+    );
   }
 }

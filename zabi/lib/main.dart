@@ -70,25 +70,22 @@ class MyApp extends StatelessWidget {
                         statusBarIconBrightness: Brightness.light,
                         systemNavigationBarIconBrightness: Brightness.light,
                       ),
-                      child: Directionality(
-                        textDirection: TextDirection.ltr,
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: SafeArea(
-                                top: false,
-                                bottom: GetPlatform.isAndroid,
-                                child: child!,
-                              ),
+                      child: Overlay(
+                        initialEntries: [
+                          OverlayEntry(
+                            builder: (context) => SafeArea(
+                              top: false,
+                              bottom: GetPlatform.isAndroid,
+                              child: child!,
                             ),
-                            const Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
+                          ),
+                          OverlayEntry(
+                            builder: (context) => const Align(
+                              alignment: Alignment.bottomCenter,
                               child: GlobalMiniPlayer(),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     );
                   },

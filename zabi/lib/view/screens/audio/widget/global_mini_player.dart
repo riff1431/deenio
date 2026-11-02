@@ -45,6 +45,7 @@ class GlobalMiniPlayer extends StatelessWidget {
       return AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOutCubic,
+        width: double.infinity,
         padding: EdgeInsets.fromLTRB(12, 0, 12, bottomPadding),
         child: Material(
           type: MaterialType.transparency,
