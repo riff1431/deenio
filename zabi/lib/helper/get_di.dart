@@ -95,7 +95,7 @@ Future<Map<String, Map<String, String>>> init() async {
   Get.lazyPut(() => QuranController(quranRepo: Get.find()), fenix: true);
   Get.lazyPut(() => PrayerTimeController(apiClient: Get.find()), fenix: true);
   Get.lazyPut(() => NotiSoundController());
-  Get.lazyPut(() => AudioPlayerController(apiClient: Get.find()));
+  Get.lazyPut(() => AudioPlayerController(apiClient: Get.find()), fenix: true);
   Get.lazyPut(() => WallPaperController(wallpaperRepo: Get.find()));
   Get.lazyPut(() => AlphabetController());
   Get.lazyPut(() => PrayerTimeAdjustmentController(), fenix: true);

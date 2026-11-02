@@ -81,6 +81,34 @@ class AudioPlayerController extends GetxController {
   final Rx<Duration> position = Duration.zero.obs;
   final Rx<Duration> duration = Duration.zero.obs;
 
+  // Global persistent mini-player navigation & visibility state
+  final RxBool isFullScreenPlayerOpen = false.obs;
+  final RxString currentRoute = ''.obs;
+
+  bool get isBottomNavActive =>
+      currentRoute.value == '/bottomNavbar' ||
+      currentRoute.value == '/home' ||
+      currentRoute.value.isEmpty;
+
+  void updateRoute(String? route) {
+    if (route != null && route.isNotEmpty) {
+      currentRoute.value = route;
+      update();
+    }
+  }
+
+  Future<void> stopAndDismiss() async {
+    try {
+      await _audioHandler.stop();
+    } catch (e) {
+      if (kDebugMode) print('Error stopping audio: $e');
+    }
+    currentMediaItem.value = null;
+    isPlaying.value = false;
+    position.value = Duration.zero;
+    update();
+  }
+
   // Future<void> ensureAudioHandlerRunning() async {
   //   if (!_audioHandler.playbackState.value.playing &&
   //       _audioHandler.queue.value.isEmpty) {

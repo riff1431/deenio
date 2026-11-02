@@ -6,7 +6,9 @@ import 'package:zabi/controller/home_layout_controller.dart';
 import 'package:zabi/helper/theme_helper.dart';
 import 'package:zabi/util/app_constants.dart';
 
+import 'controller/audio_player_controller.dart';
 import 'controller/internet_check_controller.dart';
+import 'view/screens/audio/widget/global_mini_player.dart';
 import 'controller/localization_controller.dart';
 import 'controller/theme_controller.dart';
 import 'helper/audio_service_helper.dart';
@@ -52,6 +54,15 @@ class MyApp extends StatelessWidget {
                     AppConstants.languages[0].countryCode,
                   ),
                   transitionDuration: const Duration(milliseconds: 500),
+                  navigatorObservers: [
+                    GetObserver((routing) {
+                      if (routing?.current != null &&
+                          Get.isRegistered<AudioPlayerController>()) {
+                        Get.find<AudioPlayerController>()
+                            .updateRoute(routing!.current);
+                      }
+                    }),
+                  ],
                   builder: (context, child) {
                     Theme.of(context);
 
@@ -61,15 +72,21 @@ class MyApp extends StatelessWidget {
                         statusBarIconBrightness: Brightness.light,
                         systemNavigationBarIconBrightness: Brightness.light,
                       ),
-                      child: Overlay(
-                        initialEntries: [
-                          OverlayEntry(
-                            builder: (context) => SafeArea(
-                              top: false,
-                              bottom: GetPlatform.isAndroid,
-                              child: child!,
-                            ),
+                      child: Stack(
+                        children: [
+                          SafeArea(
+                            top: false,
+                            bottom: GetPlatform.isAndroid,
+                            child: child!,
                           ),
+                          const GlobalMiniPlayer(),
+
+
+
+
+
+
+
                         ],
                       ),
                     );
