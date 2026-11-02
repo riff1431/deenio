@@ -1,3 +1,4 @@
+import 'package:zabi/view/screens/audio/widget/global_mini_player.dart';
 // ignore_for_file: deprecated_member_use
 
 
@@ -84,9 +85,15 @@ class _BottomNavbarScreenState extends State<BottomNavbarScreen> {
         final isModern =
             Get.find<HomeLayoutController>().currentLayout.value ==
             HomeLayoutController.modern;
-        return isModern
-            ? _buildModernNavBar(context)
-            : _buildClassicNavBar(context, isIOS);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const GlobalMiniPlayer(),
+            isModern
+                ? _buildModernNavBar(context)
+                : _buildClassicNavBar(context, isIOS),
+          ],
+        );
       }),
     );
   }

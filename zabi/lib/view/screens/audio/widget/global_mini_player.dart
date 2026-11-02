@@ -29,158 +29,121 @@ class GlobalMiniPlayer extends StatelessWidget {
         return const SizedBox.shrink();
       }
 
-      // If user is on bottomNavbar or home, float directly above the bottom bar (~82px).
-      // On subpages (such as audioList, suraDetaile, dua, settings), sit comfortably at the bottom (~12px).
-      final bool hasBottomNav = controller.isBottomNavActive ||
-          Get.currentRoute.contains('bottomNavbar') ||
-          Get.currentRoute.contains('home');
-
-      final double bottomPadding = hasBottomNav
-          ? 82.0
-          : (GetPlatform.isIOS ? 24.0 : 12.0);
-
       final isDark = Theme.of(context).brightness == Brightness.dark;
       final primaryColor = Theme.of(context).primaryColor;
 
-      return AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOutCubic,
-        width: double.infinity,
-        padding: EdgeInsets.fromLTRB(12, 0, 12, bottomPadding),
-        child: Material(
-          type: MaterialType.transparency,
-          child: Dismissible(
-            key: Key('global_mini_player_${mediaItem.id}'),
-            direction: DismissDirection.down,
-            onDismissed: (_) => controller.stopAndDismiss(),
-            child: GestureDetector(
-              onTap: () => _openFullScreenSheet(context, controller),
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E232A) : Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.08)
-                        : primaryColor.withOpacity(0.15),
-                    width: 1,
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E232A) : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : primaryColor.withOpacity(0.15),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
+              blurRadius: 12,
+              spreadRadius: 1,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Sleek progress bar at top of mini player
+              _buildProgressBar(context, controller, primaryColor),
+
+              // Player Content Row
+              GestureDetector(
+                onTap: () => _openFullScreenSheet(context, controller),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.4 : 0.12),
-                      blurRadius: 18,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Sleek progress bar at top of mini player
-                    _buildPlaybackProgressBar(context, controller),
+                  child: Row(
+                    children: [
+                      // Album Art Thumbnail
+                      _buildAlbumArt(context, mediaItem, isDark),
 
-                    // Main mini player body
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      child: Row(
-                        children: [
-                          // Reciter / Surah Avatar
-                          _buildAlbumArt(context, mediaItem, isDark),
+                      const SizedBox(width: 10),
 
-                          const SizedBox(width: 10),
-
-                          // Surah & Reciter Title
-                          Expanded(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  mediaItem.title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: robotoMedium.copyWith(
-                                    fontSize: Dimensions.FONT_SIZE_DEFAULT,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? Colors.white
-                                        : const Color(0xFF1B232A),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  mediaItem.artist ?? 'unknown_artist_key'.tr,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: robotoRegular.copyWith(
-                                    fontSize: Dimensions.FONT_SIZE_EXTRA_SMALL,
-                                    color: isDark
-                                        ? Colors.grey[400]
-                                        : Colors.grey[600],
-                                  ),
-                                ),
-                              ],
+                      // Surah Title & Reciter
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              mediaItem.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: robotoMedium.copyWith(
+                                fontSize: Dimensions.FONT_SIZE_DEFAULT,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF1B232A),
+                              ),
                             ),
-                          ),
-
-                          const SizedBox(width: 6),
-
-                          // Controls: Previous, Play/Pause, Next
-                          _buildControls(context, controller, primaryColor),
-
-                          // Quick dismiss (X) button
-                          IconButton(
-                            icon: Icon(
-                              Icons.close_rounded,
-                              size: 20,
-                              color: isDark
-                                  ? Colors.grey[400]
-                                  : Colors.grey[500],
+                            const SizedBox(height: 2),
+                            Text(
+                              mediaItem.artist ?? 'unknown_artist_key'.tr,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: robotoRegular.copyWith(
+                                fontSize: Dimensions.FONT_SIZE_EXTRA_SMALL,
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
+                              ),
                             ),
-                            tooltip: 'Close player',
-                            padding: const EdgeInsets.all(4),
-                            constraints: const BoxConstraints(),
-                            onPressed: () => controller.stopAndDismiss(),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(width: 8),
+
+                      // Controls: Previous, Play/Pause, Next
+                      _buildControls(context, controller, primaryColor),
+
+                      const SizedBox(width: 4),
+
+                      // Dismiss (X) button
+                      IconButton(
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: 18,
+                          color: isDark ? Colors.grey[400] : Colors.grey[500],
+                        ),
+                        padding: const EdgeInsets.all(4),
+                        constraints: const BoxConstraints(),
+                        tooltip: 'Close player',
+                        onPressed: () => controller.stopAndDismiss(),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       );
     });
   }
 
-  void _openFullScreenSheet(
+  Widget _buildProgressBar(
     BuildContext context,
     AudioPlayerController controller,
-  ) {
-    controller.isFullScreenPlayerOpen.value = true;
-
-    final targetContext = Get.key.currentContext ?? context;
-
-    showModalBottomSheet(
-      context: targetContext,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => FullScreenBottomSheet(controller: controller),
-    ).whenComplete(() {
-      controller.isFullScreenPlayerOpen.value = false;
-    });
-  }
-
-  Widget _buildPlaybackProgressBar(
-    BuildContext context,
-    AudioPlayerController controller,
+    Color primaryColor,
   ) {
     return Obx(() {
       final pos = controller.position.value.inMilliseconds.toDouble();
@@ -190,11 +153,9 @@ class GlobalMiniPlayer extends StatelessWidget {
 
       return LinearProgressIndicator(
         value: progress,
-        minHeight: 2.5,
+        minHeight: 2.0,
         backgroundColor: Colors.transparent,
-        valueColor: AlwaysStoppedAnimation<Color>(
-          Theme.of(context).primaryColor,
-        ),
+        valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
       );
     });
   }
@@ -205,21 +166,14 @@ class GlobalMiniPlayer extends StatelessWidget {
     bool isDark,
   ) {
     return Container(
-      width: 44,
-      height: 44,
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(10),
         color: isDark ? Colors.grey[800] : Colors.grey[200],
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(10),
         child: mediaItem.artUri != null
             ? Image.network(
                 mediaItem.artUri.toString(),
@@ -236,7 +190,7 @@ class GlobalMiniPlayer extends StatelessWidget {
     return Center(
       child: Icon(
         Icons.music_note_rounded,
-        size: 22,
+        size: 20,
         color: Theme.of(context).primaryColor,
       ),
     );
@@ -250,33 +204,29 @@ class GlobalMiniPlayer extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Previous
         IconButton(
           icon: Icon(
             Icons.skip_previous_rounded,
-            size: 24,
+            size: 22,
             color: primaryColor,
           ),
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(3),
           constraints: const BoxConstraints(),
           onPressed: controller.skipToPrevious,
         ),
-
         const SizedBox(width: 4),
-
-        // Play/Pause circular button
         Obx(() {
           final isPlaying = controller.isPlaying.value;
           return Container(
-            width: 38,
-            height: 38,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: primaryColor,
               boxShadow: [
                 BoxShadow(
-                  color: primaryColor.withOpacity(0.35),
-                  blurRadius: 8,
+                  color: primaryColor.withOpacity(0.3),
+                  blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
               ],
@@ -285,8 +235,8 @@ class GlobalMiniPlayer extends StatelessWidget {
               icon: SvgPicture.asset(
                 isPlaying ? Images.Pause_Icon : Images.Play_Icon,
                 color: Colors.white,
-                width: 16,
-                height: 16,
+                width: 14,
+                height: 14,
               ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
@@ -294,21 +244,35 @@ class GlobalMiniPlayer extends StatelessWidget {
             ),
           );
         }),
-
         const SizedBox(width: 4),
-
-        // Next
         IconButton(
           icon: Icon(
             Icons.skip_next_rounded,
-            size: 24,
+            size: 22,
             color: primaryColor,
           ),
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(3),
           constraints: const BoxConstraints(),
           onPressed: controller.skipToNext,
         ),
       ],
     );
+  }
+
+  void _openFullScreenSheet(
+    BuildContext context,
+    AudioPlayerController controller,
+  ) {
+    controller.isFullScreenPlayerOpen.value = true;
+    final targetContext = Get.key.currentContext ?? context;
+
+    showModalBottomSheet(
+      context: targetContext,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => FullScreenBottomSheet(controller: controller),
+    ).whenComplete(() {
+      controller.isFullScreenPlayerOpen.value = false;
+    });
   }
 }

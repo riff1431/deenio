@@ -1,3 +1,4 @@
+import 'package:zabi/view/screens/audio/widget/global_mini_player.dart';
 // ignore_for_file: deprecated_member_use
 
 import 'package:audio_service/audio_service.dart';
@@ -52,6 +53,7 @@ class _AudioPlayerViewState extends State<AudioPlayerView> {
           : _controller.audioData.isEmpty
               ? _buildEmptyAudioList()
               : _buildAudioList()),
+      bottomNavigationBar: const GlobalMiniPlayer(),
     );
   }
 

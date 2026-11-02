@@ -8,7 +8,6 @@ import 'package:zabi/util/app_constants.dart';
 
 import 'controller/audio_player_controller.dart';
 import 'controller/internet_check_controller.dart';
-import 'view/screens/audio/widget/global_mini_player.dart';
 import 'controller/localization_controller.dart';
 import 'controller/theme_controller.dart';
 import 'helper/audio_service_helper.dart';
@@ -77,12 +76,6 @@ class MyApp extends StatelessWidget {
                               top: false,
                               bottom: GetPlatform.isAndroid,
                               child: child!,
-                            ),
-                          ),
-                          OverlayEntry(
-                            builder: (context) => const Align(
-                              alignment: Alignment.bottomCenter,
-                              child: GlobalMiniPlayer(),
                             ),
                           ),
                         ],
