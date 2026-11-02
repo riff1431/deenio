@@ -15,7 +15,7 @@ class ReciterScreen extends StatelessWidget {
   ReciterScreen({super.key, this.appBackButton});
 
   final AudioPlayerController audioPlayerController =
-      Get.put(AudioPlayerController(apiClient: Get.find()));
+      Get.find<AudioPlayerController>();
 
   @override
   Widget build(BuildContext context) {

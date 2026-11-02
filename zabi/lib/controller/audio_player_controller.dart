@@ -101,9 +101,14 @@ class AudioPlayerController extends GetxController {
     try {
       audioData.clear();
       isAudioLoading(true);
-      final response = await apiClient.getData(AppConstants.AUDIO_LIST + id);
 
-      if (response.statusCode == 200) {
+      final safeId = (id.isEmpty || id == 'null') ? '1' : id;
+      final response =
+          await apiClient.getData(AppConstants.AUDIO_LIST + safeId);
+
+      if (response.statusCode == 200 &&
+          response.body is Map &&
+          response.body["data"] is List) {
         audioData = response.body["data"];
         if (kDebugMode) {
           print("Audio List fetched: ${audioData.length} items");
